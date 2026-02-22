@@ -397,6 +397,42 @@
   .btn-cancel:hover { background:rgba(255,255,255,0.04); }
   .inline-add { display:flex; align-items:center; gap:0.5rem; padding:0.5rem; border:1px dashed rgba(255,255,255,0.1); border-radius:8px; cursor:pointer; color:var(--muted); font-size:0.78rem; transition:all 0.15s; margin-top:0.4rem; }
   .inline-add:hover { border-color:var(--accent); color:var(--accent); }
+  /* ─── CONTACTS ─── */
+  .contacts-header { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-bottom:1rem; }
+  .contacts-header h2 { margin:0; flex:1; }
+  .contacts-search-wrap { position:relative; flex:1; min-width:180px; max-width:320px; }
+  .contacts-search { width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:0.45rem 0.65rem 0.45rem 2rem; font-size:0.83rem; font-family:'Inter',sans-serif; }
+  .contacts-search:focus { outline:none; border-color:var(--accent); }
+  .contacts-search-icon { position:absolute; left:0.6rem; top:50%; transform:translateY(-50%); color:var(--muted); font-size:0.8rem; pointer-events:none; }
+  .contacts-type-pills { display:flex; gap:0.3rem; flex-wrap:wrap; margin-bottom:1rem; }
+  .contacts-list { display:flex; flex-direction:column; gap:0.55rem; }
+  .contact-card { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:border-color 0.15s; }
+  .contact-card:hover { border-color:rgba(255,255,255,0.12); }
+  .contact-card-header { display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1rem; cursor:pointer; }
+  .contact-avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#c2410c); display:flex; align-items:center; justify-content:center; font-size:0.9rem; font-weight:600; flex-shrink:0; color:#fff; }
+  .contact-card-name { font-size:0.88rem; font-weight:600; }
+  .contact-card-sub { font-size:0.72rem; color:var(--muted); margin-top:0.1rem; }
+  .contact-card-badges { display:flex; gap:0.25rem; flex-wrap:wrap; margin-top:0.3rem; }
+  .contact-badge { font-size:0.6rem; padding:0.08rem 0.4rem; border-radius:20px; border:1px solid var(--border); color:var(--muted); white-space:nowrap; }
+  .contact-badge.type-client       { border-color:rgba(16,185,129,0.4); color:#34d399; }
+  .contact-badge.type-subcontractor{ border-color:rgba(249,115,22,0.4); color:#fb923c; }
+  .contact-badge.type-vendor        { border-color:rgba(59,130,246,0.4); color:#60a5fa; }
+  .contact-badge.type-personal      { border-color:rgba(168,85,247,0.4); color:#c084fc; }
+  .contact-badge.type-professional  { border-color:rgba(234,179,8,0.4);  color:#fbbf24; }
+  .contact-expand { display:none; padding:0 1rem 1rem; border-top:1px solid var(--border); }
+  .contact-expand.open { display:block; }
+  .contact-field { display:flex; align-items:center; gap:0.5rem; padding:0.35rem 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .contact-field:last-child { border-bottom:none; }
+  .contact-field-label { font-size:0.65rem; color:var(--muted); width:72px; flex-shrink:0; text-transform:uppercase; letter-spacing:0.04em; }
+  .contact-field-value { flex:1; font-size:0.8rem; }
+  .contact-field-value a { color:var(--text); text-decoration:none; }
+  .contact-field-value a:hover { color:var(--accent); }
+  .copy-btn { font-size:0.65rem; padding:0.1rem 0.35rem; border-radius:5px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; transition:all 0.15s; flex-shrink:0; }
+  .copy-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .copy-btn.copied { border-color:var(--green); color:var(--green); }
+  .contact-expand-actions { display:flex; gap:0.5rem; margin-top:0.85rem; }
+  .contact-empty { text-align:center; color:var(--muted); padding:3rem 1rem; font-size:0.85rem; }
+  .contacts-count { font-size:0.72rem; color:var(--muted); margin-bottom:0.75rem; }
 </style>
 </head>
 <body>
@@ -446,6 +482,7 @@
     <button onclick="showTab('revenue',this)">💰 Revenue</button>
     <button onclick="showTab('agents',this)">🤖 Agents</button>
     <button onclick="showTab('tasks',this)">✅ Tasks</button>
+    <button onclick="showTab('contacts',this)">👥 Contacts</button>
   </nav>
   <div class="header-right">
     <span id="clock"></span>
@@ -624,6 +661,73 @@
         <tr><td>Gateway</td><td><span class="badge badge-muted">Checking…</span></td><td></td></tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- ═══════════════ CONTACTS TAB ═══════════════ -->
+<div id="tab-contacts" class="tab-panel">
+  <div class="contacts-header">
+    <h2>👥 Contacts</h2>
+    <div class="contacts-search-wrap">
+      <span class="contacts-search-icon">🔍</span>
+      <input class="contacts-search" id="contacts-search" placeholder="Search name, company, phone…" oninput="debounceContactSearch()" />
+    </div>
+    <button class="btn" onclick="openAddContact()">+ Add</button>
+  </div>
+
+  <div class="contacts-type-pills" id="contacts-type-pills">
+    <button class="pill active" onclick="setContactFilter('',this)">All</button>
+    <button class="pill" onclick="setContactFilter('client',this)">Clients</button>
+    <button class="pill" onclick="setContactFilter('subcontractor',this)">Subs</button>
+    <button class="pill" onclick="setContactFilter('vendor',this)">Vendors</button>
+    <button class="pill" onclick="setContactFilter('personal',this)">Personal</button>
+    <button class="pill" onclick="setContactFilter('professional',this)">Professional</button>
+  </div>
+
+  <div class="contacts-count" id="contacts-count"></div>
+  <div class="contacts-list" id="contacts-list">
+    <div class="state-loading">Loading contacts…</div>
+  </div>
+</div>
+
+<!-- ═══════════════ ADD/EDIT CONTACT MODAL ═══════════════ -->
+<div class="modal-overlay hidden" id="contact-modal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-title" id="contact-modal-title">New Contact</div>
+    <div class="form-row-2col">
+      <div class="form-row"><label class="form-label">First name</label><input class="form-input" id="cm-first" placeholder="John" /></div>
+      <div class="form-row"><label class="form-label">Last name</label><input class="form-input" id="cm-last" placeholder="Martinez" /></div>
+    </div>
+    <div class="form-row-2col">
+      <div class="form-row"><label class="form-label">Phone</label><input class="form-input" id="cm-phone" placeholder="+1 415 555 1234" /></div>
+      <div class="form-row"><label class="form-label">Email</label><input class="form-input" id="cm-email" placeholder="john@example.com" /></div>
+    </div>
+    <div class="form-row-2col">
+      <div class="form-row"><label class="form-label">Company</label><input class="form-input" id="cm-company" placeholder="Coastal Plumbing" /></div>
+      <div class="form-row"><label class="form-label">Title / Role</label><input class="form-input" id="cm-title" placeholder="Owner" /></div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Types (comma-separated)</label>
+      <input class="form-input" id="cm-types" placeholder="subcontractor, client, personal…" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Trades / Specialty (comma-separated)</label>
+      <input class="form-input" id="cm-trades" placeholder="Plumber, Electrician…" />
+    </div>
+    <div class="form-row-2col">
+      <div class="form-row"><label class="form-label">Rating (1–5)</label><input class="form-input" id="cm-rating" type="number" min="1" max="5" /></div>
+      <div class="form-row"><label class="form-label">Source</label><input class="form-input" id="cm-source" placeholder="referral, Google…" /></div>
+    </div>
+    <div class="form-row"><label class="form-label">Notes</label><textarea class="form-input" id="cm-notes" rows="2"></textarea></div>
+    <div class="form-row" style="display:flex;align-items:center;gap:0.5rem">
+      <input type="checkbox" id="cm-verified" style="accent-color:var(--accent)" />
+      <label class="form-label" style="margin:0" for="cm-verified">Verified contact</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="cm-delete-btn" style="color:var(--red);border-color:rgba(239,68,68,0.3);display:none" onclick="deleteCurrentContact()">Delete</button>
+      <button class="btn-cancel" onclick="closeContactModal()">Cancel</button>
+      <button class="btn" id="cm-submit-btn" onclick="submitContactModal()">Add Contact</button>
+    </div>
   </div>
 </div>
 
@@ -1805,6 +1909,220 @@ document.addEventListener('keydown', e => {
 
 // Fetch tasks on load
 fetchTasks();
+
+/* ══════════════════════════════════════════════
+   CONTACTS
+══════════════════════════════════════════════ */
+let allContacts = [];
+let contactFilter = '';
+let contactSearchTerm = '';
+let _editContactId = null;
+let _searchTimer = null;
+
+const TYPE_COLORS = {
+  client:'type-client', subcontractor:'type-subcontractor',
+  vendor:'type-vendor', personal:'type-personal', professional:'type-professional',
+  trade_partner:'type-vendor', lead:'type-professional',
+};
+
+function initials(c) {
+  const f = c.first_name?.[0] || '';
+  const l = c.last_name?.[0]  || '';
+  return (f + l).toUpperCase() || (c.company?.[0] || '?').toUpperCase();
+}
+
+function copyField(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+function renderContacts(contacts) {
+  const list  = document.getElementById('contacts-list');
+  const count = document.getElementById('contacts-count');
+  if (!contacts.length) {
+    list.innerHTML = '<div class="contact-empty">No contacts found.</div>';
+    count.textContent = '';
+    return;
+  }
+  count.textContent = `${contacts.length} contact${contacts.length !== 1 ? 's' : ''}`;
+
+  list.innerHTML = contacts.map(c => {
+    const name    = [c.first_name, c.last_name].filter(Boolean).join(' ') || c.company || '(unnamed)';
+    const sub     = [c.company, c.title].filter(Boolean).join(' · ');
+    const types   = (c.types || []).map(t => `<span class="contact-badge ${TYPE_COLORS[t]||''}">${t}</span>`).join('');
+    const trades  = (c.trades || []).map(t => `<span class="contact-badge">${t}</span>`).join('');
+
+    const fields = [];
+    if (c.phone)    fields.push({ label:'Phone',   value:`<a href="tel:${c.phone}">${c.phone}</a>`, copy: c.phone });
+    if (c.phone_alt)fields.push({ label:'Phone 2', value:`<a href="tel:${c.phone_alt}">${c.phone_alt}</a>`, copy: c.phone_alt });
+    if (c.email)    fields.push({ label:'Email',   value:`<a href="mailto:${c.email}">${c.email}</a>`, copy: c.email });
+    if (c.company)  fields.push({ label:'Company', value:escHtml(c.company), copy: c.company });
+    if (c.address)  fields.push({ label:'Address', value:escHtml([c.address,c.city,c.state,c.zip].filter(Boolean).join(', ')), copy:[c.address,c.city,c.state,c.zip].filter(Boolean).join(', ') });
+    if (c.license_number) fields.push({ label:'License', value:escHtml(c.license_number) + (c.license_expiry?` <span style="color:var(--muted);font-size:0.7rem">exp ${c.license_expiry.slice(0,10)}</span>`:''), copy: c.license_number });
+    if (c.coi_expiry) fields.push({ label:'COI Exp', value:c.coi_expiry.slice(0,10), copy: c.coi_expiry.slice(0,10) });
+    if (c.rating)   fields.push({ label:'Rating',  value:'★'.repeat(c.rating)+'☆'.repeat(5-c.rating), copy: String(c.rating) });
+    if (c.notes)    fields.push({ label:'Notes',   value:`<span style="color:var(--muted)">${escHtml(c.notes)}</span>`, copy: c.notes });
+
+    const fieldRows = fields.map(f => `
+      <div class="contact-field">
+        <span class="contact-field-label">${f.label}</span>
+        <span class="contact-field-value">${f.value}</span>
+        ${f.copy ? `<button class="copy-btn" onclick="copyField(${JSON.stringify(f.copy)},this)">📋</button>` : ''}
+      </div>`).join('');
+
+    return `<div class="contact-card" id="cc-${c.id}">
+      <div class="contact-card-header" onclick="toggleContact('${c.id}')">
+        <div class="contact-avatar">${escHtml(initials(c))}</div>
+        <div style="flex:1;min-width:0">
+          <div class="contact-card-name">${escHtml(name)}</div>
+          ${sub ? `<div class="contact-card-sub">${escHtml(sub)}</div>` : ''}
+          <div class="contact-card-badges">${types}${trades}</div>
+        </div>
+        ${c.phone ? `<a href="tel:${c.phone}" onclick="event.stopPropagation()" style="font-size:1.1rem;text-decoration:none" title="${c.phone}">📞</a>` : ''}
+      </div>
+      <div class="contact-expand" id="cx-${c.id}">
+        ${fieldRows}
+        <div class="contact-expand-actions">
+          <button class="btn" style="font-size:0.75rem;padding:0.3rem 0.75rem" onclick="openEditContact('${c.id}')">Edit</button>
+          ${c.phone ? `<button class="btn-cancel" style="font-size:0.75rem" onclick="copyField('${c.phone}',this)">📋 Copy Phone</button>` : ''}
+          ${c.email ? `<a href="mailto:${c.email}" class="btn-cancel" style="font-size:0.75rem;text-decoration:none">✉️ Email</a>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleContact(id) {
+  const el = document.getElementById(`cx-${id}`);
+  if (!el) return;
+  const isOpen = el.classList.contains('open');
+  document.querySelectorAll('.contact-expand.open').forEach(e => e.classList.remove('open'));
+  if (!isOpen) el.classList.add('open');
+}
+
+async function fetchContacts(search = '', type = '') {
+  try {
+    const params = new URLSearchParams({ limit: 500 });
+    if (search) params.set('search', search);
+    if (type)   params.set('type', type);
+    const res = await fetch(`/api/contacts?${params}`);
+    const data = await res.json();
+    allContacts = data.contacts || [];
+    renderContacts(allContacts);
+  } catch (err) {
+    document.getElementById('contacts-list').innerHTML = `<div class="state-error">Failed to load: ${err.message}</div>`;
+  }
+}
+
+function setContactFilter(type, btn) {
+  contactFilter = type;
+  document.querySelectorAll('.contacts-type-pills .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  fetchContacts(contactSearchTerm, contactFilter);
+}
+
+function debounceContactSearch() {
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(() => {
+    contactSearchTerm = document.getElementById('contacts-search').value.trim();
+    fetchContacts(contactSearchTerm, contactFilter);
+  }, 300);
+}
+
+// ── Add/Edit modal ─────────────────────────────────────────────────────────
+function openAddContact() {
+  _editContactId = null;
+  document.getElementById('contact-modal-title').textContent = 'New Contact';
+  document.getElementById('cm-submit-btn').textContent = 'Add Contact';
+  document.getElementById('cm-delete-btn').style.display = 'none';
+  ['first','last','phone','email','company','title','types','trades','rating','source','notes'].forEach(f => {
+    const el = document.getElementById(`cm-${f}`);
+    if (el) el.value = '';
+  });
+  document.getElementById('cm-verified').checked = false;
+  document.getElementById('contact-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('cm-first').focus(), 80);
+}
+
+function openEditContact(id) {
+  const c = allContacts.find(x => x.id === id);
+  if (!c) return;
+  _editContactId = id;
+  document.getElementById('contact-modal-title').textContent = 'Edit Contact';
+  document.getElementById('cm-submit-btn').textContent = 'Save Changes';
+  document.getElementById('cm-delete-btn').style.display = 'block';
+  document.getElementById('cm-first').value   = c.first_name || '';
+  document.getElementById('cm-last').value    = c.last_name  || '';
+  document.getElementById('cm-phone').value   = c.phone      || '';
+  document.getElementById('cm-email').value   = c.email      || '';
+  document.getElementById('cm-company').value = c.company    || '';
+  document.getElementById('cm-title').value   = c.title      || '';
+  document.getElementById('cm-types').value   = (c.types  || []).join(', ');
+  document.getElementById('cm-trades').value  = (c.trades || []).join(', ');
+  document.getElementById('cm-rating').value  = c.rating     || '';
+  document.getElementById('cm-source').value  = c.source     || '';
+  document.getElementById('cm-notes').value   = c.notes      || '';
+  document.getElementById('cm-verified').checked = !!c.is_verified;
+  document.getElementById('contact-modal').classList.remove('hidden');
+}
+
+function closeContactModal() {
+  _editContactId = null;
+  document.getElementById('contact-modal').classList.add('hidden');
+}
+
+function parseTags(str) {
+  return str.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+}
+
+async function submitContactModal() {
+  const btn = document.getElementById('cm-submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  const body = {
+    first_name:   document.getElementById('cm-first').value.trim()   || null,
+    last_name:    document.getElementById('cm-last').value.trim()    || null,
+    phone:        document.getElementById('cm-phone').value.trim()   || null,
+    email:        document.getElementById('cm-email').value.trim()   || null,
+    company:      document.getElementById('cm-company').value.trim() || null,
+    title:        document.getElementById('cm-title').value.trim()   || null,
+    types:        parseTags(document.getElementById('cm-types').value),
+    trades:       parseTags(document.getElementById('cm-trades').value),
+    rating:       parseInt(document.getElementById('cm-rating').value) || null,
+    source:       document.getElementById('cm-source').value.trim()  || null,
+    notes:        document.getElementById('cm-notes').value.trim()   || null,
+    is_verified:  document.getElementById('cm-verified').checked,
+  };
+  try {
+    const method = _editContactId ? 'PATCH' : 'POST';
+    const url    = _editContactId ? `/api/contacts?id=${_editContactId}` : '/api/contacts';
+    const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (data.ok) { closeContactModal(); fetchContacts(contactSearchTerm, contactFilter); }
+    else { btn.disabled = false; btn.textContent = 'Error — retry'; }
+  } catch { btn.disabled = false; btn.textContent = 'Error — retry'; }
+}
+
+async function deleteCurrentContact() {
+  if (!_editContactId || !confirm('Archive this contact?')) return;
+  await fetch(`/api/contacts?id=${_editContactId}`, { method:'DELETE' });
+  closeContactModal();
+  fetchContacts(contactSearchTerm, contactFilter);
+}
+
+// Close on overlay click / Escape
+document.getElementById('contact-modal').addEventListener('click', e => {
+  if (e.target.id === 'contact-modal') closeContactModal();
+});
+
+// Load contacts when tab is opened
+const _origShowTab = showTab;
+function showTab(name, btn) {
+  _origShowTab(name, btn);
+  if (name === 'contacts' && !allContacts.length) fetchContacts();
+}
 </script>
 </body>
 </html>
