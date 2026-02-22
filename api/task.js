@@ -1,16 +1,21 @@
 // /api/task — Receive a task from Siri Shortcut and message Jerry via Telegram
+// Accepts GET (?task=...) or POST (JSON body)
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  let body;
-  try {
-    body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
-  } catch {
-    return res.status(400).json({ error: 'Invalid JSON' });
+  let task = '';
+
+  if (req.method === 'GET') {
+    task = (req.query?.task || '').trim();
+  } else {
+    let body;
+    try {
+      body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
+    } catch {
+      return res.status(400).json({ error: 'Invalid JSON' });
+    }
+    task = (body.task || body.text || body.message || '').trim();
   }
-
-  const task = (body.task || body.text || body.message || '').trim();
   if (!task) return res.status(400).json({ error: 'No task provided' });
 
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
