@@ -37,12 +37,26 @@ export default async function handler(req, res) {
   // ── GET — list all tasks ───────────────────────────────────────────────
   if (req.method === 'GET') {
     try {
-      const tasks = await sbFetch(
+      const raw = await sbFetch(
         '/tasks?select=*&order=created_at.asc',
         { headers: { 'Prefer': 'return=representation' } }
       );
+      // Normalize to camelCase / frontend-friendly field names
+      const tasks = (raw || []).map(t => ({
+        id:          t.id,
+        name:        t.name,
+        description: t.description,
+        status:      t.status,
+        priority:    t.priority,
+        level:       t.level,
+        job:         t.job_name,
+        assignee:    t.assignee,
+        dueDate:     t.due_date,
+        notes:       t.notes,
+        createdAt:   t.created_at,
+      }));
       res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=30');
-      res.status(200).json({ tasks: tasks || [] });
+      res.status(200).json({ tasks });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

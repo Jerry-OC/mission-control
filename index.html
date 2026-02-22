@@ -317,11 +317,17 @@
   .kanban-col { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:0.85rem; min-height:200px; }
   .kanban-col-header { font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.5rem; }
   .kanban-count { font-size:0.68rem; padding:0.1rem 0.45rem; border-radius:20px; font-weight:500; }
-  .task-card { background:var(--card); border:1px solid var(--border); border-radius:9px; padding:0.75rem; margin-bottom:0.55rem; cursor:pointer; transition:border-color 0.15s,transform 0.12s; }
+  .task-card { background:var(--card); border:1px solid var(--border); border-radius:9px; padding:0.75rem; margin-bottom:0.55rem; cursor:grab; transition:border-color 0.15s,transform 0.12s,opacity 0.15s; }
   .task-card:hover { border-color:rgba(255,255,255,0.14); transform:translateY(-1px); }
-  .task-card-name { font-size:0.82rem; font-weight:500; margin-bottom:0.4rem; line-height:1.35; }
+  .task-card.dragging { opacity:0.35; cursor:grabbing; transform:scale(0.97); }
+  .task-card-name { font-size:0.82rem; font-weight:500; margin-bottom:0.4rem; line-height:1.35; cursor:pointer; }
   .task-card-meta { display:flex; flex-wrap:wrap; gap:0.3rem; align-items:center; }
   .task-card-job { font-size:0.68rem; color:var(--muted); }
+  .task-card-actions { display:flex; gap:0.3rem; margin-top:0.5rem; padding-top:0.45rem; border-top:1px solid var(--border); }
+  .status-btn { font-size:0.65rem; padding:0.15rem 0.45rem; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; white-space:nowrap; }
+  .status-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(249,115,22,0.1); }
+  .kanban-col.drag-over { border-color:var(--accent); background:rgba(249,115,22,0.06); }
+  .kanban-drop-zone { min-height:60px; border-radius:7px; transition:background 0.15s; }
 
   /* List view */
   .tasks-list-group { margin-bottom:1.5rem; }
@@ -1325,12 +1331,20 @@ function applyFilter(tasks) {
 }
 
 // ── Kanban render ─────────────────────────────────────────────────────────
+// Next-status quick move options per column
+const NEXT_STATUS = {
+  'To Do':       [{ label:'▶ Start',  status:'In Progress' }, { label:'✗ Block', status:'Blocked' }],
+  'In Progress': [{ label:'✓ Done',   status:'Done'        }, { label:'✗ Block', status:'Blocked' }],
+  'Blocked':     [{ label:'▶ Resume', status:'In Progress' }, { label:'✓ Done',  status:'Done' }],
+  'Done':        [{ label:'↩ Reopen', status:'To Do'       }],
+};
+
 function renderKanban(tasks) {
   const cols = {
-    'To Do':       { key:'col-todo',     label:'To Do',      cards:[] },
+    'To Do':       { key:'col-todo',     label:'To Do',       cards:[] },
     'In Progress': { key:'col-progress', label:'In Progress', cards:[] },
-    'Blocked':     { key:'col-blocked',  label:'Blocked',    cards:[] },
-    'Done':        { key:'col-done',     label:'Done',       cards:[] },
+    'Blocked':     { key:'col-blocked',  label:'Blocked',     cards:[] },
+    'Done':        { key:'col-done',     label:'Done',        cards:[] },
   };
   tasks.forEach(t => { if (cols[t.status]) cols[t.status].cards.push(t); });
 
@@ -1338,23 +1352,39 @@ function renderKanban(tasks) {
   board.innerHTML = Object.values(cols).map(col => {
     const cards = col.cards
       .sort((a,b) => (PRI_ORDER[a.priority]??3) - (PRI_ORDER[b.priority]??3))
-      .map(t => `
-        <div class="task-card" onclick="openEditTask('${t.id}')">
-          <div class="task-card-name">${escHtml(t.name)}</div>
+      .map(t => {
+        const nextBtns = (NEXT_STATUS[t.status] || [])
+          .map(n => `<button class="status-btn" onclick="event.stopPropagation();quickComplete('${t.id}','${n.status}')">${n.label}</button>`)
+          .join('');
+        return `
+        <div class="task-card"
+          draggable="true"
+          data-task-id="${t.id}"
+          data-status="${escHtml(t.status)}"
+          ondragstart="onCardDragStart(event)"
+          ondragend="onCardDragEnd(event)">
+          <div class="task-card-name" onclick="openEditTask('${t.id}')">${escHtml(t.name)}</div>
           <div class="task-card-meta">
             <span class="badge pri-badge ${priClass(t.priority)}">${t.priority}</span>
             ${t.level==='Job' && t.job ? `<span class="task-card-job">🏗️ ${escHtml(t.job)}</span>` : ''}
             ${t.assignee ? `<span class="task-card-job">👤 ${t.assignee}</span>` : ''}
-            ${t.dueDate ? `<span class="task-card-job ${isDueSoon(t.dueDate)?'':''}">📅 ${fmtDate(t.dueDate)}</span>` : ''}
+            ${t.dueDate ? `<span class="task-card-job">📅 ${fmtDate(t.dueDate)}</span>` : ''}
           </div>
-        </div>`).join('');
+          ${nextBtns ? `<div class="task-card-actions">${nextBtns}</div>` : ''}
+        </div>`;
+      }).join('');
 
     const addBtn = col.key !== 'col-done'
       ? `<div class="inline-add" onclick="openAddTaskInCol('${col.label}')"><span>+</span> Add task</div>`
       : '';
 
     return `
-      <div class="kanban-col ${col.key}">
+      <div class="kanban-col ${col.key} kanban-drop-zone"
+        data-status="${col.label}"
+        ondragover="onColDragOver(event)"
+        ondragenter="onColDragEnter(event)"
+        ondragleave="onColDragLeave(event)"
+        ondrop="onColDrop(event)">
         <div class="kanban-col-header">
           <span>${col.label}</span>
           <span class="kanban-count">${col.cards.length}</span>
@@ -1363,6 +1393,48 @@ function renderKanban(tasks) {
         ${addBtn}
       </div>`;
   }).join('');
+}
+
+// ── Drag and drop handlers ────────────────────────────────────────────────
+let _dragTaskId = null;
+
+function onCardDragStart(e) {
+  _dragTaskId = e.currentTarget.dataset.taskId;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', _dragTaskId);
+}
+
+function onCardDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
+  _dragTaskId = null;
+}
+
+function onColDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function onColDragEnter(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+
+function onColDragLeave(e) {
+  // Only remove if leaving the column itself, not a child element
+  if (!e.currentTarget.contains(e.relatedTarget)) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+}
+
+function onColDrop(e) {
+  e.preventDefault();
+  const col = e.currentTarget;
+  col.classList.remove('drag-over');
+  const taskId = e.dataTransfer.getData('text/plain') || _dragTaskId;
+  const newStatus = col.dataset.status;
+  if (taskId && newStatus) quickComplete(taskId, newStatus);
 }
 
 // ── List render (grouped by job/org) ─────────────────────────────────────
