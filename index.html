@@ -963,6 +963,7 @@ function showTab(name, btn) {
   btn.classList.add('active');
   if (name === 'tasks') fetchTasks();
   if (name === 'agents') fetchAgents();
+  if (name === 'contacts') fetchContacts(contactSearchTerm, contactFilter);
 }
 
 
@@ -2117,12 +2118,7 @@ document.getElementById('contact-modal').addEventListener('click', e => {
   if (e.target.id === 'contact-modal') closeContactModal();
 });
 
-// Load contacts when tab is opened
-const _origShowTab = showTab;
-function showTab(name, btn) {
-  _origShowTab(name, btn);
-  if (name === 'contacts' && !allContacts.length) fetchContacts();
-}
+// Contacts load triggered by showTab above
 </script>
 </body>
 </html>
