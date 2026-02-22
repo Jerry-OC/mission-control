@@ -1,56 +1,48 @@
-// /api/tasks — Airtable-backed task management
-// GET  /api/tasks              → list all tasks
-// POST /api/tasks              → create a task
-// PATCH /api/tasks?id=recXXX  → update a task
-// DELETE /api/tasks?id=recXXX → delete a task
+// /api/tasks — Supabase-backed task management
+// GET    /api/tasks              → list all tasks
+// POST   /api/tasks              → create a task
+// PATCH  /api/tasks?id=uuid      → update a task
+// DELETE /api/tasks?id=uuid      → delete a task
 
-const BASE_ID  = 'appYwbR0tGpKUCb8P';
-const TABLE_ID = 'tblUqgCA5pGSjxK7B';
-const AT_URL   = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
+const SB_URL = process.env.SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-function atHeaders() {
+function sbHeaders() {
   return {
-    'Authorization': `Bearer ${process.env.AIRTABLE_PAT}`,
+    'apikey': SB_KEY,
+    'Authorization': `Bearer ${SB_KEY}`,
     'Content-Type': 'application/json',
   };
+}
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SB_URL}/rest/v1${path}`, {
+    ...options,
+    headers: { ...sbHeaders(), ...(options.headers || {}) },
+  });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) throw new Error(data?.message || `Supabase error ${res.status}`);
+  return data;
 }
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
 
-  // ── GET — list all tasks ────────────────────────────────────────────────
+  const id = req.query?.id;
+
+  // ── GET — list all tasks ───────────────────────────────────────────────
   if (req.method === 'GET') {
     try {
-      const params = new URLSearchParams({
-        sort: JSON.stringify([
-          { field: 'Priority', direction: 'desc' },
-          { field: 'Status',   direction: 'asc'  },
-        ]),
-        pageSize: '100',
-      });
-      const r = await fetch(`${AT_URL}?${params}`, { headers: atHeaders() });
-      const data = await r.json();
-
-      const tasks = (data.records || []).map(rec => ({
-        id:          rec.id,
-        name:        rec.fields['Name']        || '',
-        description: rec.fields['Description'] || '',
-        status:      rec.fields['Status']      || 'To Do',
-        priority:    rec.fields['Priority']    || 'Medium',
-        level:       rec.fields['Level']       || 'Org',
-        job:         rec.fields['Job']         || '',
-        assignee:    rec.fields['Assignee']    || '',
-        dueDate:     rec.fields['Due Date']    || null,
-        notes:       rec.fields['Notes']       || '',
-        createdTime: rec.createdTime,
-      }));
-
+      const tasks = await sbFetch(
+        '/tasks?select=*&order=created_at.asc',
+        { headers: { 'Prefer': 'return=representation' } }
+      );
       res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=30');
-      res.status(200).json({ tasks });
+      res.status(200).json({ tasks: tasks || [] });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -61,59 +53,53 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const fields = {};
-      if (body.name)        fields['Name']        = body.name;
-      if (body.description) fields['Description'] = body.description;
-      if (body.status)      fields['Status']      = body.status;
-      if (body.priority)    fields['Priority']    = body.priority;
-      if (body.level)       fields['Level']       = body.level;
-      if (body.job)         fields['Job']         = body.job;
-      if (body.assignee)    fields['Assignee']    = body.assignee;
-      if (body.dueDate)     fields['Due Date']    = body.dueDate;
-      if (body.notes)       fields['Notes']       = body.notes;
-
-      if (!fields['Status'])   fields['Status']   = 'To Do';
-      if (!fields['Priority']) fields['Priority'] = 'Medium';
-      if (!fields['Level'])    fields['Level']    = 'Org';
-
-      const r = await fetch(AT_URL, {
+      const row = {
+        name:        body.name        || null,
+        description: body.description || null,
+        status:      body.status      || 'To Do',
+        priority:    body.priority    || 'Medium',
+        level:       body.level       || 'Org',
+        job_name:    body.job         || body.job_name || null,
+        assignee:    body.assignee    || null,
+        due_date:    body.dueDate     || body.due_date || null,
+        notes:       body.notes       || null,
+      };
+      const [created] = await sbFetch('/tasks', {
         method: 'POST',
-        headers: atHeaders(),
-        body: JSON.stringify({ records: [{ fields }] }),
+        body: JSON.stringify(row),
+        headers: { 'Prefer': 'return=representation' },
       });
-      const data = await r.json();
-      const rec = data.records?.[0];
-      res.status(201).json({ ok: true, id: rec?.id, name: rec?.fields?.Name });
+      res.status(201).json({ ok: true, id: created.id, name: created.name });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
     return;
   }
 
-  // ── PATCH — update a task ───────────────────────────────────────────────
+  // ── PATCH — update a task ──────────────────────────────────────────────
   if (req.method === 'PATCH') {
-    const id = req.query?.id || new URL(req.url, 'http://x').searchParams.get('id');
     if (!id) { res.status(400).json({ error: 'id required' }); return; }
     try {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const fields = {};
-      if (body.name        !== undefined) fields['Name']        = body.name;
-      if (body.description !== undefined) fields['Description'] = body.description;
-      if (body.status      !== undefined) fields['Status']      = body.status;
-      if (body.priority    !== undefined) fields['Priority']    = body.priority;
-      if (body.level       !== undefined) fields['Level']       = body.level;
-      if (body.job         !== undefined) fields['Job']         = body.job;
-      if (body.assignee    !== undefined) fields['Assignee']    = body.assignee;
-      if (body.dueDate     !== undefined) fields['Due Date']    = body.dueDate;
-      if (body.notes       !== undefined) fields['Notes']       = body.notes;
+      const patch = {};
+      if (body.name        !== undefined) patch.name        = body.name;
+      if (body.description !== undefined) patch.description = body.description;
+      if (body.status      !== undefined) patch.status      = body.status;
+      if (body.priority    !== undefined) patch.priority    = body.priority;
+      if (body.level       !== undefined) patch.level       = body.level;
+      if (body.job         !== undefined) patch.job_name    = body.job;
+      if (body.job_name    !== undefined) patch.job_name    = body.job_name;
+      if (body.assignee    !== undefined) patch.assignee    = body.assignee;
+      if (body.dueDate     !== undefined) patch.due_date    = body.dueDate;
+      if (body.due_date    !== undefined) patch.due_date    = body.due_date;
+      if (body.notes       !== undefined) patch.notes       = body.notes;
 
-      const r = await fetch(`${AT_URL}/${id}`, {
+      await sbFetch(`/tasks?id=eq.${id}`, {
         method: 'PATCH',
-        headers: atHeaders(),
-        body: JSON.stringify({ fields }),
+        body: JSON.stringify(patch),
+        headers: { 'Prefer': 'return=minimal' },
       });
-      const data = await r.json();
-      res.status(200).json({ ok: true, id: data.id });
+      res.status(200).json({ ok: true, id });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -122,10 +108,9 @@ export default async function handler(req, res) {
 
   // ── DELETE ──────────────────────────────────────────────────────────────
   if (req.method === 'DELETE') {
-    const id = req.query?.id || new URL(req.url, 'http://x').searchParams.get('id');
     if (!id) { res.status(400).json({ error: 'id required' }); return; }
     try {
-      await fetch(`${AT_URL}/${id}`, { method: 'DELETE', headers: atHeaders() });
+      await sbFetch(`/tasks?id=eq.${id}`, { method: 'DELETE' });
       res.status(200).json({ ok: true });
     } catch (err) {
       res.status(500).json({ error: err.message });
