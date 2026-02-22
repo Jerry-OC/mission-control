@@ -8,13 +8,16 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     task = (req.query?.task || '').trim();
   } else {
-    let body;
-    try {
-      body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
-    } catch {
-      return res.status(400).json({ error: 'Invalid JSON' });
+    // Accept JSON or form-encoded body
+    let body = req.body || {};
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch {
+        // Try form-encoded
+        const params = new URLSearchParams(body);
+        task = (params.get('task') || params.get('text') || '').trim();
+      }
     }
-    task = (body.task || body.text || body.message || '').trim();
+    if (!task) task = (body.task || body.text || body.message || '').trim();
   }
   if (!task) return res.status(400).json({ error: 'No task provided' });
 
