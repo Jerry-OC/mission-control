@@ -299,6 +299,73 @@
   /* ─── LOADING / ERROR STATES ─── */
   .state-loading { text-align:center; padding:2rem; color:var(--muted); font-size:0.85rem; }
   .state-error { text-align:center; padding:1.5rem; color:var(--red); font-size:0.82rem; background:rgba(239,68,68,0.06); border-radius:8px; border:1px solid rgba(239,68,68,0.15); }
+
+  /* ─── TASKS ─── */
+  .tasks-toolbar { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-bottom:1.25rem; }
+  .tasks-toolbar h2 { margin:0; flex:1; min-width:120px; }
+  .view-toggle { display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .view-btn { padding:0.3rem 0.75rem; background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:0.78rem; font-family:'Inter',sans-serif; transition:all 0.15s; }
+  .view-btn.active { background:var(--accent); color:#fff; }
+  .filter-pills { display:flex; gap:0.35rem; flex-wrap:wrap; margin-bottom:1rem; }
+  .pill { padding:0.22rem 0.65rem; border-radius:20px; font-size:0.72rem; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; }
+  .pill.active { border-color:var(--accent); color:var(--accent); background:rgba(249,115,22,0.1); }
+
+  /* Kanban */
+  .kanban-board { display:grid; grid-template-columns:repeat(4,1fr); gap:0.85rem; align-items:start; }
+  @media(max-width:900px){ .kanban-board { grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:500px){ .kanban-board { grid-template-columns:1fr; } }
+  .kanban-col { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; padding:0.85rem; min-height:200px; }
+  .kanban-col-header { font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.75rem; display:flex; align-items:center; gap:0.5rem; }
+  .kanban-count { font-size:0.68rem; padding:0.1rem 0.45rem; border-radius:20px; font-weight:500; }
+  .task-card { background:var(--card); border:1px solid var(--border); border-radius:9px; padding:0.75rem; margin-bottom:0.55rem; cursor:pointer; transition:border-color 0.15s,transform 0.12s; }
+  .task-card:hover { border-color:rgba(255,255,255,0.14); transform:translateY(-1px); }
+  .task-card-name { font-size:0.82rem; font-weight:500; margin-bottom:0.4rem; line-height:1.35; }
+  .task-card-meta { display:flex; flex-wrap:wrap; gap:0.3rem; align-items:center; }
+  .task-card-job { font-size:0.68rem; color:var(--muted); }
+
+  /* List view */
+  .tasks-list-group { margin-bottom:1.5rem; }
+  .tasks-list-group-header { font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin-bottom:0.5rem; padding-bottom:0.35rem; border-bottom:1px solid var(--border); }
+  .task-row { display:flex; align-items:center; gap:0.6rem; padding:0.6rem 0.5rem; border-radius:7px; cursor:pointer; transition:background 0.12s; }
+  .task-row:hover { background:rgba(255,255,255,0.04); }
+  .task-row-check { width:16px; height:16px; border-radius:50%; border:1.5px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all 0.15s; cursor:pointer; }
+  .task-row-check.done { background:var(--green); border-color:var(--green); }
+  .task-row-name { flex:1; font-size:0.83rem; }
+  .task-row-name.done-text { text-decoration:line-through; color:var(--muted); }
+  .task-row-right { display:flex; align-items:center; gap:0.4rem; }
+
+  /* Priority badges */
+  .pri-urgent { background:rgba(239,68,68,0.15);  color:#f87171; border:1px solid rgba(239,68,68,0.25); }
+  .pri-high   { background:rgba(234,179,8,0.15);  color:#fbbf24; border:1px solid rgba(234,179,8,0.25); }
+  .pri-medium { background:rgba(59,130,246,0.15); color:#60a5fa; border:1px solid rgba(59,130,246,0.25); }
+  .pri-low    { background:rgba(107,114,128,0.12);color:var(--muted); border:1px solid var(--border); }
+  .pri-badge  { font-size:0.63rem; padding:0.1rem 0.42rem; border-radius:20px; font-weight:500; white-space:nowrap; }
+
+  /* Kanban column accent colors */
+  .col-todo     .kanban-col-header { color:#60a5fa; }
+  .col-todo     .kanban-count { background:rgba(59,130,246,0.15); color:#60a5fa; }
+  .col-progress .kanban-col-header { color:#fbbf24; }
+  .col-progress .kanban-count { background:rgba(234,179,8,0.15); color:#fbbf24; }
+  .col-blocked  .kanban-col-header { color:#f87171; }
+  .col-blocked  .kanban-count { background:rgba(239,68,68,0.15); color:#f87171; }
+  .col-done     .kanban-col-header { color:var(--muted); }
+  .col-done     .kanban-count { background:rgba(107,114,128,0.15); color:var(--muted); }
+
+  /* Add task modal */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:500; display:flex; align-items:center; justify-content:center; animation:fadeIn 0.15s ease; }
+  .modal-overlay.hidden { display:none; }
+  .modal-box { background:var(--bg2); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:1.75rem; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
+  .modal-title { font-size:1rem; font-weight:600; margin-bottom:1.25rem; }
+  .form-row { margin-bottom:0.85rem; }
+  .form-label { font-size:0.72rem; color:var(--muted); margin-bottom:0.3rem; display:block; }
+  .form-input { width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:0.5rem 0.65rem; font-size:0.83rem; font-family:'Inter',sans-serif; transition:border-color 0.15s; }
+  .form-input:focus { outline:none; border-color:var(--accent); }
+  .form-row-2col { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; }
+  .modal-footer { display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem; }
+  .btn-cancel { padding:0.45rem 1rem; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; font-family:'Inter',sans-serif; font-size:0.82rem; }
+  .btn-cancel:hover { background:rgba(255,255,255,0.04); }
+  .inline-add { display:flex; align-items:center; gap:0.5rem; padding:0.5rem; border:1px dashed rgba(255,255,255,0.1); border-radius:8px; cursor:pointer; color:var(--muted); font-size:0.78rem; transition:all 0.15s; margin-top:0.4rem; }
+  .inline-add:hover { border-color:var(--accent); color:var(--accent); }
 </style>
 </head>
 <body>
@@ -347,6 +414,7 @@
     <button onclick="showTab('inbox',this)">📥 Cost Inbox</button>
     <button onclick="showTab('revenue',this)">💰 Revenue</button>
     <button onclick="showTab('agents',this)">🤖 Agents</button>
+    <button onclick="showTab('tasks',this)">✅ Tasks</button>
   </nav>
   <div class="header-right">
     <span id="clock"></span>
@@ -528,6 +596,110 @@
   </div>
 </div>
 
+<!-- ═══════════════ TASKS TAB ═══════════════ -->
+<div id="tab-tasks" class="tab-panel">
+
+  <!-- toolbar -->
+  <div class="tasks-toolbar">
+    <h2>✅ Tasks</h2>
+    <div class="view-toggle">
+      <button class="view-btn active" id="view-kanban-btn" onclick="setTaskView('kanban')">⬜ Kanban</button>
+      <button class="view-btn" id="view-list-btn" onclick="setTaskView('list')">☰ List</button>
+    </div>
+    <button class="btn" onclick="openAddTask()">+ Add Task</button>
+  </div>
+
+  <!-- filter pills -->
+  <div class="filter-pills" id="task-filter-pills">
+    <button class="pill active" data-filter="all"      onclick="setTaskFilter('all',this)">All</button>
+    <button class="pill"        data-filter="org"      onclick="setTaskFilter('org',this)">🏢 Org</button>
+    <button class="pill"        data-filter="job"      onclick="setTaskFilter('job',this)">🏗️ Job</button>
+    <button class="pill"        data-filter="todo"     onclick="setTaskFilter('todo',this)">To Do</button>
+    <button class="pill"        data-filter="mine"     onclick="setTaskFilter('mine',this)">Mine</button>
+    <button class="pill"        data-filter="jerry"    onclick="setTaskFilter('jerry',this)">Jerry</button>
+  </div>
+
+  <!-- kanban board -->
+  <div id="tasks-kanban" class="kanban-board">
+    <div class="state-loading">Loading tasks…</div>
+  </div>
+
+  <!-- list view -->
+  <div id="tasks-list" style="display:none">
+    <div class="state-loading">Loading tasks…</div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ ADD TASK MODAL ═══════════════ -->
+<div class="modal-overlay hidden" id="add-task-modal">
+  <div class="modal-box">
+    <div class="modal-title">New Task</div>
+    <div class="form-row">
+      <label class="form-label">Task name *</label>
+      <input class="form-input" id="t-name" placeholder="What needs to be done?" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Description</label>
+      <textarea class="form-input" id="t-desc" rows="2" placeholder="Optional details…"></textarea>
+    </div>
+    <div class="form-row-2col">
+      <div class="form-row">
+        <label class="form-label">Status</label>
+        <select class="form-input" id="t-status">
+          <option value="To Do">To Do</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Blocked">Blocked</option>
+          <option value="Done">Done</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Priority</label>
+        <select class="form-input" id="t-priority">
+          <option value="Low">Low</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="High">High</option>
+          <option value="Urgent">Urgent</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row-2col">
+      <div class="form-row">
+        <label class="form-label">Level</label>
+        <select class="form-input" id="t-level" onchange="onTaskLevelChange()">
+          <option value="Org">🏢 Org</option>
+          <option value="Job">🏗️ Job</option>
+        </select>
+      </div>
+      <div class="form-row" id="t-job-row" style="display:none">
+        <label class="form-label">Job</label>
+        <input class="form-input" id="t-job" placeholder="e.g. Balboa" />
+      </div>
+    </div>
+    <div class="form-row-2col">
+      <div class="form-row">
+        <label class="form-label">Assignee</label>
+        <select class="form-input" id="t-assignee">
+          <option value="">Unassigned</option>
+          <option value="David">David</option>
+          <option value="Jerry">Jerry</option>
+          <option value="Phil">Phil</option>
+          <option value="Bobby">Bobby</option>
+          <option value="Mickey">Mickey</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Due Date</label>
+        <input class="form-input" type="date" id="t-due" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeAddTask()">Cancel</button>
+      <button class="btn" id="add-task-submit-btn" onclick="submitAddTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
 </main>
 </div><!-- /#app -->
 
@@ -649,6 +821,8 @@ function showTab(name, btn) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
+  if (name === 'tasks') fetchTasks();
+  if (name === 'agents') fetchAgents();
 }
 
 
@@ -1112,6 +1286,344 @@ async function saveModel(agentId) {
 // Initial load + poll every 10 seconds
 fetchAgents();
 setInterval(fetchAgents, 10 * 1000);
+
+/* ══════════════════════════════════════════════
+   TASKS
+══════════════════════════════════════════════ */
+let allTasks       = [];
+let taskView       = 'kanban';  // 'kanban' | 'list'
+let taskFilter     = 'all';
+let tasksLoaded    = false;
+
+const PRI_ORDER = { Urgent:0, High:1, Medium:2, Low:3 };
+
+function priClass(p) {
+  return { Urgent:'pri-urgent', High:'pri-high', Medium:'pri-medium', Low:'pri-low' }[p] || 'pri-low';
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  return `${m}/${day}`;
+}
+
+function isDueSoon(d) {
+  if (!d) return false;
+  return (new Date(d) - new Date()) < 86400 * 3 * 1000;
+}
+
+// ── Filter logic ─────────────────────────────────────────────────────────
+function applyFilter(tasks) {
+  return tasks.filter(t => {
+    if (taskFilter === 'org')   return t.level === 'Org';
+    if (taskFilter === 'job')   return t.level === 'Job';
+    if (taskFilter === 'todo')  return t.status === 'To Do';
+    if (taskFilter === 'mine')  return t.assignee === 'David';
+    if (taskFilter === 'jerry') return t.assignee === 'Jerry';
+    return true;
+  });
+}
+
+// ── Kanban render ─────────────────────────────────────────────────────────
+function renderKanban(tasks) {
+  const cols = {
+    'To Do':       { key:'col-todo',     label:'To Do',      cards:[] },
+    'In Progress': { key:'col-progress', label:'In Progress', cards:[] },
+    'Blocked':     { key:'col-blocked',  label:'Blocked',    cards:[] },
+    'Done':        { key:'col-done',     label:'Done',       cards:[] },
+  };
+  tasks.forEach(t => { if (cols[t.status]) cols[t.status].cards.push(t); });
+
+  const board = document.getElementById('tasks-kanban');
+  board.innerHTML = Object.values(cols).map(col => {
+    const cards = col.cards
+      .sort((a,b) => (PRI_ORDER[a.priority]??3) - (PRI_ORDER[b.priority]??3))
+      .map(t => `
+        <div class="task-card" onclick="openEditTask('${t.id}')">
+          <div class="task-card-name">${escHtml(t.name)}</div>
+          <div class="task-card-meta">
+            <span class="badge pri-badge ${priClass(t.priority)}">${t.priority}</span>
+            ${t.level==='Job' && t.job ? `<span class="task-card-job">🏗️ ${escHtml(t.job)}</span>` : ''}
+            ${t.assignee ? `<span class="task-card-job">👤 ${t.assignee}</span>` : ''}
+            ${t.dueDate ? `<span class="task-card-job ${isDueSoon(t.dueDate)?'':''}">📅 ${fmtDate(t.dueDate)}</span>` : ''}
+          </div>
+        </div>`).join('');
+
+    const addBtn = col.key !== 'col-done'
+      ? `<div class="inline-add" onclick="openAddTaskInCol('${col.label}')"><span>+</span> Add task</div>`
+      : '';
+
+    return `
+      <div class="kanban-col ${col.key}">
+        <div class="kanban-col-header">
+          <span>${col.label}</span>
+          <span class="kanban-count">${col.cards.length}</span>
+        </div>
+        ${cards}
+        ${addBtn}
+      </div>`;
+  }).join('');
+}
+
+// ── List render (grouped by job/org) ─────────────────────────────────────
+function renderList(tasks) {
+  const groups = {};
+  tasks.forEach(t => {
+    const key = t.level === 'Job' && t.job ? `🏗️ ${t.job}` : '🏢 Org';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+
+  // Sort groups: Org first, then jobs alphabetically
+  const sortedKeys = Object.keys(groups).sort((a,b) => {
+    if (a.startsWith('🏢')) return -1;
+    if (b.startsWith('🏢')) return 1;
+    return a.localeCompare(b);
+  });
+
+  const el = document.getElementById('tasks-list');
+  el.innerHTML = sortedKeys.map(key => {
+    const sorted = groups[key].sort((a,b) => (PRI_ORDER[a.priority]??3) - (PRI_ORDER[b.priority]??3));
+    const rows = sorted.map(t => {
+      const done = t.status === 'Done';
+      return `
+        <div class="task-row" onclick="openEditTask('${t.id}')">
+          <div class="task-row-check ${done ? 'done' : ''}" onclick="event.stopPropagation();quickComplete('${t.id}','${done?'To Do':'Done'}')">
+            ${done ? '✓' : ''}
+          </div>
+          <div class="task-row-name ${done ? 'done-text' : ''}">${escHtml(t.name)}</div>
+          <div class="task-row-right">
+            <span class="badge pri-badge ${priClass(t.priority)}">${t.priority}</span>
+            ${t.assignee ? `<span style="font-size:0.72rem;color:var(--muted)">👤 ${t.assignee}</span>` : ''}
+            ${t.dueDate  ? `<span style="font-size:0.72rem;color:${isDueSoon(t.dueDate)?'var(--yellow)':'var(--muted)'}">📅 ${fmtDate(t.dueDate)}</span>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="tasks-list-group">
+        <div class="tasks-list-group-header">${key}</div>
+        ${rows}
+      </div>`;
+  }).join('') || '<div class="state-loading">No tasks match this filter.</div>';
+}
+
+// ── Render dispatcher ────────────────────────────────────────────────────
+function renderTasks() {
+  const filtered = applyFilter(allTasks);
+  if (taskView === 'kanban') {
+    document.getElementById('tasks-kanban').style.display = '';
+    document.getElementById('tasks-list').style.display   = 'none';
+    renderKanban(filtered);
+  } else {
+    document.getElementById('tasks-kanban').style.display = 'none';
+    document.getElementById('tasks-list').style.display   = '';
+    renderList(filtered);
+  }
+}
+
+function setTaskView(view) {
+  taskView = view;
+  document.getElementById('view-kanban-btn').classList.toggle('active', view === 'kanban');
+  document.getElementById('view-list-btn').classList.toggle('active', view === 'list');
+  renderTasks();
+}
+
+function setTaskFilter(f, btn) {
+  taskFilter = f;
+  document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  renderTasks();
+}
+
+// ── Fetch tasks from Vercel API ──────────────────────────────────────────
+async function fetchTasks() {
+  try {
+    const token = getToken();
+    const res = await fetch('/api/tasks', {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    });
+    const data = await res.json();
+    if (data.tasks) {
+      allTasks = data.tasks;
+      tasksLoaded = true;
+      renderTasks();
+    }
+  } catch (err) {
+    if (!tasksLoaded) {
+      document.getElementById('tasks-kanban').innerHTML =
+        `<div class="state-error" style="grid-column:1/-1">Failed to load tasks: ${err.message}</div>`;
+    }
+  }
+}
+
+// Auto-refresh tasks every 30s
+setInterval(fetchTasks, 30 * 1000);
+
+// Load tasks when tab is opened
+const _origShowTab = window.showTab;
+// (tasks are fetched in loadData path below)
+
+// ── Quick complete (list view check) ────────────────────────────────────
+async function quickComplete(id, newStatus) {
+  // Optimistic update
+  const t = allTasks.find(x => x.id === id);
+  if (t) t.status = newStatus;
+  renderTasks();
+
+  try {
+    await fetch(`/api/tasks?id=${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+  } catch { /* ignore — will re-sync on next poll */ }
+}
+
+// ── Add Task modal ────────────────────────────────────────────────────────
+let _addTaskPreset = {};
+
+function openAddTask(preset = {}) {
+  _addTaskPreset = preset;
+  document.getElementById('t-name').value    = preset.name    || '';
+  document.getElementById('t-desc').value    = preset.desc    || '';
+  document.getElementById('t-status').value  = preset.status  || 'To Do';
+  document.getElementById('t-priority').value= preset.priority|| 'Medium';
+  document.getElementById('t-level').value   = preset.level   || 'Org';
+  document.getElementById('t-job').value     = preset.job     || '';
+  document.getElementById('t-assignee').value= preset.assignee|| '';
+  document.getElementById('t-due').value     = preset.dueDate || '';
+  onTaskLevelChange();
+  document.getElementById('add-task-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('t-name').focus(), 100);
+}
+
+function openAddTaskInCol(status) {
+  openAddTask({ status });
+}
+
+function closeAddTask() {
+  document.getElementById('add-task-modal').classList.add('hidden');
+}
+
+function onTaskLevelChange() {
+  const isJob = document.getElementById('t-level').value === 'Job';
+  document.getElementById('t-job-row').style.display = isJob ? '' : 'none';
+}
+
+async function submitAddTask() {
+  const name = document.getElementById('t-name').value.trim();
+  if (!name) { document.getElementById('t-name').focus(); return; }
+
+  const btn = document.getElementById('add-task-submit-btn');
+  btn.disabled = true; btn.textContent = 'Adding…';
+
+  const body = {
+    name,
+    description: document.getElementById('t-desc').value.trim(),
+    status:      document.getElementById('t-status').value,
+    priority:    document.getElementById('t-priority').value,
+    level:       document.getElementById('t-level').value,
+    job:         document.getElementById('t-job').value.trim(),
+    assignee:    document.getElementById('t-assignee').value,
+    dueDate:     document.getElementById('t-due').value || null,
+  };
+
+  try {
+    const res = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      closeAddTask();
+      btn.disabled = false; btn.textContent = 'Add Task';
+      fetchTasks();
+    } else {
+      btn.disabled = false; btn.textContent = 'Error — retry';
+    }
+  } catch {
+    btn.disabled = false; btn.textContent = 'Error — retry';
+  }
+}
+
+// ── Edit Task (simple — open modal prefilled, PATCH on save) ─────────────
+let _editTaskId = null;
+
+function openEditTask(id) {
+  const t = allTasks.find(x => x.id === id);
+  if (!t) return;
+  _editTaskId = id;
+  openAddTask({
+    name: t.name, desc: t.description, status: t.status,
+    priority: t.priority, level: t.level, job: t.job,
+    assignee: t.assignee, dueDate: t.dueDate,
+  });
+  // Retitle modal + change button
+  document.querySelector('#add-task-modal .modal-title').textContent = 'Edit Task';
+  document.getElementById('add-task-submit-btn').textContent = 'Save Changes';
+  document.getElementById('add-task-submit-btn').onclick = submitEditTask;
+}
+
+async function submitEditTask() {
+  const name = document.getElementById('t-name').value.trim();
+  if (!name || !_editTaskId) return;
+
+  const btn = document.getElementById('add-task-submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  const body = {
+    name,
+    description: document.getElementById('t-desc').value.trim(),
+    status:      document.getElementById('t-status').value,
+    priority:    document.getElementById('t-priority').value,
+    level:       document.getElementById('t-level').value,
+    job:         document.getElementById('t-job').value.trim(),
+    assignee:    document.getElementById('t-assignee').value,
+    dueDate:     document.getElementById('t-due').value || null,
+  };
+
+  try {
+    const res = await fetch(`/api/tasks?id=${_editTaskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      _editTaskId = null;
+      closeAddTask();
+      // Reset modal title + button for next add
+      document.querySelector('#add-task-modal .modal-title').textContent = 'New Task';
+      document.getElementById('add-task-submit-btn').textContent = 'Add Task';
+      document.getElementById('add-task-submit-btn').onclick = submitAddTask;
+      btn.disabled = false;
+      fetchTasks();
+    } else {
+      btn.disabled = false; btn.textContent = 'Error — retry';
+    }
+  } catch {
+    btn.disabled = false; btn.textContent = 'Error — retry';
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('add-task-modal').addEventListener('click', e => {
+  if (e.target.id === 'add-task-modal') closeAddTask();
+});
+
+// Escape key closes modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeAddTask();
+});
+
+// HTML escape helper
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Fetch tasks on load
+fetchTasks();
 </script>
 </body>
 </html>
