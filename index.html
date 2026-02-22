@@ -226,19 +226,31 @@
 
   /* ─── AGENT CARDS ─── */
   .agent-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
-  .agent-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.25rem; }
+  @media(max-width:700px){ .agent-grid { grid-template-columns:1fr; } }
+  .agent-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.25rem; transition:border-color 0.2s; }
+  .agent-card.agent-active { border-color:rgba(34,197,94,0.3); }
   .agent-header { display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem; }
   .agent-emoji { font-size:1.8rem; }
   .agent-name { font-weight:600; font-size:1rem; }
   .agent-role { font-size:0.75rem; color:var(--muted); }
-  .agent-status { display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; margin-bottom:0.75rem; }
-  .dot { width:7px; height:7px; border-radius:50%; }
-  .dot-green { background:var(--green); box-shadow:0 0 6px var(--green); }
+  .agent-status-row { display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; margin-bottom:0.5rem; }
+  .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .dot-green { background:var(--green); box-shadow:0 0 6px var(--green); animation:pulse-green 2s infinite; }
   .dot-yellow { background:var(--yellow); }
   .dot-gray { background:var(--muted); }
-  .agent-tasks { font-size:0.78rem; color:var(--muted); }
-  .agent-task-item { padding:0.3rem 0; border-bottom:1px solid var(--border); }
-  .agent-task-item:last-child { border-bottom:none; }
+  @keyframes pulse-green { 0%,100%{box-shadow:0 0 4px var(--green);} 50%{box-shadow:0 0 10px var(--green);} }
+  .agent-last-active { font-size:0.7rem; color:var(--muted); margin-bottom:0.75rem; }
+  .agent-caps { display:flex; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.85rem; }
+  .agent-model-row { display:flex; align-items:center; gap:0.5rem; margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--border); }
+  .agent-model-label { font-size:0.72rem; color:var(--muted); white-space:nowrap; }
+  .model-select { flex:1; background:var(--bg2); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:0.25rem 0.4rem; font-size:0.72rem; font-family:'Inter',sans-serif; cursor:pointer; }
+  .model-select:focus { outline:none; border-color:var(--accent); }
+  .model-save-btn { font-size:0.7rem; padding:0.25rem 0.6rem; border-radius:6px; border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; white-space:nowrap; }
+  .model-save-btn:hover { background:rgba(249,115,22,0.15); }
+  .model-save-btn:disabled { opacity:0.4; cursor:default; }
+  .agent-offline-note { font-size:0.7rem; color:var(--muted); font-style:italic; margin-top:0.4rem; }
+  .agents-live-badge { display:flex; align-items:center; gap:0.4rem; font-size:0.72rem; color:var(--muted); }
+  .agents-live-badge .dot { width:5px; height:5px; }
 
   /* ─── INBOX ITEMS ─── */
   .inbox-item { display:flex; align-items:center; justify-content:space-between; padding:0.75rem; background:rgba(255,255,255,0.02); border-radius:8px; margin-bottom:0.5rem; border:1px solid var(--border); }
@@ -494,63 +506,23 @@
 
 <!-- ═══════════════ AGENTS TAB ═══════════════ -->
 <div id="tab-agents" class="tab-panel">
-  <h2>Agent Command Center</h2>
-  <div class="agent-grid">
-    <div class="agent-card">
-      <div class="agent-header">
-        <div class="agent-emoji">🤙</div>
-        <div><div class="agent-name">Jerry</div><div class="agent-role">Main Agent — Orchestrator</div></div>
-      </div>
-      <div class="agent-status"><div class="dot dot-green"></div><span style="color:var(--green)">Online</span> · claude-sonnet-4-6 · Telegram</div>
-      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem">Capabilities</div>
-      <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.75rem">
-        <span class="badge badge-muted">Browser</span>
-        <span class="badge badge-muted">JT API</span>
-        <span class="badge badge-muted">Gmail</span>
-        <span class="badge badge-muted">Airtable</span>
-        <span class="badge badge-muted">Memory</span>
-        <span class="badge badge-muted">Delegate to Phil</span>
-      </div>
-      <div class="agent-tasks">
-        <div class="agent-task-item">✅ Built JT API skill (Pave)</div>
-        <div class="agent-task-item">✅ Created Phil agent</div>
-        <div class="agent-task-item">✅ Built Mission Control dashboard</div>
-        <div class="agent-task-item">⏳ Phil delegation (pairing fix pending)</div>
-      </div>
-    </div>
-
-    <div class="agent-card">
-      <div class="agent-header">
-        <div class="agent-emoji">🏗️</div>
-        <div><div class="agent-name">Phil</div><div class="agent-role">Construction Agent — JT Specialist</div></div>
-      </div>
-      <div class="agent-status"><div class="dot dot-yellow"></div><span style="color:var(--yellow)">Pairing Required</span> · claude-sonnet-4-6</div>
-      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem">Capabilities</div>
-      <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.75rem">
-        <span class="badge badge-muted">JT API</span>
-        <span class="badge badge-muted">Plaid Coding</span>
-        <span class="badge badge-muted">Job Costing</span>
-        <span class="badge badge-muted">Change Orders</span>
-      </div>
-      <div class="agent-tasks">
-        <div class="agent-task-item">✅ Workspace configured</div>
-        <div class="agent-task-item">✅ JT grant key stored</div>
-        <div class="agent-task-item">✅ get-unapplied-payments.sh ready</div>
-        <div class="agent-task-item">⚠️ Fix: OpenClaw menubar → approve device</div>
-      </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+    <h2 style="margin:0">Agent Command Center</h2>
+    <div class="agents-live-badge" id="agents-live-badge">
+      <div class="dot dot-gray"></div><span>Connecting…</span>
     </div>
   </div>
 
-  <div class="card" style="margin-top:1rem">
+  <div class="agent-grid" id="agent-grid">
+    <div style="color:var(--muted);font-size:0.85rem;padding:2rem;grid-column:1/-1;text-align:center">Loading agents…</div>
+  </div>
+
+  <div class="card" id="system-status-card" style="margin-top:1rem">
     <div class="card-header"><span class="card-title">System Status</span></div>
     <table>
       <thead><tr><th>Component</th><th>Status</th><th>Detail</th></tr></thead>
-      <tbody>
-        <tr><td>Gateway</td><td><span class="badge badge-green">Running</span></td><td style="color:var(--muted);font-size:0.78rem">ws://127.0.0.1:18789 · Telegram connected</td></tr>
-        <tr><td>Memory</td><td><span class="badge badge-green">Active</span></td><td style="color:var(--muted);font-size:0.78rem">memory-lancedb · text-embedding-3-small</td></tr>
-        <tr><td>JT API</td><td><span class="badge badge-green">Working</span></td><td style="color:var(--muted);font-size:0.78rem">Pave · grant key valid · Org 22NeVb7CK2sW</td></tr>
-        <tr><td>Google Workspace</td><td><span class="badge badge-green">Connected</span></td><td style="color:var(--muted);font-size:0.78rem">assistant@codydesignbuild.com</td></tr>
-        <tr><td>Phil Delegation</td><td><span class="badge badge-yellow">Blocked</span></td><td style="color:var(--muted);font-size:0.78rem">Needs pairing approval via menubar app</td></tr>
+      <tbody id="system-status-body">
+        <tr><td>Gateway</td><td><span class="badge badge-muted">Checking…</span></td><td></td></tr>
       </tbody>
     </table>
   </div>
@@ -966,6 +938,180 @@ async function loadData() {
 
 // Auto-refresh every 5 minutes
 setInterval(loadData, 5 * 60 * 1000);
+
+/* ══════════════════════════════════════════════
+   AGENTS — Live Status + Model Switcher
+══════════════════════════════════════════════ */
+const LOCAL_API = 'http://127.0.0.1:18900';
+const MODELS = [
+  { id: 'anthropic/claude-sonnet-4-6',  label: 'Claude Sonnet 4.6 (default)' },
+  { id: 'anthropic/claude-opus-4-5',    label: 'Claude Opus 4.5' },
+  { id: 'anthropic/claude-haiku-4-5',   label: 'Claude Haiku 4.5' },
+  { id: 'openai/gpt-4o',                label: 'GPT-4o' },
+  { id: 'openai/gpt-4o-mini',           label: 'GPT-4o Mini' },
+  { id: 'openai/o3-mini',               label: 'o3-mini' },
+];
+
+let agentsData = null;          // last fetched payload
+let agentModelDraft = {};       // { agentId: selectedModel } — unsaved changes
+let localAvailable = false;
+
+function fmtAgo(seconds) {
+  if (!seconds) return 'never';
+  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+function statusMeta(agent) {
+  if (!agent.gatewayUp) return { dot: 'dot-gray',   label: 'Offline',  color: 'var(--muted)' };
+  if (agent.status === 'active')  return { dot: 'dot-green',  label: 'Active',   color: 'var(--green)' };
+  if (agent.status === 'recent')  return { dot: 'dot-yellow', label: 'Idle',     color: 'var(--yellow)' };
+  return { dot: 'dot-gray',   label: 'Idle',     color: 'var(--muted)' };
+}
+
+function renderAgentCard(agent) {
+  const sm = statusMeta(agent);
+  const draft = agentModelDraft[agent.id] ?? agent.model;
+  const isDirty = draft !== agent.model;
+  const channelStr = agent.channel ? ` · ${agent.channel}` : '';
+
+  const modelOptions = MODELS.map(m =>
+    `<option value="${m.id}" ${draft === m.id ? 'selected' : ''}>${m.label}</option>`
+  ).join('');
+
+  const caps = (agent.capabilities || [])
+    .map(c => `<span class="badge badge-muted">${c}</span>`)
+    .join('');
+
+  return `
+  <div class="agent-card ${agent.status === 'active' ? 'agent-active' : ''}" id="card-${agent.id}">
+    <div class="agent-header">
+      <div class="agent-emoji">${agent.emoji}</div>
+      <div>
+        <div class="agent-name">${agent.name}</div>
+        <div class="agent-role">${agent.role}</div>
+      </div>
+    </div>
+    <div class="agent-status-row">
+      <div class="dot ${sm.dot}"></div>
+      <span style="color:${sm.color}">${sm.label}</span>
+      <span style="color:var(--muted)">${channelStr}</span>
+    </div>
+    <div class="agent-last-active">Last active: ${fmtAgo(agent.lastActiveAgo)}</div>
+    <div class="agent-caps">${caps}</div>
+    <div class="agent-model-row">
+      <span class="agent-model-label">Model</span>
+      <select class="model-select" id="model-select-${agent.id}"
+        onchange="onModelChange('${agent.id}', this.value)">
+        ${modelOptions}
+      </select>
+      <button class="model-save-btn" id="model-save-${agent.id}"
+        onclick="saveModel('${agent.id}')"
+        ${isDirty ? '' : 'disabled'}>
+        Save
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderAgents(data) {
+  const grid = document.getElementById('agent-grid');
+  if (!grid) return;
+  grid.innerHTML = data.agents.map(renderAgentCard).join('');
+
+  // System status table
+  const tbody = document.getElementById('system-status-body');
+  if (tbody) {
+    const gw = data.gatewayStatus === 'running';
+    tbody.innerHTML = `
+      <tr><td>Gateway</td>
+          <td><span class="badge ${gw ? 'badge-green' : 'badge-red'}">${gw ? 'Running' : 'Stopped'}</span></td>
+          <td style="color:var(--muted);font-size:0.78rem">ws://127.0.0.1:18789 · Telegram connected</td></tr>
+      <tr><td>Memory</td>
+          <td><span class="badge badge-green">Active</span></td>
+          <td style="color:var(--muted);font-size:0.78rem">memory-lancedb · text-embedding-3-small</td></tr>
+      <tr><td>JT API</td>
+          <td><span class="badge badge-green">Working</span></td>
+          <td style="color:var(--muted);font-size:0.78rem">Pave · grant key valid · Org 22NeVb7CK2sW</td></tr>
+      <tr><td>Google Workspace</td>
+          <td><span class="badge badge-green">Connected</span></td>
+          <td style="color:var(--muted);font-size:0.78rem">assistant@codydesignbuild.com</td></tr>
+      <tr><td>Local Status API</td>
+          <td><span class="badge badge-green">Online</span></td>
+          <td style="color:var(--muted);font-size:0.78rem">127.0.0.1:18900 · live data</td></tr>`;
+  }
+}
+
+function renderAgentsFallback() {
+  const grid = document.getElementById('agent-grid');
+  if (grid) {
+    grid.innerHTML = `<div style="color:var(--muted);font-size:0.82rem;padding:1.5rem;grid-column:1/-1;text-align:center">
+      ⚠️ Local status server unreachable (port 18900).<br>
+      Live status only available when on the Mac mini or local network.
+    </div>`;
+  }
+}
+
+function setLiveBadge(live) {
+  const badge = document.getElementById('agents-live-badge');
+  if (!badge) return;
+  badge.innerHTML = live
+    ? `<div class="dot dot-green"></div><span style="color:var(--green)">Live</span>`
+    : `<div class="dot dot-gray"></div><span>Offline — remote view</span>`;
+}
+
+async function fetchAgents() {
+  try {
+    const res = await fetch(`${LOCAL_API}/api/agents`, { signal: AbortSignal.timeout(3000) });
+    const data = await res.json();
+    agentsData = data;
+    localAvailable = true;
+    setLiveBadge(true);
+    renderAgents(data);
+  } catch {
+    localAvailable = false;
+    setLiveBadge(false);
+    if (!agentsData) renderAgentsFallback();
+  }
+}
+
+function onModelChange(agentId, value) {
+  agentModelDraft[agentId] = value;
+  const btn = document.getElementById(`model-save-${agentId}`);
+  if (btn) btn.disabled = (value === (agentsData?.agents?.find(a => a.id === agentId)?.model));
+}
+
+async function saveModel(agentId) {
+  const model = agentModelDraft[agentId];
+  if (!model) return;
+  const btn = document.getElementById(`model-save-${agentId}`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    const res = await fetch(`${LOCAL_API}/api/agents/${agentId}/model`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model }),
+      signal: AbortSignal.timeout(5000),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      delete agentModelDraft[agentId];
+      if (btn) { btn.textContent = '✓ Saved'; setTimeout(() => { if (btn) { btn.textContent = 'Save'; } }, 2000); }
+      // Refresh agents after a tick
+      setTimeout(fetchAgents, 300);
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'Error'; }
+    }
+  } catch {
+    if (btn) { btn.disabled = false; btn.textContent = 'Error'; }
+  }
+}
+
+// Initial load + poll every 10 seconds
+fetchAgents();
+setInterval(fetchAgents, 10 * 1000);
 </script>
 </body>
 </html>
