@@ -25,7 +25,108 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; }
 
-  /* HEADER */
+  /* ─── AUTH GATE ─── */
+  #auth-overlay {
+    position:fixed; inset:0; z-index:9999;
+    background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    animation:fadeIn 0.3s ease;
+  }
+  #auth-overlay.hidden { display:none; }
+
+  .auth-box {
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:20px;
+    padding:3rem 2.5rem;
+    width:100%;
+    max-width:400px;
+    backdrop-filter:blur(24px);
+    box-shadow:0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .auth-box::before {
+    content:'';
+    position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--accent), var(--accent2), var(--purple));
+  }
+  .auth-logo {
+    font-size:1.1rem; font-weight:700; color:var(--accent);
+    letter-spacing:-0.02em; margin-bottom:0.25rem;
+  }
+  .auth-logo span { color:var(--text); font-weight:400; }
+  .auth-title {
+    font-size:1.5rem; font-weight:700; letter-spacing:-0.03em;
+    margin:1.25rem 0 0.4rem;
+  }
+  .auth-subtitle { font-size:0.82rem; color:var(--muted); margin-bottom:2rem; }
+
+  .auth-field {
+    position:relative; margin-bottom:1rem;
+  }
+  .auth-field input {
+    width:100%;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:10px;
+    padding:0.8rem 1rem;
+    font-size:1rem;
+    font-family:'Inter',sans-serif;
+    color:var(--text);
+    outline:none;
+    transition:border-color 0.2s, box-shadow 0.2s;
+    letter-spacing:0.1em;
+    text-align:center;
+  }
+  .auth-field input::placeholder { letter-spacing:normal; color:var(--muted); }
+  .auth-field input:focus {
+    border-color:rgba(249,115,22,0.5);
+    box-shadow:0 0 0 3px rgba(249,115,22,0.1);
+  }
+  .auth-field label {
+    display:block; font-size:0.72rem; font-weight:600;
+    text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--muted); margin-bottom:0.5rem; text-align:left;
+  }
+
+  .auth-btn {
+    width:100%; padding:0.85rem;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    border:none; border-radius:10px;
+    font-size:0.9rem; font-weight:600;
+    font-family:'Inter',sans-serif;
+    color:#fff; cursor:pointer;
+    transition:opacity 0.15s, transform 0.1s;
+    letter-spacing:0.01em;
+  }
+  .auth-btn:hover { opacity:0.9; transform:translateY(-1px); }
+  .auth-btn:active { transform:translateY(0); }
+  .auth-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+  .auth-error {
+    margin-top:0.75rem; padding:0.6rem 1rem;
+    background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2);
+    border-radius:8px; font-size:0.8rem; color:var(--red);
+    display:none;
+  }
+  .auth-error.show { display:block; }
+
+  .auth-spinner {
+    display:inline-block; width:14px; height:14px;
+    border:2px solid rgba(255,255,255,0.3);
+    border-top-color:#fff; border-radius:50%;
+    animation:spin 0.6s linear infinite;
+    vertical-align:middle; margin-right:0.4rem;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .auth-footer {
+    margin-top:1.5rem; font-size:0.72rem; color:var(--muted);
+  }
+
+  /* ─── HEADER ─── */
   header {
     position:sticky; top:0; z-index:100;
     background:rgba(5,5,8,0.85);
@@ -51,15 +152,23 @@
   .status-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 2s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
-  /* MAIN */
+  #signout-btn {
+    font-size:0.75rem; color:var(--muted); cursor:pointer;
+    background:none; border:none; font-family:'Inter',sans-serif;
+    padding:0.25rem 0.5rem; border-radius:4px;
+    transition:color 0.15s, background 0.15s;
+  }
+  #signout-btn:hover { color:var(--red); background:rgba(239,68,68,0.08); }
+
+  /* ─── MAIN ─── */
   main { max-width:1400px; margin:0 auto; padding:2rem; }
 
-  /* TAB PANELS */
+  /* ─── TAB PANELS ─── */
   .tab-panel { display:none; animation:fadeIn 0.2s ease; }
   .tab-panel.active { display:block; }
   @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
-  /* CARDS */
+  /* ─── CARDS ─── */
   .card {
     background:var(--card);
     border:1px solid var(--border);
@@ -70,7 +179,7 @@
   .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
   .card-title { font-size:0.8rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
 
-  /* METRICS GRID */
+  /* ─── METRICS GRID ─── */
   .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
   .metric-card {
     background:var(--card); border:1px solid var(--border);
@@ -84,18 +193,18 @@
   .trend-up { color:var(--green); }
   .trend-dn { color:var(--red); }
 
-  /* GRIDS */
+  /* ─── GRIDS ─── */
   .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
   .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1rem; }
 
-  /* TABLES */
+  /* ─── TABLES ─── */
   table { width:100%; border-collapse:collapse; }
   th { font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); padding:0.5rem 0.75rem; text-align:left; border-bottom:1px solid var(--border); }
   td { padding:0.65rem 0.75rem; font-size:0.85rem; border-bottom:1px solid rgba(255,255,255,0.03); }
   tr:last-child td { border-bottom:none; }
   tr:hover td { background:rgba(255,255,255,0.02); }
 
-  /* BADGES */
+  /* ─── BADGES ─── */
   .badge { display:inline-flex; align-items:center; gap:0.3rem; padding:0.2rem 0.6rem; border-radius:20px; font-size:0.72rem; font-weight:600; }
   .badge-green { background:rgba(34,197,94,0.15); color:var(--green); }
   .badge-yellow { background:rgba(234,179,8,0.15); color:var(--yellow); }
@@ -104,18 +213,18 @@
   .badge-orange { background:rgba(249,115,22,0.15); color:var(--accent); }
   .badge-muted { background:rgba(107,114,128,0.15); color:var(--muted); }
 
-  /* PROGRESS */
+  /* ─── PROGRESS ─── */
   .progress-bar { background:rgba(255,255,255,0.06); border-radius:4px; height:6px; overflow:hidden; }
-  .progress-fill { height:100%; border-radius:4px; transition:width 0.5s ease; }
+  .progress-fill { height:100%; border-radius:4px; transition:width 0.6s ease; }
 
-  /* PRIORITIES */
+  /* ─── PRIORITIES ─── */
   .priority-item { display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0; border-bottom:1px solid var(--border); }
   .priority-item:last-child { border-bottom:none; }
   .priority-item input[type=checkbox] { accent-color:var(--accent); width:16px; height:16px; cursor:pointer; }
   .priority-item label { font-size:0.875rem; cursor:pointer; flex:1; }
   .priority-item label.done { text-decoration:line-through; color:var(--muted); }
 
-  /* AGENT CARDS */
+  /* ─── AGENT CARDS ─── */
   .agent-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
   .agent-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.25rem; }
   .agent-header { display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem; }
@@ -131,7 +240,7 @@
   .agent-task-item { padding:0.3rem 0; border-bottom:1px solid var(--border); }
   .agent-task-item:last-child { border-bottom:none; }
 
-  /* INBOX ITEMS */
+  /* ─── INBOX ITEMS ─── */
   .inbox-item { display:flex; align-items:center; justify-content:space-between; padding:0.75rem; background:rgba(255,255,255,0.02); border-radius:8px; margin-bottom:0.5rem; border:1px solid var(--border); }
   .inbox-left { display:flex; flex-direction:column; gap:0.2rem; }
   .inbox-vendor { font-size:0.875rem; font-weight:500; }
@@ -140,35 +249,83 @@
   .inbox-amount.debit { color:var(--red); }
   .inbox-amount.credit { color:var(--green); }
 
-  /* SECTION HEADERS */
+  /* ─── SECTION HEADERS ─── */
   h2 { font-size:1.2rem; font-weight:700; margin-bottom:1rem; letter-spacing:-0.02em; }
   h3 { font-size:0.95rem; font-weight:600; margin-bottom:0.75rem; }
 
-  /* WELCOME BAR */
+  /* ─── WELCOME BAR ─── */
   .welcome { margin-bottom:1.5rem; }
   .welcome h1 { font-size:1.6rem; font-weight:700; letter-spacing:-0.03em; }
   .welcome p { color:var(--muted); font-size:0.875rem; margin-top:0.25rem; }
 
-  /* DIVIDER */
+  /* ─── DIVIDER ─── */
   .divider { border:none; border-top:1px solid var(--border); margin:1rem 0; }
 
-  /* BUTTON */
+  /* ─── BUTTONS ─── */
   .btn { background:var(--accent); color:#fff; border:none; padding:0.5rem 1rem; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:opacity 0.15s; }
   .btn:hover { opacity:0.85; }
   .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--text); }
   .btn-ghost:hover { background:var(--card); }
 
-  /* JOB CARD */
-  .job-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.25rem; margin-bottom:0.75rem; }
+  /* ─── JOB CARD ─── */
+  .job-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.25rem; margin-bottom:0.75rem; transition:border-color 0.2s; }
+  .job-card:hover { border-color:rgba(255,255,255,0.12); }
   .job-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem; }
   .job-name { font-weight:600; font-size:0.95rem; }
   .job-number { font-size:0.75rem; color:var(--muted); margin-top:0.15rem; }
   .job-budget-row { display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:0.4rem; }
   .job-budget-row span { color:var(--muted); }
   .job-budget-row strong { color:var(--text); }
+
+  /* ─── LAST UPDATED ─── */
+  #last-updated {
+    font-size:0.72rem; color:var(--muted);
+    text-align:right; margin-bottom:0.75rem;
+    transition:opacity 0.3s;
+  }
+
+  /* ─── LOADING / ERROR STATES ─── */
+  .state-loading { text-align:center; padding:2rem; color:var(--muted); font-size:0.85rem; }
+  .state-error { text-align:center; padding:1.5rem; color:var(--red); font-size:0.82rem; background:rgba(239,68,68,0.06); border-radius:8px; border:1px solid rgba(239,68,68,0.15); }
 </style>
 </head>
 <body>
+
+<!-- ═══════════════════════════════════════════════
+     AUTH GATE OVERLAY
+════════════════════════════════════════════════ -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-logo">CDB <span>Mission Control</span></div>
+    <h2 class="auth-title">Welcome back</h2>
+    <p class="auth-subtitle">Enter your access code to continue</p>
+
+    <div class="auth-field">
+      <label for="auth-code-input">Access Code</label>
+      <input
+        type="password"
+        id="auth-code-input"
+        placeholder="••••••••••"
+        autocomplete="off"
+        spellcheck="false"
+        autofocus
+      >
+    </div>
+
+    <button class="auth-btn" id="auth-submit-btn" onclick="submitAuth()">
+      Request Access
+    </button>
+
+    <div class="auth-error" id="auth-error"></div>
+
+    <div class="auth-footer">Cody Design Build Inc. · Private System</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MAIN APP (hidden until authed)
+════════════════════════════════════════════════ -->
+<div id="app" style="display:none">
 
 <header>
   <div class="logo">CDB <span>Mission Control</span></div>
@@ -182,6 +339,7 @@
   <div class="header-right">
     <span id="clock"></span>
     <div class="status-dot"></div>
+    <button id="signout-btn" onclick="signOut()" title="Sign out">Sign out</button>
   </div>
 </header>
 
@@ -194,28 +352,34 @@
     <p id="date-line">Loading...</p>
   </div>
 
+  <div id="last-updated"></div>
+
   <div class="metrics">
+    <!-- Active Jobs -->
     <div class="metric-card">
       <div class="metric-bar" style="background:linear-gradient(90deg,var(--accent),var(--accent2))"></div>
       <div class="metric-icon">🏗️</div>
       <div class="metric-label">Active Jobs</div>
-      <div class="metric-value">4</div>
-      <div class="metric-sub">$1,967,506 total value</div>
+      <div class="metric-value" id="metric-jobs-count">—</div>
+      <div class="metric-sub" id="metric-jobs-value">loading…</div>
     </div>
+    <!-- Cost Inbox -->
     <div class="metric-card">
       <div class="metric-bar" style="background:linear-gradient(90deg,var(--red),#f87171)"></div>
       <div class="metric-icon">📥</div>
       <div class="metric-label">Cost Inbox</div>
-      <div class="metric-value" id="inbox-count">—</div>
+      <div class="metric-value" id="metric-inbox-count">—</div>
       <div class="metric-sub">transactions to code</div>
     </div>
+    <!-- Open Invoices -->
     <div class="metric-card">
       <div class="metric-bar" style="background:linear-gradient(90deg,var(--green),#4ade80)"></div>
       <div class="metric-icon">💵</div>
       <div class="metric-label">Open Invoices</div>
-      <div class="metric-value">$58,229</div>
-      <div class="metric-sub">2 invoices outstanding</div>
+      <div class="metric-value" id="metric-invoices-owed">—</div>
+      <div class="metric-sub" id="metric-invoices-sub">loading…</div>
     </div>
+    <!-- Draft Bills (static) -->
     <div class="metric-card">
       <div class="metric-bar" style="background:linear-gradient(90deg,var(--purple),#c084fc)"></div>
       <div class="metric-icon">📋</div>
@@ -256,42 +420,8 @@
 <!-- ═══════════════ JOBS TAB ═══════════════ -->
 <div id="tab-jobs" class="tab-panel">
   <h2>Active Jobs</h2>
-
-  <div class="job-card">
-    <div class="job-header">
-      <div><div class="job-name">3993 25th Ave — Bath + Windows</div><div class="job-number">Job #1</div></div>
-      <span class="badge badge-green">Active</span>
-    </div>
-    <div class="job-budget-row"><span>Contract Value</span><strong>$680,000</strong></div>
-    <div class="job-budget-row"><span>Budget Used</span><strong>—</strong></div>
-    <div class="progress-bar"><div class="progress-fill" style="width:45%;background:var(--accent)"></div></div>
-    <div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem">~45% complete (est.)</div>
-  </div>
-
-  <div class="job-card">
-    <div class="job-header">
-      <div><div class="job-name">3631 Balboa — Full Remodel</div><div class="job-number">Job #2</div></div>
-      <span class="badge badge-yellow">In Progress</span>
-    </div>
-    <div class="job-budget-row"><span>Contract Value</span><strong>$890,000</strong></div>
-    <div class="job-budget-row"><span>Open Invoice</span><strong>$58,229</strong></div>
-    <div class="progress-bar"><div class="progress-fill" style="width:30%;background:var(--yellow)"></div></div>
-    <div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem">~30% complete (est.)</div>
-  </div>
-
-  <div class="job-card">
-    <div class="job-header">
-      <div><div class="job-name">978 Teresha — Remodel</div><div class="job-number">Job #3</div></div>
-      <span class="badge badge-blue">Active</span>
-    </div>
-    <div class="job-budget-row"><span>Contract Value</span><strong>$397,506</strong></div>
-    <div class="job-budget-row"><span>Subs</span><strong>Luis Gomez (framing)</strong></div>
-    <div class="progress-bar"><div class="progress-fill" style="width:60%;background:var(--blue)"></div></div>
-    <div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem">~60% complete (est.)</div>
-  </div>
-
-  <div style="margin-top:1rem;text-align:center;color:var(--muted);font-size:0.8rem">
-    💡 Phase 2: this tab will pull live data from JobTread via API
+  <div id="jobs-list">
+    <div class="state-loading">Loading jobs…</div>
   </div>
 </div>
 
@@ -299,41 +429,17 @@
 <div id="tab-inbox" class="tab-panel">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
     <h2 style="margin:0">Cost Inbox — Plaid Transactions</h2>
-    <span class="badge badge-red" id="inbox-badge">Loading...</span>
+    <span class="badge badge-red" id="inbox-badge">—</span>
   </div>
 
   <div class="card" style="margin-bottom:1rem">
     <div style="font-size:0.82rem;color:var(--muted)">
-      These are bank transactions pulled from <strong style="color:var(--text)">Business Checking ...4687</strong> via Plaid that haven't been coded to a job yet. Phase 2: Jerry or Phil will auto-code these.
+      These are bank transactions pulled from <strong style="color:var(--text)">Business Checking ...4687</strong> via Plaid that haven't been coded to a job yet.
     </div>
   </div>
 
   <div id="inbox-list">
-    <div style="text-align:center;color:var(--muted);padding:2rem;font-size:0.85rem">
-      Loading transactions from JobTread API...<br>
-      <span style="font-size:0.75rem;margin-top:0.5rem;display:block">(Phase 2: live data — static placeholder for now)</span>
-    </div>
-  </div>
-
-  <!-- Static sample data -->
-  <div style="margin-top:1rem">
-    <h3>Sample (from last API pull)</h3>
-    <div class="inbox-item">
-      <div class="inbox-left"><div class="inbox-vendor">CHECK</div><div class="inbox-desc">Business Checking ...4687 · Feb 17</div></div>
-      <div class="inbox-amount debit">-$6,000</div>
-    </div>
-    <div class="inbox-item">
-      <div class="inbox-left"><div class="inbox-vendor">CHECK</div><div class="inbox-desc">Business Checking ...4687 · Feb 17</div></div>
-      <div class="inbox-amount debit">-$2,652</div>
-    </div>
-    <div class="inbox-item">
-      <div class="inbox-left"><div class="inbox-vendor">CHASE CREDIT CRD EPAY — DAVID M CODY</div><div class="inbox-desc">Business Checking ...4687 · Feb 17</div></div>
-      <div class="inbox-amount debit">-$1,100</div>
-    </div>
-    <div class="inbox-item">
-      <div class="inbox-left"><div class="inbox-vendor">INTUIT — TRAN FEE</div><div class="inbox-desc">Business Checking ...4687 · Feb 16</div></div>
-      <div class="inbox-amount debit">-$184.78</div>
-    </div>
+    <div class="state-loading">Loading transactions…</div>
   </div>
 </div>
 
@@ -345,15 +451,15 @@
       <div class="metric-bar" style="background:linear-gradient(90deg,var(--green),#4ade80)"></div>
       <div class="metric-icon">📊</div>
       <div class="metric-label">Total Pipeline</div>
-      <div class="metric-value">$1.97M</div>
-      <div class="metric-sub">4 active jobs</div>
+      <div class="metric-value" id="rev-pipeline">—</div>
+      <div class="metric-sub" id="rev-pipeline-sub">loading…</div>
     </div>
     <div class="metric-card">
       <div class="metric-bar" style="background:linear-gradient(90deg,var(--yellow),#fde047)"></div>
       <div class="metric-icon">🧾</div>
       <div class="metric-label">Open Invoices</div>
-      <div class="metric-value">$58,229</div>
-      <div class="metric-sub">2 invoices pending</div>
+      <div class="metric-value" id="rev-open-invoices">—</div>
+      <div class="metric-sub" id="rev-invoices-sub">loading…</div>
     </div>
     <div class="metric-card">
       <div class="metric-bar" style="background:linear-gradient(90deg,var(--red),#f87171)"></div>
@@ -367,10 +473,9 @@
   <div class="card">
     <div class="card-header"><span class="card-title">Open Customer Invoices</span></div>
     <table>
-      <thead><tr><th>Job</th><th>Invoice</th><th>Amount</th><th>Status</th></tr></thead>
-      <tbody>
-        <tr><td>3631 Balboa</td><td>Invoice #1</td><td>$58,229</td><td><span class="badge badge-yellow">Pending</span></td></tr>
-        <tr><td>3993 25th</td><td>Pending Order ×4</td><td>$1,000</td><td><span class="badge badge-orange">Draft</span></td></tr>
+      <thead><tr><th>Job</th><th>Invoice</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+      <tbody id="invoice-rows">
+        <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem">Loading…</td></tr>
       </tbody>
     </table>
   </div>
@@ -452,21 +557,121 @@
 </div>
 
 </main>
+</div><!-- /#app -->
 
 <script>
-// Clock
+/* ══════════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════════ */
+const TOKEN_KEY = 'mc_token';
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function showApp() {
+  document.getElementById('auth-overlay').classList.add('hidden');
+  document.getElementById('app').style.display = 'block';
+  loadData();
+}
+
+function showAuthOverlay() {
+  document.getElementById('auth-overlay').classList.remove('hidden');
+  document.getElementById('app').style.display = 'none';
+  setTimeout(() => document.getElementById('auth-code-input').focus(), 100);
+}
+
+function setAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function clearAuthError() {
+  document.getElementById('auth-error').classList.remove('show');
+}
+
+async function submitAuth() {
+  const input = document.getElementById('auth-code-input');
+  const btn   = document.getElementById('auth-submit-btn');
+  const code  = input.value.trim();
+
+  if (!code) { setAuthError('Please enter your access code.'); return; }
+
+  clearAuthError();
+  btn.disabled = true;
+  btn.innerHTML = '<span class="auth-spinner"></span>Verifying…';
+
+  try {
+    const res  = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    const data = await res.json();
+
+    if (data.ok && data.token) {
+      localStorage.setItem(TOKEN_KEY, data.token);
+      input.value = '';
+      showApp();
+    } else {
+      setAuthError(data.error || 'Access denied. Check your code and try again.');
+      input.value = '';
+      input.focus();
+    }
+  } catch (err) {
+    setAuthError('Connection error — please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Request Access';
+  }
+}
+
+function signOut() {
+  localStorage.removeItem(TOKEN_KEY);
+  showAuthOverlay();
+}
+
+// Allow Enter key on the access code input
+document.getElementById('auth-code-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') submitAuth();
+});
+
+// Boot: check token
+(function bootAuth() {
+  const token = getToken();
+  if (token) {
+    // Token exists — trust it and show app (server validates on every API call)
+    showApp();
+  } else {
+    showAuthOverlay();
+  }
+})();
+
+
+/* ══════════════════════════════════════════════
+   CLOCK & GREETING
+══════════════════════════════════════════════ */
 function updateClock() {
   const now = new Date();
-  document.getElementById('clock').textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const clockEl = document.getElementById('clock');
+  if (clockEl) {
+    clockEl.textContent = now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
   const hour = now.getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  document.getElementById('greeting').textContent = `${greeting}, David 👋`;
-  document.getElementById('date-line').textContent = now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}) + ' · Cody Design Build Inc.';
+  const greetEl = document.getElementById('greeting');
+  if (greetEl) greetEl.textContent = `${greeting}, David 👋`;
+  const dateEl = document.getElementById('date-line');
+  if (dateEl) dateEl.textContent = now.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) + ' · Cody Design Build Inc.';
 }
 updateClock();
 setInterval(updateClock, 1000);
 
-// Tab switching
+
+/* ══════════════════════════════════════════════
+   TAB SWITCHING
+══════════════════════════════════════════════ */
 function showTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -474,16 +679,18 @@ function showTab(name, btn) {
   btn.classList.add('active');
 }
 
-// Priorities
+
+/* ══════════════════════════════════════════════
+   PRIORITIES (localStorage)
+══════════════════════════════════════════════ */
 function toggleDone(cb) {
-  const label = cb.nextElementSibling;
-  label.classList.toggle('done', cb.checked);
+  cb.nextElementSibling.classList.toggle('done', cb.checked);
   savePriorities();
 }
 function addPriority() {
   const text = prompt('New priority:');
   if (!text) return;
-  const id = 'p' + Date.now();
+  const id  = 'p' + Date.now();
   const div = document.createElement('div');
   div.className = 'priority-item';
   div.innerHTML = `<input type="checkbox" id="${id}" onchange="toggleDone(this)"><label for="${id}">${text}</label>`;
@@ -493,7 +700,7 @@ function addPriority() {
 function savePriorities() {
   const items = [...document.querySelectorAll('#priorities .priority-item')].map(el => ({
     text: el.querySelector('label').textContent,
-    done: el.querySelector('input').checked
+    done: el.querySelector('input').checked,
   }));
   localStorage.setItem('mc_priorities', JSON.stringify(items));
 }
@@ -501,23 +708,264 @@ function loadPriorities() {
   const saved = localStorage.getItem('mc_priorities');
   if (!saved) return;
   try {
-    const items = JSON.parse(saved);
+    const items     = JSON.parse(saved);
     const container = document.getElementById('priorities');
     container.innerHTML = '';
     items.forEach((item, i) => {
-      const id = 'p' + i;
+      const id  = 'p' + i;
       const div = document.createElement('div');
       div.className = 'priority-item';
-      div.innerHTML = `<input type="checkbox" id="${id}" ${item.done?'checked':''} onchange="toggleDone(this)"><label for="${id}" class="${item.done?'done':''}">${item.text}</label>`;
+      div.innerHTML = `<input type="checkbox" id="${id}" ${item.done ? 'checked' : ''} onchange="toggleDone(this)"><label for="${id}" class="${item.done ? 'done' : ''}">${item.text}</label>`;
       container.appendChild(div);
     });
   } catch(e) {}
 }
 loadPriorities();
 
-// Inbox placeholder count
-document.getElementById('inbox-count').textContent = '12+';
-document.getElementById('inbox-badge').textContent = '12+ uncoded';
+
+/* ══════════════════════════════════════════════
+   CURRENCY FORMATTERS
+══════════════════════════════════════════════ */
+function fmtCurrency(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000) {
+    return sign + '$' + (abs / 1_000_000).toFixed(2).replace(/\.?0+$/, '') + 'M';
+  }
+  return sign + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function fmtCurrencyFull(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  return sign + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtDate(str) {
+  if (!str) return '—';
+  try {
+    return new Date(str).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  } catch { return str; }
+}
+
+function progressColor(pct) {
+  if (pct >= 90) return 'var(--red)';
+  if (pct >= 70) return 'var(--yellow)';
+  return 'var(--accent)';
+}
+
+function invoiceStatusBadge(status) {
+  if (!status) return '<span class="badge badge-muted">Unknown</span>';
+  const s = status.toLowerCase();
+  if (s.includes('paid'))    return '<span class="badge badge-green">Paid</span>';
+  if (s.includes('partial')) return '<span class="badge badge-blue">Partial</span>';
+  if (s.includes('draft'))   return '<span class="badge badge-orange">Draft</span>';
+  if (s.includes('void'))    return '<span class="badge badge-muted">Void</span>';
+  return `<span class="badge badge-yellow">${status}</span>`;
+}
+
+
+/* ══════════════════════════════════════════════
+   RENDER HELPERS
+══════════════════════════════════════════════ */
+function renderJobs(data) {
+  const container = document.getElementById('jobs-list');
+  const jobs = data.jobs || [];
+
+  if (!jobs.length) {
+    container.innerHTML = '<div class="state-loading">No active jobs found.</div>';
+    return;
+  }
+
+  container.innerHTML = jobs.map(job => {
+    const contractValue = Number(job.contractValue) || 0;
+    const billed        = Number(job.billed)        || 0;
+    const owed          = Number(job.owed)           || 0;
+    const pct           = contractValue > 0 ? Math.min(100, Math.round((billed / contractValue) * 100)) : 0;
+    const color         = progressColor(pct);
+    const customer      = job.customer || '—';
+    const jobNum        = job.number   ? `Job #${job.number}` : (job.id || '');
+
+    return `
+      <div class="job-card">
+        <div class="job-header">
+          <div>
+            <div class="job-name">${escHtml(job.name || 'Untitled Job')}</div>
+            <div class="job-number">${escHtml(jobNum)} · ${escHtml(customer)}</div>
+          </div>
+          <span class="badge badge-green">Active</span>
+        </div>
+        <div class="job-budget-row"><span>Contract Value</span><strong>${fmtCurrency(contractValue)}</strong></div>
+        <div class="job-budget-row"><span>Billed So Far</span><strong>${fmtCurrency(billed)}</strong></div>
+        <div class="job-budget-row"><span>Outstanding</span><strong style="color:${owed > 0 ? 'var(--yellow)' : 'var(--muted)'}">${fmtCurrency(owed)}</strong></div>
+        <div class="progress-bar" style="margin-top:0.6rem">
+          <div class="progress-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem">${pct}% billed of contract</div>
+      </div>`;
+  }).join('');
+}
+
+function renderInbox(data) {
+  const transactions = data.transactions || [];
+  const count        = data.count ?? transactions.length;
+  const totalAmt     = data.totalAmount;
+
+  // Update header badge
+  document.getElementById('inbox-badge').textContent =
+    count > 0 ? `${count} uncoded` : '0 uncoded';
+
+  const container = document.getElementById('inbox-list');
+
+  if (!transactions.length) {
+    container.innerHTML = '<div class="state-loading">No uncoded transactions — inbox is clear! ✅</div>';
+    return;
+  }
+
+  container.innerHTML = transactions.map(tx => {
+    const amount   = Number(tx.amount) || 0;
+    const isDebit  = amount < 0;
+    const cls      = isDebit ? 'debit' : 'credit';
+    const dateStr  = fmtDate(tx.date);
+    const account  = tx.account ? ` · ${escHtml(tx.account)}` : '';
+
+    return `
+      <div class="inbox-item">
+        <div class="inbox-left">
+          <div class="inbox-vendor">${escHtml(tx.name || '—')}</div>
+          <div class="inbox-desc">${dateStr}${account}</div>
+        </div>
+        <div class="inbox-amount ${cls}">${isDebit ? '-' : '+'}${fmtCurrency(Math.abs(amount))}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderInvoices(data) {
+  const invoices = data.invoices || [];
+  const tbody    = document.getElementById('invoice-rows');
+
+  if (!invoices.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem">No open invoices.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = invoices.map(inv => {
+    const jobName = inv.jobName || '—';
+    const invName = inv.name   || (inv.number ? `Invoice #${inv.number}` : '—');
+    const total   = fmtCurrency(Number(inv.total) || 0);
+    const date    = fmtDate(inv.date);
+    const badge   = invoiceStatusBadge(inv.status);
+    return `<tr>
+      <td>${escHtml(jobName)}</td>
+      <td>${escHtml(invName)}</td>
+      <td style="color:var(--muted);font-size:0.78rem">${date}</td>
+      <td>${total}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+
+/* ══════════════════════════════════════════════
+   LIVE DATA LOADING
+══════════════════════════════════════════════ */
+async function loadData() {
+  const token = getToken();
+
+  const headers = token
+    ? { 'Authorization': `Bearer ${token}` }
+    : {};
+
+  let jobsData, inboxData, invoicesData;
+
+  try {
+    [jobsData, inboxData, invoicesData] = await Promise.all([
+      fetch('/api/jobs',     { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/inbox',    { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/invoices', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]);
+  } catch (e) {
+    console.error('loadData failed:', e);
+  }
+
+  // ── JOBS ──────────────────────────────────
+  if (jobsData) {
+    const count = jobsData.total ?? (jobsData.jobs || []).length;
+    const val   = Number(jobsData.totalValue) || 0;
+
+    document.getElementById('metric-jobs-count').textContent = count !== null ? count : '—';
+    document.getElementById('metric-jobs-value').textContent =
+      val > 0 ? `${fmtCurrency(val)} total value` : 'no value data';
+
+    // Revenue tab pipeline
+    const revPipeline = document.getElementById('rev-pipeline');
+    if (revPipeline) revPipeline.textContent = val > 0 ? fmtCurrency(val) : '—';
+    const revPipelineSub = document.getElementById('rev-pipeline-sub');
+    if (revPipelineSub) revPipelineSub.textContent = `${count} active job${count !== 1 ? 's' : ''}`;
+
+    renderJobs(jobsData);
+  } else {
+    document.getElementById('metric-jobs-count').textContent = '—';
+    document.getElementById('metric-jobs-value').textContent = 'failed to load';
+    document.getElementById('jobs-list').innerHTML =
+      '<div class="state-error">Could not load jobs — API unavailable.</div>';
+  }
+
+  // ── INBOX ─────────────────────────────────
+  if (inboxData) {
+    const count = inboxData.count ?? (inboxData.transactions || []).length;
+    document.getElementById('metric-inbox-count').textContent = count;
+    renderInbox(inboxData);
+  } else {
+    document.getElementById('metric-inbox-count').textContent = '—';
+    document.getElementById('inbox-list').innerHTML =
+      '<div class="state-error">Could not load inbox — API unavailable.</div>';
+    document.getElementById('inbox-badge').textContent = 'error';
+  }
+
+  // ── INVOICES ──────────────────────────────
+  if (invoicesData) {
+    const owed  = Number(invoicesData.totalOwed) || 0;
+    const count = invoicesData.count ?? (invoicesData.invoices || []).length;
+
+    document.getElementById('metric-invoices-owed').textContent = fmtCurrency(owed);
+    document.getElementById('metric-invoices-sub').textContent =
+      `${count} invoice${count !== 1 ? 's' : ''} outstanding`;
+
+    // Revenue tab open invoices
+    const revOwed = document.getElementById('rev-open-invoices');
+    if (revOwed) revOwed.textContent = fmtCurrency(owed);
+    const revInvSub = document.getElementById('rev-invoices-sub');
+    if (revInvSub) revInvSub.textContent = `${count} invoice${count !== 1 ? 's' : ''} pending`;
+
+    renderInvoices(invoicesData);
+  } else {
+    document.getElementById('metric-invoices-owed').textContent = '—';
+    document.getElementById('metric-invoices-sub').textContent = 'failed to load';
+    document.getElementById('invoice-rows').innerHTML =
+      '<tr><td colspan="5" style="text-align:center;color:var(--red);padding:1.5rem">Could not load invoices — API unavailable.</td></tr>';
+  }
+
+  // ── LAST UPDATED TIMESTAMP ────────────────
+  const ts = new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+  const lastUpdatedEl = document.getElementById('last-updated');
+  if (lastUpdatedEl) {
+    lastUpdatedEl.textContent = `Last updated: ${ts}`;
+  }
+}
+
+// Auto-refresh every 5 minutes
+setInterval(loadData, 5 * 60 * 1000);
 </script>
 </body>
 </html>
