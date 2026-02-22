@@ -334,7 +334,7 @@
   .task-card-actions { display:flex; gap:0.3rem; margin-top:0.5rem; padding-top:0.45rem; border-top:1px solid var(--border); }
   .status-btn { font-size:0.65rem; padding:0.15rem 0.45rem; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; white-space:nowrap; }
   .status-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(249,115,22,0.1); }
-  .kanban-col.drag-over { border-color:var(--accent); background:rgba(249,115,22,0.06); }
+  .kanban-col.drag-over,.mini-col.drag-over { border-color:var(--accent); background:rgba(249,115,22,0.06); border-radius:7px; }
 
   /* Multi-board (Jobs group view) */
   .multi-board { display:flex; flex-direction:column; gap:1.5rem; }
@@ -1497,7 +1497,10 @@ function buildCard(t, mini) {
     .join('') : '';
 
   if (mini) {
-    return `<div class="mini-card" onclick="openEditTask('${t.id}')">
+    return `<div class="mini-card" draggable="true"
+        data-task-id="${t.id}" data-status="${escHtml(t.status)}"
+        ondragstart="onCardDragStart(event)" ondragend="onCardDragEnd(event)"
+        onclick="openEditTask('${t.id}')">
       ${escHtml(t.name)}
       <div class="mini-card-meta">
         <span class="badge pri-badge ${priClass(t.priority)}" style="font-size:0.58rem">${t.priority}</span>
