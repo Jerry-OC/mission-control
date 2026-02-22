@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cody Design Build — Mission Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050508;
+    --bg2: #0d0d14;
+    --card: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.07);
+    --accent: #f97316;
+    --accent2: #fb923c;
+    --text: #e8e8f0;
+    --muted: #6b7280;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; }
+
+  /* HEADER */
+  header {
+    position:sticky; top:0; z-index:100;
+    background:rgba(5,5,8,0.85);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+    padding:0 2rem;
+    display:flex; align-items:center; justify-content:space-between;
+    height:60px;
+  }
+  .logo { font-size:1rem; font-weight:700; color:var(--accent); letter-spacing:-0.02em; }
+  .logo span { color:var(--text); font-weight:400; }
+  nav { display:flex; gap:0.25rem; }
+  nav button {
+    background:none; border:none; color:var(--muted);
+    padding:0.4rem 0.9rem; border-radius:6px;
+    font-size:0.85rem; font-family:'Inter',sans-serif;
+    cursor:pointer; transition:all 0.15s;
+  }
+  nav button:hover { color:var(--text); background:var(--card); }
+  nav button.active { color:var(--accent); background:rgba(249,115,22,0.1); }
+  .header-right { display:flex; align-items:center; gap:1rem; }
+  #clock { font-size:0.8rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .status-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* MAIN */
+  main { max-width:1400px; margin:0 auto; padding:2rem; }
+
+  /* TAB PANELS */
+  .tab-panel { display:none; animation:fadeIn 0.2s ease; }
+  .tab-panel.active { display:block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  /* CARDS */
+  .card {
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:1.25rem;
+    backdrop-filter:blur(10px);
+  }
+  .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; }
+  .card-title { font-size:0.8rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+
+  /* METRICS GRID */
+  .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
+  .metric-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; padding:1.25rem; position:relative; overflow:hidden;
+  }
+  .metric-bar { position:absolute; top:0; left:0; right:0; height:3px; }
+  .metric-icon { font-size:1.4rem; margin-bottom:0.5rem; }
+  .metric-label { font-size:0.75rem; color:var(--muted); margin-bottom:0.25rem; }
+  .metric-value { font-size:1.8rem; font-weight:700; letter-spacing:-0.02em; }
+  .metric-sub { font-size:0.75rem; color:var(--muted); margin-top:0.25rem; }
+  .trend-up { color:var(--green); }
+  .trend-dn { color:var(--red); }
+
+  /* GRIDS */
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; margin-bottom:1rem; }
+
+  /* TABLES */
+  table { width:100%; border-collapse:collapse; }
+  th { font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); padding:0.5rem 0.75rem; text-align:left; border-bottom:1px solid var(--border); }
+  td { padding:0.65rem 0.75rem; font-size:0.85rem; border-bottom:1px solid rgba(255,255,255,0.03); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,0.02); }
+
+  /* BADGES */
+  .badge { display:inline-flex; align-items:center; gap:0.3rem; padding:0.2rem 0.6rem; border-radius:20px; font-size:0.72rem; font-weight:600; }
+  .badge-green { background:rgba(34,197,94,0.15); color:var(--green); }
+  .badge-yellow { background:rgba(234,179,8,0.15); color:var(--yellow); }
+  .badge-red { background:rgba(239,68,68,0.15); color:var(--red); }
+  .badge-blue { background:rgba(59,130,246,0.15); color:var(--blue); }
+  .badge-orange { background:rgba(249,115,22,0.15); color:var(--accent); }
+  .badge-muted { background:rgba(107,114,128,0.15); color:var(--muted); }
+
+  /* PROGRESS */
+  .progress-bar { background:rgba(255,255,255,0.06); border-radius:4px; height:6px; overflow:hidden; }
+  .progress-fill { height:100%; border-radius:4px; transition:width 0.5s ease; }
+
+  /* PRIORITIES */
+  .priority-item { display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0; border-bottom:1px solid var(--border); }
+  .priority-item:last-child { border-bottom:none; }
+  .priority-item input[type=checkbox] { accent-color:var(--accent); width:16px; height:16px; cursor:pointer; }
+  .priority-item label { font-size:0.875rem; cursor:pointer; flex:1; }
+  .priority-item label.done { text-decoration:line-through; color:var(--muted); }
+
+  /* AGENT CARDS */
+  .agent-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+  .agent-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.25rem; }
+  .agent-header { display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem; }
+  .agent-emoji { font-size:1.8rem; }
+  .agent-name { font-weight:600; font-size:1rem; }
+  .agent-role { font-size:0.75rem; color:var(--muted); }
+  .agent-status { display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; margin-bottom:0.75rem; }
+  .dot { width:7px; height:7px; border-radius:50%; }
+  .dot-green { background:var(--green); box-shadow:0 0 6px var(--green); }
+  .dot-yellow { background:var(--yellow); }
+  .dot-gray { background:var(--muted); }
+  .agent-tasks { font-size:0.78rem; color:var(--muted); }
+  .agent-task-item { padding:0.3rem 0; border-bottom:1px solid var(--border); }
+  .agent-task-item:last-child { border-bottom:none; }
+
+  /* INBOX ITEMS */
+  .inbox-item { display:flex; align-items:center; justify-content:space-between; padding:0.75rem; background:rgba(255,255,255,0.02); border-radius:8px; margin-bottom:0.5rem; border:1px solid var(--border); }
+  .inbox-left { display:flex; flex-direction:column; gap:0.2rem; }
+  .inbox-vendor { font-size:0.875rem; font-weight:500; }
+  .inbox-desc { font-size:0.75rem; color:var(--muted); }
+  .inbox-amount { font-size:1rem; font-weight:600; }
+  .inbox-amount.debit { color:var(--red); }
+  .inbox-amount.credit { color:var(--green); }
+
+  /* SECTION HEADERS */
+  h2 { font-size:1.2rem; font-weight:700; margin-bottom:1rem; letter-spacing:-0.02em; }
+  h3 { font-size:0.95rem; font-weight:600; margin-bottom:0.75rem; }
+
+  /* WELCOME BAR */
+  .welcome { margin-bottom:1.5rem; }
+  .welcome h1 { font-size:1.6rem; font-weight:700; letter-spacing:-0.03em; }
+  .welcome p { color:var(--muted); font-size:0.875rem; margin-top:0.25rem; }
+
+  /* DIVIDER */
+  .divider { border:none; border-top:1px solid var(--border); margin:1rem 0; }
+
+  /* BUTTON */
+  .btn { background:var(--accent); color:#fff; border:none; padding:0.5rem 1rem; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:opacity 0.15s; }
+  .btn:hover { opacity:0.85; }
+  .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--text); }
+  .btn-ghost:hover { background:var(--card); }
+
+  /* JOB CARD */
+  .job-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.25rem; margin-bottom:0.75rem; }
+  .job-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem; }
+  .job-name { font-weight:600; font-size:0.95rem; }
+  .job-number { font-size:0.75rem; color:var(--muted); margin-top:0.15rem; }
+  .job-budget-row { display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:0.4rem; }
+  .job-budget-row span { color:var(--muted); }
+  .job-budget-row strong { color:var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CDB <span>Mission Control</span></div>
+  <nav>
+    <button class="active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
+    <button onclick="showTab('jobs',this)">🏗️ Jobs</button>
+    <button onclick="showTab('inbox',this)">📥 Cost Inbox</button>
+    <button onclick="showTab('revenue',this)">💰 Revenue</button>
+    <button onclick="showTab('agents',this)">🤖 Agents</button>
+  </nav>
+  <div class="header-right">
+    <span id="clock"></span>
+    <div class="status-dot"></div>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══════════════ DASHBOARD TAB ═══════════════ -->
+<div id="tab-dashboard" class="tab-panel active">
+  <div class="welcome">
+    <h1 id="greeting">Good morning, David 👋</h1>
+    <p id="date-line">Loading...</p>
+  </div>
+
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="metric-bar" style="background:linear-gradient(90deg,var(--accent),var(--accent2))"></div>
+      <div class="metric-icon">🏗️</div>
+      <div class="metric-label">Active Jobs</div>
+      <div class="metric-value">4</div>
+      <div class="metric-sub">$1,967,506 total value</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-bar" style="background:linear-gradient(90deg,var(--red),#f87171)"></div>
+      <div class="metric-icon">📥</div>
+      <div class="metric-label">Cost Inbox</div>
+      <div class="metric-value" id="inbox-count">—</div>
+      <div class="metric-sub">transactions to code</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-bar" style="background:linear-gradient(90deg,var(--green),#4ade80)"></div>
+      <div class="metric-icon">💵</div>
+      <div class="metric-label">Open Invoices</div>
+      <div class="metric-value">$58,229</div>
+      <div class="metric-sub">2 invoices outstanding</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-bar" style="background:linear-gradient(90deg,var(--purple),#c084fc)"></div>
+      <div class="metric-icon">📋</div>
+      <div class="metric-label">Draft Bills</div>
+      <div class="metric-value">$41,000</div>
+      <div class="metric-sub">2 vendor bills pending</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Top Priorities</span>
+        <button class="btn btn-ghost" style="font-size:0.72rem;padding:0.25rem 0.6rem" onclick="addPriority()">+ Add</button>
+      </div>
+      <div id="priorities">
+        <div class="priority-item"><input type="checkbox" id="p1" onchange="toggleDone(this)"><label for="p1">Fix Phil's pairing — OpenClaw menubar app</label></div>
+        <div class="priority-item"><input type="checkbox" id="p2" onchange="toggleDone(this)"><label for="p2">Code this week's Plaid transactions</label></div>
+        <div class="priority-item"><input type="checkbox" id="p3" onchange="toggleDone(this)"><label for="p3">Send invoice to Balboa client</label></div>
+        <div class="priority-item"><input type="checkbox" id="p4" onchange="toggleDone(this)"><label for="p4">Approve Graham Plastering bill ($9K)</label></div>
+        <div class="priority-item"><input type="checkbox" id="p5" onchange="toggleDone(this)"><label for="p5">Invite assistant@codydesignbuild.com to Airtable</label></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Activity Feed</span></div>
+      <div id="activity-feed" style="font-size:0.82rem;">
+        <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border)"><span>Jerry pulled Plaid transactions</span><span style="color:var(--muted)">just now</span></div>
+        <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border)"><span>JT API skill built + tested</span><span style="color:var(--muted)">today</span></div>
+        <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border)"><span>Phil agent created (pairing pending)</span><span style="color:var(--muted)">today</span></div>
+        <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border)"><span>memory-lancedb enabled</span><span style="color:var(--muted)">today</span></div>
+        <div style="display:flex;justify-content:space-between;padding:0.4rem 0"><span>Google Workspace connected</span><span style="color:var(--muted)">today</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ JOBS TAB ═══════════════ -->
+<div id="tab-jobs" class="tab-panel">
+  <h2>Active Jobs</h2>
+
+  <div class="job-card">
+    <div class="job-header">
+      <div><div class="job-name">3993 25th Ave — Bath + Windows</div><div class="job-number">Job #1</div></div>
+      <span class="badge badge-green">Active</span>
+    </div>
+    <div class="job-budget-row"><span>Contract Value</span><strong>$680,000</strong></div>
+    <div class="job-budget-row"><span>Budget Used</span><strong>—</strong></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:45%;background:var(--accent)"></div></div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem">~45% complete (est.)</div>
+  </div>
+
+  <div class="job-card">
+    <div class="job-header">
+      <div><div class="job-name">3631 Balboa — Full Remodel</div><div class="job-number">Job #2</div></div>
+      <span class="badge badge-yellow">In Progress</span>
+    </div>
+    <div class="job-budget-row"><span>Contract Value</span><strong>$890,000</strong></div>
+    <div class="job-budget-row"><span>Open Invoice</span><strong>$58,229</strong></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:30%;background:var(--yellow)"></div></div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem">~30% complete (est.)</div>
+  </div>
+
+  <div class="job-card">
+    <div class="job-header">
+      <div><div class="job-name">978 Teresha — Remodel</div><div class="job-number">Job #3</div></div>
+      <span class="badge badge-blue">Active</span>
+    </div>
+    <div class="job-budget-row"><span>Contract Value</span><strong>$397,506</strong></div>
+    <div class="job-budget-row"><span>Subs</span><strong>Luis Gomez (framing)</strong></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:60%;background:var(--blue)"></div></div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-top:0.4rem">~60% complete (est.)</div>
+  </div>
+
+  <div style="margin-top:1rem;text-align:center;color:var(--muted);font-size:0.8rem">
+    💡 Phase 2: this tab will pull live data from JobTread via API
+  </div>
+</div>
+
+<!-- ═══════════════ COST INBOX TAB ═══════════════ -->
+<div id="tab-inbox" class="tab-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+    <h2 style="margin:0">Cost Inbox — Plaid Transactions</h2>
+    <span class="badge badge-red" id="inbox-badge">Loading...</span>
+  </div>
+
+  <div class="card" style="margin-bottom:1rem">
+    <div style="font-size:0.82rem;color:var(--muted)">
+      These are bank transactions pulled from <strong style="color:var(--text)">Business Checking ...4687</strong> via Plaid that haven't been coded to a job yet. Phase 2: Jerry or Phil will auto-code these.
+    </div>
+  </div>
+
+  <div id="inbox-list">
+    <div style="text-align:center;color:var(--muted);padding:2rem;font-size:0.85rem">
+      Loading transactions from JobTread API...<br>
+      <span style="font-size:0.75rem;margin-top:0.5rem;display:block">(Phase 2: live data — static placeholder for now)</span>
+    </div>
+  </div>
+
+  <!-- Static sample data -->
+  <div style="margin-top:1rem">
+    <h3>Sample (from last API pull)</h3>
+    <div class="inbox-item">
+      <div class="inbox-left"><div class="inbox-vendor">CHECK</div><div class="inbox-desc">Business Checking ...4687 · Feb 17</div></div>
+      <div class="inbox-amount debit">-$6,000</div>
+    </div>
+    <div class="inbox-item">
+      <div class="inbox-left"><div class="inbox-vendor">CHECK</div><div class="inbox-desc">Business Checking ...4687 · Feb 17</div></div>
+      <div class="inbox-amount debit">-$2,652</div>
+    </div>
+    <div class="inbox-item">
+      <div class="inbox-left"><div class="inbox-vendor">CHASE CREDIT CRD EPAY — DAVID M CODY</div><div class="inbox-desc">Business Checking ...4687 · Feb 17</div></div>
+      <div class="inbox-amount debit">-$1,100</div>
+    </div>
+    <div class="inbox-item">
+      <div class="inbox-left"><div class="inbox-vendor">INTUIT — TRAN FEE</div><div class="inbox-desc">Business Checking ...4687 · Feb 16</div></div>
+      <div class="inbox-amount debit">-$184.78</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ REVENUE TAB ═══════════════ -->
+<div id="tab-revenue" class="tab-panel">
+  <h2>Revenue Overview</h2>
+  <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+    <div class="metric-card">
+      <div class="metric-bar" style="background:linear-gradient(90deg,var(--green),#4ade80)"></div>
+      <div class="metric-icon">📊</div>
+      <div class="metric-label">Total Pipeline</div>
+      <div class="metric-value">$1.97M</div>
+      <div class="metric-sub">4 active jobs</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-bar" style="background:linear-gradient(90deg,var(--yellow),#fde047)"></div>
+      <div class="metric-icon">🧾</div>
+      <div class="metric-label">Open Invoices</div>
+      <div class="metric-value">$58,229</div>
+      <div class="metric-sub">2 invoices pending</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-bar" style="background:linear-gradient(90deg,var(--red),#f87171)"></div>
+      <div class="metric-icon">📤</div>
+      <div class="metric-label">Draft Vendor Bills</div>
+      <div class="metric-value">$41,000</div>
+      <div class="metric-sub">2 bills to approve</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Open Customer Invoices</span></div>
+    <table>
+      <thead><tr><th>Job</th><th>Invoice</th><th>Amount</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>3631 Balboa</td><td>Invoice #1</td><td>$58,229</td><td><span class="badge badge-yellow">Pending</span></td></tr>
+        <tr><td>3993 25th</td><td>Pending Order ×4</td><td>$1,000</td><td><span class="badge badge-orange">Draft</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:1rem">
+    <div class="card-header"><span class="card-title">Draft Vendor Bills</span></div>
+    <table>
+      <thead><tr><th>Vendor</th><th>Amount</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Graham Plastering</td><td>$9,000</td><td><span class="badge badge-yellow">Draft</span></td></tr>
+        <tr><td>Other</td><td>$32,000</td><td><span class="badge badge-yellow">Draft</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════ AGENTS TAB ═══════════════ -->
+<div id="tab-agents" class="tab-panel">
+  <h2>Agent Command Center</h2>
+  <div class="agent-grid">
+    <div class="agent-card">
+      <div class="agent-header">
+        <div class="agent-emoji">🤙</div>
+        <div><div class="agent-name">Jerry</div><div class="agent-role">Main Agent — Orchestrator</div></div>
+      </div>
+      <div class="agent-status"><div class="dot dot-green"></div><span style="color:var(--green)">Online</span> · claude-sonnet-4-6 · Telegram</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem">Capabilities</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.75rem">
+        <span class="badge badge-muted">Browser</span>
+        <span class="badge badge-muted">JT API</span>
+        <span class="badge badge-muted">Gmail</span>
+        <span class="badge badge-muted">Airtable</span>
+        <span class="badge badge-muted">Memory</span>
+        <span class="badge badge-muted">Delegate to Phil</span>
+      </div>
+      <div class="agent-tasks">
+        <div class="agent-task-item">✅ Built JT API skill (Pave)</div>
+        <div class="agent-task-item">✅ Created Phil agent</div>
+        <div class="agent-task-item">✅ Built Mission Control dashboard</div>
+        <div class="agent-task-item">⏳ Phil delegation (pairing fix pending)</div>
+      </div>
+    </div>
+
+    <div class="agent-card">
+      <div class="agent-header">
+        <div class="agent-emoji">🏗️</div>
+        <div><div class="agent-name">Phil</div><div class="agent-role">Construction Agent — JT Specialist</div></div>
+      </div>
+      <div class="agent-status"><div class="dot dot-yellow"></div><span style="color:var(--yellow)">Pairing Required</span> · claude-sonnet-4-6</div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem">Capabilities</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.75rem">
+        <span class="badge badge-muted">JT API</span>
+        <span class="badge badge-muted">Plaid Coding</span>
+        <span class="badge badge-muted">Job Costing</span>
+        <span class="badge badge-muted">Change Orders</span>
+      </div>
+      <div class="agent-tasks">
+        <div class="agent-task-item">✅ Workspace configured</div>
+        <div class="agent-task-item">✅ JT grant key stored</div>
+        <div class="agent-task-item">✅ get-unapplied-payments.sh ready</div>
+        <div class="agent-task-item">⚠️ Fix: OpenClaw menubar → approve device</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1rem">
+    <div class="card-header"><span class="card-title">System Status</span></div>
+    <table>
+      <thead><tr><th>Component</th><th>Status</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Gateway</td><td><span class="badge badge-green">Running</span></td><td style="color:var(--muted);font-size:0.78rem">ws://127.0.0.1:18789 · Telegram connected</td></tr>
+        <tr><td>Memory</td><td><span class="badge badge-green">Active</span></td><td style="color:var(--muted);font-size:0.78rem">memory-lancedb · text-embedding-3-small</td></tr>
+        <tr><td>JT API</td><td><span class="badge badge-green">Working</span></td><td style="color:var(--muted);font-size:0.78rem">Pave · grant key valid · Org 22NeVb7CK2sW</td></tr>
+        <tr><td>Google Workspace</td><td><span class="badge badge-green">Connected</span></td><td style="color:var(--muted);font-size:0.78rem">assistant@codydesignbuild.com</td></tr>
+        <tr><td>Phil Delegation</td><td><span class="badge badge-yellow">Blocked</span></td><td style="color:var(--muted);font-size:0.78rem">Needs pairing approval via menubar app</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</main>
+
+<script>
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting').textContent = `${greeting}, David 👋`;
+  document.getElementById('date-line').textContent = now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}) + ' · Cody Design Build Inc.';
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// Tab switching
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Priorities
+function toggleDone(cb) {
+  const label = cb.nextElementSibling;
+  label.classList.toggle('done', cb.checked);
+  savePriorities();
+}
+function addPriority() {
+  const text = prompt('New priority:');
+  if (!text) return;
+  const id = 'p' + Date.now();
+  const div = document.createElement('div');
+  div.className = 'priority-item';
+  div.innerHTML = `<input type="checkbox" id="${id}" onchange="toggleDone(this)"><label for="${id}">${text}</label>`;
+  document.getElementById('priorities').appendChild(div);
+  savePriorities();
+}
+function savePriorities() {
+  const items = [...document.querySelectorAll('#priorities .priority-item')].map(el => ({
+    text: el.querySelector('label').textContent,
+    done: el.querySelector('input').checked
+  }));
+  localStorage.setItem('mc_priorities', JSON.stringify(items));
+}
+function loadPriorities() {
+  const saved = localStorage.getItem('mc_priorities');
+  if (!saved) return;
+  try {
+    const items = JSON.parse(saved);
+    const container = document.getElementById('priorities');
+    container.innerHTML = '';
+    items.forEach((item, i) => {
+      const id = 'p' + i;
+      const div = document.createElement('div');
+      div.className = 'priority-item';
+      div.innerHTML = `<input type="checkbox" id="${id}" ${item.done?'checked':''} onchange="toggleDone(this)"><label for="${id}" class="${item.done?'done':''}">${item.text}</label>`;
+      container.appendChild(div);
+    });
+  } catch(e) {}
+}
+loadPriorities();
+
+// Inbox placeholder count
+document.getElementById('inbox-count').textContent = '12+';
+document.getElementById('inbox-badge').textContent = '12+ uncoded';
+</script>
+</body>
+</html>
