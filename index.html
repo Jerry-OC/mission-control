@@ -550,6 +550,153 @@
   .split-remaining-bar.over { border-color:rgba(239,68,68,0.4);  color:#f87171; }
   .btn-split-add { background:none; border:none; color:var(--accent); cursor:pointer; font-size:0.8rem; font-family:'Inter',sans-serif; padding:0.2rem 0; display:inline-block; }
   .btn-split-add:hover { text-decoration:underline; }
+
+  /* ─── ESTIMATING TAB ─── */
+  .est-header { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem; }
+  .est-header h2 { margin:0; flex:1; }
+  .est-job-select {
+    background:rgba(255,255,255,0.05); border:1px solid var(--border);
+    color:var(--text); border-radius:8px; padding:0.45rem 0.75rem;
+    font-size:0.83rem; font-family:'Inter',sans-serif;
+    color-scheme:dark; min-width:220px; cursor:pointer;
+  }
+  .est-job-select:focus { outline:none; border-color:var(--accent); }
+  .est-job-select option { background:#1a1a2e; color:#e2e8f0; }
+
+  /* Job summary metrics */
+  .est-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:0.75rem; margin-bottom:1.5rem; }
+  @media(max-width:700px) { .est-metrics { grid-template-columns:repeat(2,1fr); } }
+
+  /* Orders list */
+  .order-list { display:flex; flex-direction:column; gap:0.75rem; }
+  .order-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden; transition:border-color 0.2s;
+  }
+  .order-card.order-signed { border-color:rgba(34,197,94,0.3); }
+  .order-card.order-sent   { border-color:rgba(59,130,246,0.3); }
+
+  .order-card-header {
+    display:flex; align-items:center; gap:0.75rem;
+    padding:0.9rem 1.1rem; cursor:pointer; user-select:none;
+  }
+  .order-card-header:hover { background:rgba(255,255,255,0.02); }
+  .order-card-title { flex:1; min-width:0; }
+  .order-card-name { font-size:0.92rem; font-weight:600; }
+  .order-card-meta { font-size:0.72rem; color:var(--muted); margin-top:0.1rem; }
+  .order-card-totals { display:flex; gap:1.25rem; align-items:center; flex-shrink:0; }
+  .order-card-totals span { font-size:0.78rem; color:var(--muted); }
+  .order-card-totals strong { color:var(--text); font-weight:600; }
+  .order-price-highlight { font-size:1.05rem; font-weight:700; color:var(--accent); }
+  .order-chevron { font-size:0.75rem; color:var(--muted); transition:transform 0.2s; flex-shrink:0; }
+  .order-card.expanded .order-chevron { transform:rotate(180deg); }
+  .order-header-actions { display:flex; gap:0.35rem; flex-shrink:0; }
+  .btn-icon {
+    background:none; border:1px solid var(--border); border-radius:6px;
+    padding:0.22rem 0.55rem; font-size:0.72rem; cursor:pointer;
+    font-family:'Inter',sans-serif; color:var(--muted); transition:all 0.15s;
+  }
+  .btn-icon:hover { border-color:rgba(255,255,255,0.25); color:var(--text); }
+  .btn-icon.danger:hover { border-color:rgba(239,68,68,0.4); color:#f87171; }
+
+  /* Line items panel */
+  .order-body {
+    display:none; border-top:1px solid var(--border);
+    background:rgba(255,255,255,0.01);
+  }
+  .order-body.open { display:block; }
+  .order-body-inner { padding:0.85rem 1.1rem 1rem; }
+
+  /* Line item table */
+  .li-table { width:100%; border-collapse:collapse; margin-bottom:0.75rem; }
+  .li-table th {
+    font-size:0.65rem; font-weight:600; text-transform:uppercase;
+    letter-spacing:0.07em; color:var(--muted);
+    padding:0.35rem 0.5rem; text-align:left;
+    border-bottom:1px solid var(--border);
+  }
+  .li-table th.num { text-align:right; }
+  .li-table td { padding:0.5rem 0.5rem; font-size:0.83rem; border-bottom:1px solid rgba(255,255,255,0.03); vertical-align:middle; }
+  .li-table tr:last-child td { border-bottom:none; }
+  .li-table tr:hover td { background:rgba(255,255,255,0.015); }
+  .li-table td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .li-table td.num-muted { text-align:right; color:var(--muted); font-size:0.78rem; }
+  .li-name-cell { font-weight:500; }
+  .li-desc-cell { font-size:0.75rem; color:var(--muted); line-height:1.3; }
+  .li-price-cell { font-weight:600; color:var(--accent); }
+  .li-actions { display:flex; gap:0.25rem; justify-content:flex-end; white-space:nowrap; }
+
+  /* Inline edit row */
+  .li-table tr.li-editing td { background:rgba(249,115,22,0.04); }
+  .li-input {
+    width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15);
+    color:var(--text); border-radius:6px; padding:0.3rem 0.45rem;
+    font-size:0.82rem; font-family:'Inter',sans-serif;
+    transition:border-color 0.15s; box-sizing:border-box;
+  }
+  .li-input:focus { outline:none; border-color:var(--accent); }
+  .li-input.num { text-align:right; }
+  .li-input-wide { min-width:140px; }
+  .li-input-narrow { max-width:70px; }
+  .li-save-btn {
+    background:var(--accent); color:#fff; border:none; border-radius:6px;
+    padding:0.28rem 0.6rem; font-size:0.72rem; font-weight:600;
+    cursor:pointer; font-family:'Inter',sans-serif; white-space:nowrap;
+  }
+  .li-save-btn:disabled { opacity:0.5; cursor:default; }
+  .li-cancel-btn {
+    background:transparent; color:var(--muted); border:1px solid var(--border);
+    border-radius:6px; padding:0.28rem 0.55rem; font-size:0.72rem;
+    cursor:pointer; font-family:'Inter',sans-serif;
+  }
+
+  /* Add line item row */
+  .li-add-row { display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+  .btn-add-li {
+    display:inline-flex; align-items:center; gap:0.35rem;
+    background:none; border:1px dashed rgba(255,255,255,0.12);
+    color:var(--muted); border-radius:8px; padding:0.45rem 0.85rem;
+    font-size:0.78rem; cursor:pointer; font-family:'Inter',sans-serif;
+    transition:all 0.15s;
+  }
+  .btn-add-li:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Order totals footer */
+  .order-totals-footer {
+    display:flex; justify-content:flex-end; gap:2rem;
+    padding:0.65rem 0.5rem 0; border-top:1px solid var(--border);
+    margin-top:0.25rem; flex-wrap:wrap;
+  }
+  .order-total-item { font-size:0.8rem; }
+  .order-total-item span { color:var(--muted); }
+  .order-total-item strong { color:var(--text); font-variant-numeric:tabular-nums; }
+  .order-total-item.price strong { color:var(--accent); font-size:0.95rem; }
+
+  /* Create order modal */
+  #new-order-modal.hidden { display:none; }
+  #new-order-modal {
+    position:fixed; inset:0; z-index:900;
+    background:rgba(0,0,0,0.6); backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center;
+    padding:1rem;
+  }
+  .new-order-box {
+    background:#0f0f1a; border:1px solid rgba(255,255,255,0.12);
+    border-radius:16px; padding:1.75rem; width:100%; max-width:460px;
+    box-shadow:0 32px 80px rgba(0,0,0,0.7);
+  }
+  .new-order-box h3 { margin:0 0 1.25rem; font-size:1rem; }
+
+  /* Status change dropdown on order header */
+  .order-status-select {
+    background:none; border:none; font-family:'Inter',sans-serif;
+    font-size:0.72rem; cursor:pointer; padding:0; color:inherit;
+  }
+  .order-status-select:focus { outline:none; }
+
+  /* Empty state */
+  .est-empty { text-align:center; padding:3rem 1rem; color:var(--muted); font-size:0.85rem; }
+  .est-empty .est-empty-icon { font-size:2.5rem; margin-bottom:0.75rem; }
 </style>
 </head>
 <body>
@@ -600,6 +747,7 @@
     <button onclick="showTab('agents',this)">🤖 Agents</button>
     <button onclick="showTab('tasks',this)">✅ Tasks</button>
     <button onclick="showTab('contacts',this)">👥 Contacts</button>
+    <button onclick="showTab('estimating',this)">📋 Estimating</button>
   </nav>
   <div class="header-right">
     <span id="clock"></span>
@@ -877,6 +1025,96 @@
 
 </div>
 
+<!-- ═══════════════ ESTIMATING TAB ═══════════════ -->
+<div id="tab-estimating" class="tab-panel">
+
+  <!-- Header row: title + job picker + new order button -->
+  <div class="est-header">
+    <h2 style="margin:0">📋 Estimating</h2>
+    <select class="est-job-select" id="est-job-select" onchange="estSelectJob(this.value)">
+      <option value="">— Select a job —</option>
+    </select>
+    <button class="btn" onclick="openNewOrderModal()" id="est-new-order-btn" disabled>+ New Order</button>
+  </div>
+
+  <!-- Job-level metrics (hidden until a job is selected) -->
+  <div class="est-metrics" id="est-metrics" style="display:none">
+    <div class="metric-card">
+      <div class="metric-bar" style="background:linear-gradient(90deg,var(--muted),rgba(107,114,128,0.4))"></div>
+      <div class="metric-icon">🏗️</div>
+      <div class="metric-label">Est. Cost</div>
+      <div class="metric-value" id="est-metric-cost">—</div>
+      <div class="metric-sub">all orders</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-bar" style="background:linear-gradient(90deg,var(--accent),var(--accent2))"></div>
+      <div class="metric-icon">💰</div>
+      <div class="metric-label">Est. Price</div>
+      <div class="metric-value" id="est-metric-price">—</div>
+      <div class="metric-sub" id="est-metric-margin-sub">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-bar" style="background:linear-gradient(90deg,var(--green),#4ade80)"></div>
+      <div class="metric-icon">✍️</div>
+      <div class="metric-label">Contract Value</div>
+      <div class="metric-value" id="est-metric-contract">—</div>
+      <div class="metric-sub" id="est-metric-contract-sub">signed only</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-bar" style="background:linear-gradient(90deg,var(--blue),#60a5fa)"></div>
+      <div class="metric-icon">📄</div>
+      <div class="metric-label">Orders</div>
+      <div class="metric-value" id="est-metric-orders">—</div>
+      <div class="metric-sub" id="est-metric-orders-sub">—</div>
+    </div>
+  </div>
+
+  <!-- Orders list -->
+  <div id="est-orders-area">
+    <div class="est-empty">
+      <div class="est-empty-icon">📋</div>
+      <div>Select a job to see its estimates</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ NEW ORDER MODAL ═══════════════ -->
+<div id="new-order-modal" class="hidden">
+  <div class="new-order-box" onclick="event.stopPropagation()">
+    <h3 id="new-order-modal-title">New Order</h3>
+    <div class="form-row" style="margin-bottom:0.75rem">
+      <label class="form-label">Name *</label>
+      <input class="form-input" id="no-name" placeholder="e.g. Proposal v1, Change Order #2" />
+    </div>
+    <div class="form-row-2col" style="margin-bottom:0.75rem">
+      <div>
+        <label class="form-label">Type</label>
+        <select class="form-input" id="no-type">
+          <option value="Proposal">Proposal</option>
+          <option value="Change Order">Change Order</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Status</label>
+        <select class="form-input" id="no-status">
+          <option value="Draft">Draft</option>
+          <option value="Sent">Sent</option>
+          <option value="Signed">Signed</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row" style="margin-bottom:1.25rem">
+      <label class="form-label">Notes</label>
+      <input class="form-input" id="no-notes" placeholder="Optional" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeNewOrderModal()">Cancel</button>
+      <button class="btn" id="no-save-btn" onclick="submitNewOrder()">Create Order</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ ADD / EDIT TASK MODAL ═══════════════ -->
 <div class="modal-overlay hidden" id="add-task-modal">
   <div class="modal-box">
@@ -1017,7 +1255,7 @@ function showApp() {
   // Restore last active tab — defer slightly so the DOM is ready
   const hash    = window.location.hash.replace('#', '');
   const lastTab = hash || localStorage.getItem('mc_active_tab') || 'dashboard';
-  const tabs    = ['dashboard','jobs','inbox','revenue','agents','tasks','contacts'];
+  const tabs    = ['dashboard','jobs','inbox','revenue','agents','tasks','contacts','estimating'];
   const target  = tabs.includes(lastTab) ? lastTab : 'dashboard';
   if (target !== 'dashboard') {
     setTimeout(() => {
@@ -1134,7 +1372,8 @@ function showTab(name, btn) {
   if (name === 'tasks') fetchTasks();
   if (name === 'agents') fetchAgents();
   if (name === 'contacts') fetchContacts(contactSearchTerm, contactFilter);
-  if (name === 'inbox') loadInbox(true);
+  if (name === 'inbox')      loadInbox(true);
+  if (name === 'estimating') loadEstimating();
 }
 
 
@@ -3080,6 +3319,568 @@ async function submitSplit() {
 // Close split modal on overlay click
 document.getElementById('split-modal').addEventListener('click', e => {
   if (e.target.id === 'split-modal') closeSplitModal();
+});
+
+/* ══════════════════════════════════════════════
+   ESTIMATING SYSTEM
+══════════════════════════════════════════════ */
+
+// ── State ─────────────────────────────────────
+let estJobs           = [];      // all Supabase jobs
+let estSelectedJobId  = null;
+let estOrders         = [];      // orders for selected job
+let estExpandedOrders = new Set(); // order IDs currently expanded
+let estLineItems      = {};      // orderId → array of line items
+let estEditingLineItem= null;    // { orderId, itemId } currently in edit mode
+let estNewOrderJobId  = null;    // job_id for the new-order modal
+let estEditOrderId    = null;    // order id when editing (null = create)
+let estJobsLoaded     = false;
+
+// ── Bootstrap ─────────────────────────────────
+async function loadEstimating() {
+  if (!estJobsLoaded) await fetchEstJobs();
+  if (estSelectedJobId) await fetchEstOrders(estSelectedJobId);
+}
+
+async function fetchEstJobs() {
+  try {
+    const data = await apiFetch('/api/estimate-jobs');
+    estJobs = data.jobs || [];
+    estJobsLoaded = true;
+    renderEstJobSelect();
+  } catch (err) {
+    console.error('estimate-jobs failed:', err);
+  }
+}
+
+function renderEstJobSelect() {
+  const sel = document.getElementById('est-job-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Select a job —</option>' +
+    estJobs.map(j => `<option value="${escHtml(j.id)}">${escHtml(j.name)}</option>`).join('');
+  if (estSelectedJobId) sel.value = estSelectedJobId;
+}
+
+async function estSelectJob(jobId) {
+  estSelectedJobId = jobId || null;
+  const btn = document.getElementById('est-new-order-btn');
+  if (btn) btn.disabled = !jobId;
+  estExpandedOrders.clear();
+  estLineItems = {};
+
+  if (!jobId) {
+    document.getElementById('est-metrics').style.display = 'none';
+    document.getElementById('est-orders-area').innerHTML =
+      `<div class="est-empty"><div class="est-empty-icon">📋</div><div>Select a job to see its estimates</div></div>`;
+    return;
+  }
+  document.getElementById('est-metrics').style.display = 'grid';
+  renderEstMetrics(null); // loading state
+  document.getElementById('est-orders-area').innerHTML =
+    '<div class="state-loading">Loading orders…</div>';
+  await fetchEstOrders(jobId);
+}
+
+async function fetchEstOrders(jobId) {
+  try {
+    const [ordersData, jobsData] = await Promise.all([
+      apiFetch(`/api/orders?job_id=${jobId}`),
+      apiFetch('/api/estimate-jobs'),
+    ]);
+    estOrders = ordersData.orders || [];
+    estJobs   = jobsData.jobs    || [];
+    const job = estJobs.find(j => j.id === jobId);
+    renderEstMetrics(job);
+    renderEstOrders();
+  } catch (err) {
+    document.getElementById('est-orders-area').innerHTML =
+      `<div class="state-error">Failed to load: ${escHtml(err.message)}</div>`;
+  }
+}
+
+// ── Metrics ───────────────────────────────────
+function renderEstMetrics(job) {
+  const cost     = Number(job?.totalEstimatedCost  ?? 0);
+  const price    = Number(job?.totalEstimatedPrice ?? 0);
+  const contract = Number(job?.contractPrice       ?? 0);
+  const orders   = Number(job?.orderCount          ?? 0);
+  const signed   = Number(job?.signedOrderCount    ?? 0);
+  const margin   = price > 0 ? Math.round(((price - cost) / price) * 100) : 0;
+
+  document.getElementById('est-metric-cost').textContent     = job ? fmtCurrency(cost) : '—';
+  document.getElementById('est-metric-price').textContent    = job ? fmtCurrency(price) : '—';
+  document.getElementById('est-metric-margin-sub').textContent =
+    job ? `${margin}% gross margin` : '—';
+  document.getElementById('est-metric-contract').textContent = job ? fmtCurrency(contract) : '—';
+  document.getElementById('est-metric-orders').textContent   = job ? orders : '—';
+  document.getElementById('est-metric-orders-sub').textContent =
+    job ? `${signed} signed` : '—';
+}
+
+// ── Orders list ───────────────────────────────
+function renderEstOrders() {
+  const area = document.getElementById('est-orders-area');
+  if (!estOrders.length) {
+    area.innerHTML = `
+      <div class="est-empty">
+        <div class="est-empty-icon">📄</div>
+        <div>No orders yet for this job.</div>
+        <div style="margin-top:0.5rem">
+          <button class="btn" onclick="openNewOrderModal()" style="font-size:0.82rem">+ Create First Order</button>
+        </div>
+      </div>`;
+    return;
+  }
+  area.innerHTML = `<div class="order-list">${estOrders.map(renderOrderCard).join('')}</div>`;
+
+  // Re-expand previously expanded orders and reload their line items
+  estExpandedOrders.forEach(orderId => {
+    const body = document.getElementById(`order-body-${orderId}`);
+    const card = document.getElementById(`order-card-${orderId}`);
+    if (body) { body.classList.add('open'); card?.classList.add('expanded'); }
+    if (estLineItems[orderId]) renderLineItemsInOrder(orderId);
+    else fetchLineItems(orderId);
+  });
+}
+
+function orderStatusBadge(status) {
+  if (status === 'Signed') return '<span class="badge badge-green">Signed</span>';
+  if (status === 'Sent')   return '<span class="badge badge-blue">Sent</span>';
+  return '<span class="badge badge-muted">Draft</span>';
+}
+
+function renderOrderCard(order) {
+  const isExpanded = estExpandedOrders.has(order.id);
+  const itemWord   = order.lineItemCount === 1 ? 'item' : 'items';
+  const margin     = order.totalPrice > 0
+    ? Math.round(((order.totalPrice - order.totalCost) / order.totalPrice) * 100) : 0;
+
+  return `
+    <div class="order-card${order.status === 'Signed' ? ' order-signed' : order.status === 'Sent' ? ' order-sent' : ''}${isExpanded ? ' expanded' : ''}"
+         id="order-card-${escHtml(order.id)}">
+      <div class="order-card-header" onclick="toggleOrderExpand('${escHtml(order.id)}')">
+        <div class="order-card-title">
+          <div class="order-card-name">${escHtml(order.name)}</div>
+          <div class="order-card-meta">${escHtml(order.type)} · ${order.lineItemCount} ${itemWord}</div>
+        </div>
+        ${orderStatusBadge(order.status)}
+        <div class="order-card-totals">
+          <div><span>Cost </span><strong>${fmtCurrency(order.totalCost)}</strong></div>
+          <div class="order-price-highlight">${fmtCurrency(order.totalPrice)}</div>
+          ${order.totalPrice > 0 ? `<div><span>${margin}% margin</span></div>` : ''}
+        </div>
+        <div class="order-header-actions" onclick="event.stopPropagation()">
+          <button class="btn-icon" title="Edit order" onclick="openEditOrderModal('${escHtml(order.id)}')">✏️</button>
+          <button class="btn-icon danger" title="Delete order" onclick="deleteOrder('${escHtml(order.id)}')">🗑</button>
+        </div>
+        <span class="order-chevron">▼</span>
+      </div>
+      <div class="order-body${isExpanded ? ' open' : ''}" id="order-body-${escHtml(order.id)}">
+        <div class="order-body-inner" id="order-body-inner-${escHtml(order.id)}">
+          <div class="state-loading" style="padding:1rem 0">Loading line items…</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function toggleOrderExpand(orderId) {
+  const card = document.getElementById(`order-card-${orderId}`);
+  const body = document.getElementById(`order-body-${orderId}`);
+  if (!card || !body) return;
+
+  if (estExpandedOrders.has(orderId)) {
+    estExpandedOrders.delete(orderId);
+    body.classList.remove('open');
+    card.classList.remove('expanded');
+  } else {
+    estExpandedOrders.add(orderId);
+    body.classList.add('open');
+    card.classList.add('expanded');
+    if (!estLineItems[orderId]) {
+      await fetchLineItems(orderId);
+    } else {
+      renderLineItemsInOrder(orderId);
+    }
+  }
+}
+
+// ── Line Items ────────────────────────────────
+async function fetchLineItems(orderId) {
+  const inner = document.getElementById(`order-body-inner-${orderId}`);
+  if (inner) inner.innerHTML = '<div class="state-loading" style="padding:1rem 0">Loading…</div>';
+  try {
+    const data = await apiFetch(`/api/estimate-line-items?order_id=${orderId}`);
+    estLineItems[orderId] = data.lineItems || [];
+    renderLineItemsInOrder(orderId);
+  } catch (err) {
+    if (inner) inner.innerHTML =
+      `<div class="state-error" style="margin:0.5rem 0">Error: ${escHtml(err.message)}</div>`;
+  }
+}
+
+function renderLineItemsInOrder(orderId) {
+  const inner = document.getElementById(`order-body-inner-${orderId}`);
+  if (!inner) return;
+  const items = estLineItems[orderId] || [];
+
+  const totalCost  = items.reduce((s, li) => s + li.totalCost, 0);
+  const totalPrice = items.reduce((s, li) => s + li.price, 0);
+  const isEditing  = estEditingLineItem?.orderId === orderId;
+
+  const tableRows = items.map(li => {
+    const editing = isEditing && estEditingLineItem?.itemId === li.id;
+    if (editing) return renderLineItemEditRow(orderId, li);
+    return renderLineItemReadRow(orderId, li);
+  }).join('');
+
+  inner.innerHTML = `
+    <table class="li-table">
+      <thead>
+        <tr>
+          <th style="min-width:140px">Name / Description</th>
+          <th class="num" style="width:90px">Labor</th>
+          <th class="num" style="width:90px">Materials</th>
+          <th class="num" style="width:80px">Other</th>
+          <th class="num" style="width:65px">Margin%</th>
+          <th class="num" style="width:90px">Cost</th>
+          <th class="num" style="width:90px">Price</th>
+          <th style="width:80px"></th>
+        </tr>
+      </thead>
+      <tbody id="li-tbody-${escHtml(orderId)}">
+        ${tableRows || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1rem">No line items yet</td></tr>`}
+      </tbody>
+    </table>
+    ${items.length ? `
+    <div class="order-totals-footer">
+      <div class="order-total-item"><span>Total Cost: </span><strong>${fmtCurrencyFull(totalCost)}</strong></div>
+      <div class="order-total-item price"><span>Total Price: </span><strong>${fmtCurrencyFull(totalPrice)}</strong></div>
+    </div>` : ''}
+    <div class="li-add-row" style="margin-top:0.75rem">
+      <button class="btn-add-li" onclick="startAddLineItem('${escHtml(orderId)}')">＋ Add line item</button>
+    </div>
+    ${isEditing && !estEditingLineItem?.itemId ? renderNewLineItemRow(orderId) : ''}`;
+}
+
+function renderLineItemReadRow(orderId, li) {
+  return `
+    <tr id="li-row-${escHtml(li.id)}">
+      <td>
+        <div class="li-name-cell">${escHtml(li.name)}</div>
+        ${li.description ? `<div class="li-desc-cell">${escHtml(li.description)}</div>` : ''}
+      </td>
+      <td class="num-muted">${li.laborCost > 0 ? fmtCurrencyFull(li.laborCost) : '—'}</td>
+      <td class="num-muted">${li.materialsCost > 0 ? fmtCurrencyFull(li.materialsCost) : '—'}</td>
+      <td class="num-muted">${li.otherCost > 0 ? fmtCurrencyFull(li.otherCost) : '—'}</td>
+      <td class="num-muted">${li.marginPct}%</td>
+      <td class="num">${fmtCurrencyFull(li.totalCost)}</td>
+      <td class="num li-price-cell">${fmtCurrencyFull(li.price)}</td>
+      <td>
+        <div class="li-actions">
+          <button class="btn-icon" title="Edit" onclick="startEditLineItem('${escHtml(orderId)}','${escHtml(li.id)}')">✏️</button>
+          <button class="btn-icon danger" title="Delete" onclick="deleteLineItem('${escHtml(orderId)}','${escHtml(li.id)}')">✕</button>
+        </div>
+      </td>
+    </tr>`;
+}
+
+function renderLineItemEditRow(orderId, li) {
+  return `
+    <tr class="li-editing" id="li-row-${escHtml(li.id)}">
+      <td>
+        <input class="li-input li-input-wide" id="lie-name" value="${escHtml(li.name)}" placeholder="Name *" />
+        <input class="li-input" style="margin-top:4px" id="lie-desc" value="${escHtml(li.description||'')}" placeholder="Description (optional)" />
+      </td>
+      <td><input class="li-input num li-input-narrow" id="lie-labor" type="number" min="0" step="0.01" value="${li.laborCost}" /></td>
+      <td><input class="li-input num li-input-narrow" id="lie-mats"  type="number" min="0" step="0.01" value="${li.materialsCost}" /></td>
+      <td><input class="li-input num li-input-narrow" id="lie-other" type="number" min="0" step="0.01" value="${li.otherCost}" /></td>
+      <td><input class="li-input num li-input-narrow" id="lie-margin" type="number" min="0" max="100" step="0.1" value="${li.marginPct}" /></td>
+      <td class="num" id="lie-preview-cost" style="color:var(--muted);font-size:0.78rem">—</td>
+      <td class="num li-price-cell" id="lie-preview-price">—</td>
+      <td>
+        <div class="li-actions" style="gap:0.3rem;flex-direction:column">
+          <button class="li-save-btn" onclick="saveEditLineItem('${escHtml(orderId)}','${escHtml(li.id)}')">Save</button>
+          <button class="li-cancel-btn" onclick="cancelLineItemEdit('${escHtml(orderId)}')">Cancel</button>
+        </div>
+      </td>
+    </tr>`;
+}
+
+function renderNewLineItemRow(orderId) {
+  return `
+    <div id="li-new-row-${escHtml(orderId)}" style="margin-top:0.5rem;padding:0.75rem;background:rgba(249,115,22,0.04);border:1px solid rgba(249,115,22,0.15);border-radius:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:0.5rem;margin-bottom:0.6rem">
+        <div>
+          <label class="form-label" style="font-size:0.65rem">Name *</label>
+          <input class="li-input" id="lin-name" placeholder="e.g. Rough Plumbing" />
+        </div>
+        <div>
+          <label class="form-label" style="font-size:0.65rem">Labor ($)</label>
+          <input class="li-input num" id="lin-labor" type="number" min="0" step="0.01" placeholder="0" />
+        </div>
+        <div>
+          <label class="form-label" style="font-size:0.65rem">Materials ($)</label>
+          <input class="li-input num" id="lin-mats" type="number" min="0" step="0.01" placeholder="0" />
+        </div>
+        <div>
+          <label class="form-label" style="font-size:0.65rem">Other ($)</label>
+          <input class="li-input num" id="lin-other" type="number" min="0" step="0.01" placeholder="0" />
+        </div>
+        <div>
+          <label class="form-label" style="font-size:0.65rem">Margin %</label>
+          <input class="li-input num" id="lin-margin" type="number" min="0" max="100" step="0.1" placeholder="20" value="20" />
+        </div>
+      </div>
+      <div style="margin-bottom:0.6rem">
+        <label class="form-label" style="font-size:0.65rem">Description (optional)</label>
+        <input class="li-input" id="lin-desc" placeholder="Brief description" />
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <button class="li-save-btn" onclick="submitNewLineItem('${escHtml(orderId)}')">Add Item</button>
+        <button class="li-cancel-btn" onclick="cancelNewLineItem('${escHtml(orderId)}')">Cancel</button>
+        <span id="lin-error" style="font-size:0.75rem;color:var(--red);display:none"></span>
+      </div>
+    </div>`;
+}
+
+// ── Inline edit entry points ──────────────────
+function startEditLineItem(orderId, itemId) {
+  estEditingLineItem = { orderId, itemId };
+  renderLineItemsInOrder(orderId);
+  // Wire up live preview
+  requestAnimationFrame(() => {
+    ['lie-labor','lie-mats','lie-other','lie-margin'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', () => updateEditPreview());
+    });
+    updateEditPreview();
+  });
+}
+
+function updateEditPreview() {
+  const labor  = parseFloat(document.getElementById('lie-labor')?.value  || 0) || 0;
+  const mats   = parseFloat(document.getElementById('lie-mats')?.value   || 0) || 0;
+  const other  = parseFloat(document.getElementById('lie-other')?.value  || 0) || 0;
+  const margin = parseFloat(document.getElementById('lie-margin')?.value || 20) || 20;
+  const cost   = labor + mats + other;
+  const price  = cost * (1 + margin / 100);
+  const costEl  = document.getElementById('lie-preview-cost');
+  const priceEl = document.getElementById('lie-preview-price');
+  if (costEl)  costEl.textContent  = fmtCurrencyFull(cost);
+  if (priceEl) priceEl.textContent = fmtCurrencyFull(price);
+}
+
+function cancelLineItemEdit(orderId) {
+  estEditingLineItem = null;
+  renderLineItemsInOrder(orderId);
+}
+
+async function saveEditLineItem(orderId, itemId) {
+  const name  = document.getElementById('lie-name')?.value.trim();
+  if (!name) { alert('Name is required'); return; }
+  const body = {
+    name,
+    description:   document.getElementById('lie-desc')?.value.trim() || null,
+    laborCost:     parseFloat(document.getElementById('lie-labor')?.value  || 0) || 0,
+    materialsCost: parseFloat(document.getElementById('lie-mats')?.value   || 0) || 0,
+    otherCost:     parseFloat(document.getElementById('lie-other')?.value  || 0) || 0,
+    marginPct:     parseFloat(document.getElementById('lie-margin')?.value || 20) || 20,
+  };
+  const btn = document.querySelector(`#li-row-${itemId} .li-save-btn`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    const data = await apiPatch(`/api/estimate-line-items?id=${itemId}`, body);
+    const idx  = (estLineItems[orderId] || []).findIndex(li => li.id === itemId);
+    if (idx !== -1 && data.lineItem) estLineItems[orderId][idx] = data.lineItem;
+    estEditingLineItem = null;
+    renderLineItemsInOrder(orderId);
+    await refreshOrderCard(orderId);
+  } catch (err) {
+    alert('Save failed: ' + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+  }
+}
+
+// ── New line item ─────────────────────────────
+function startAddLineItem(orderId) {
+  // If already adding, just focus the name field
+  if (estEditingLineItem?.orderId === orderId && !estEditingLineItem?.itemId) {
+    document.getElementById('lin-name')?.focus();
+    return;
+  }
+  estEditingLineItem = { orderId, itemId: null };
+  renderLineItemsInOrder(orderId);
+  requestAnimationFrame(() => document.getElementById('lin-name')?.focus());
+}
+
+function cancelNewLineItem(orderId) {
+  estEditingLineItem = null;
+  renderLineItemsInOrder(orderId);
+}
+
+async function submitNewLineItem(orderId) {
+  const name = document.getElementById('lin-name')?.value.trim();
+  const errEl = document.getElementById('lin-error');
+  if (!name) {
+    if (errEl) { errEl.textContent = 'Name required'; errEl.style.display = 'inline'; }
+    document.getElementById('lin-name')?.focus();
+    return;
+  }
+  if (errEl) errEl.style.display = 'none';
+
+  const body = {
+    order_id:      orderId,
+    name,
+    description:   document.getElementById('lin-desc')?.value.trim()  || null,
+    laborCost:     parseFloat(document.getElementById('lin-labor')?.value  || 0) || 0,
+    materialsCost: parseFloat(document.getElementById('lin-mats')?.value   || 0) || 0,
+    otherCost:     parseFloat(document.getElementById('lin-other')?.value  || 0) || 0,
+    marginPct:     parseFloat(document.getElementById('lin-margin')?.value || 20) || 20,
+  };
+  const btn = document.querySelector(`#li-new-row-${orderId} .li-save-btn`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Adding…'; }
+  try {
+    const data = await apiPost('/api/estimate-line-items', body);
+    if (!estLineItems[orderId]) estLineItems[orderId] = [];
+    estLineItems[orderId].push(data.lineItem);
+    estEditingLineItem = null;
+    renderLineItemsInOrder(orderId);
+    await refreshOrderCard(orderId);
+  } catch (err) {
+    alert('Failed to add line item: ' + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Add Item'; }
+  }
+}
+
+async function deleteLineItem(orderId, itemId) {
+  if (!confirm('Delete this line item?')) return;
+  try {
+    await fetch(`/api/estimate-line-items?id=${itemId}`, {
+      method:  'DELETE',
+      headers: authHeaders(),
+    });
+    estLineItems[orderId] = (estLineItems[orderId] || []).filter(li => li.id !== itemId);
+    if (estEditingLineItem?.itemId === itemId) estEditingLineItem = null;
+    renderLineItemsInOrder(orderId);
+    await refreshOrderCard(orderId);
+  } catch (err) {
+    alert('Delete failed: ' + err.message);
+  }
+}
+
+// ── Refresh order card after any line item change ──
+async function refreshOrderCard(orderId) {
+  try {
+    const data = await apiFetch(`/api/orders?id=${orderId}`);
+    const updated = data.orders?.[0];
+    if (!updated) return;
+    const idx = estOrders.findIndex(o => o.id === orderId);
+    if (idx !== -1) estOrders[idx] = updated;
+    // Re-render just this card's header (keep body open)
+    const card = document.getElementById(`order-card-${orderId}`);
+    if (!card) return;
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = renderOrderCard(updated);
+    const newCard = tempDiv.firstElementChild;
+    // Preserve body state
+    const body = card.querySelector('.order-body');
+    const newBody = newCard.querySelector('.order-body');
+    if (body && newBody) {
+      newBody.innerHTML = body.innerHTML;
+      if (estExpandedOrders.has(orderId)) {
+        newBody.classList.add('open');
+        newCard.classList.add('expanded');
+      }
+    }
+    card.replaceWith(newCard);
+    // Refresh job metrics
+    const jobsData = await apiFetch('/api/estimate-jobs');
+    estJobs = jobsData.jobs || [];
+    const job = estJobs.find(j => j.id === estSelectedJobId);
+    renderEstMetrics(job);
+  } catch (_) {}
+}
+
+// ── New / Edit Order modal ────────────────────
+function openNewOrderModal() {
+  estEditOrderId = null;
+  document.getElementById('new-order-modal-title').textContent = 'New Order';
+  document.getElementById('no-name').value   = '';
+  document.getElementById('no-type').value   = 'Proposal';
+  document.getElementById('no-status').value = 'Draft';
+  document.getElementById('no-notes').value  = '';
+  document.getElementById('no-save-btn').textContent = 'Create Order';
+  document.getElementById('new-order-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('no-name').focus(), 60);
+}
+
+function openEditOrderModal(orderId) {
+  const order = estOrders.find(o => o.id === orderId);
+  if (!order) return;
+  estEditOrderId = orderId;
+  document.getElementById('new-order-modal-title').textContent = 'Edit Order';
+  document.getElementById('no-name').value   = order.name;
+  document.getElementById('no-type').value   = order.type;
+  document.getElementById('no-status').value = order.status;
+  document.getElementById('no-notes').value  = order.notes || '';
+  document.getElementById('no-save-btn').textContent = 'Save Changes';
+  document.getElementById('new-order-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('no-name').focus(), 60);
+}
+
+function closeNewOrderModal() {
+  document.getElementById('new-order-modal').classList.add('hidden');
+  estEditOrderId = null;
+}
+
+async function submitNewOrder() {
+  const name   = document.getElementById('no-name').value.trim();
+  const type   = document.getElementById('no-type').value;
+  const status = document.getElementById('no-status').value;
+  const notes  = document.getElementById('no-notes').value.trim();
+  if (!name) { document.getElementById('no-name').focus(); return; }
+
+  const btn = document.getElementById('no-save-btn');
+  btn.disabled = true;
+  btn.textContent = estEditOrderId ? 'Saving…' : 'Creating…';
+
+  try {
+    if (estEditOrderId) {
+      await apiPatch(`/api/orders?id=${estEditOrderId}`, { name, type, status, notes: notes||null });
+    } else {
+      await apiPost('/api/orders', { job_id: estSelectedJobId, name, type, status, notes: notes||null });
+    }
+    closeNewOrderModal();
+    await fetchEstOrders(estSelectedJobId);
+  } catch (err) {
+    alert('Failed: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = estEditOrderId ? 'Save Changes' : 'Create Order';
+  }
+}
+
+async function deleteOrder(orderId) {
+  const order = estOrders.find(o => o.id === orderId);
+  if (!order) return;
+  if (!confirm(`Delete "${order.name}" and all its line items?`)) return;
+  try {
+    await fetch(`/api/orders?id=${orderId}`, { method: 'DELETE', headers: authHeaders() });
+    estExpandedOrders.delete(orderId);
+    delete estLineItems[orderId];
+    await fetchEstOrders(estSelectedJobId);
+  } catch (err) {
+    alert('Delete failed: ' + err.message);
+  }
+}
+
+// Close new-order modal on overlay click
+document.getElementById('new-order-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeNewOrderModal();
+});
+
+// Allow Enter on order name field
+document.getElementById('no-name').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') submitNewOrder();
 });
 </script>
 </body>
