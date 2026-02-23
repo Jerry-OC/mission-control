@@ -967,14 +967,16 @@ function showApp() {
   document.getElementById('auth-overlay').classList.add('hidden');
   document.getElementById('app').style.display = 'block';
   loadData();
-  // Restore last active tab from hash or localStorage
+  // Restore last active tab — defer slightly so the DOM is ready
   const hash    = window.location.hash.replace('#', '');
   const lastTab = hash || localStorage.getItem('mc_active_tab') || 'dashboard';
   const tabs    = ['dashboard','jobs','inbox','revenue','agents','tasks','contacts'];
   const target  = tabs.includes(lastTab) ? lastTab : 'dashboard';
   if (target !== 'dashboard') {
-    const btn = [...document.querySelectorAll('nav button')].find(b => b.getAttribute('onclick')?.includes(`'${target}'`));
-    if (btn) showTab(target, btn);
+    setTimeout(() => {
+      const btn = [...document.querySelectorAll('nav button')].find(b => b.getAttribute('onclick')?.includes(`'${target}'`));
+      if (btn) showTab(target, btn);
+    }, 50);
   }
 }
 
