@@ -706,6 +706,87 @@
   /* Empty state */
   .est-empty { text-align:center; padding:3rem 1rem; color:var(--muted); font-size:0.85rem; }
   .est-empty .est-empty-icon { font-size:2.5rem; margin-bottom:0.75rem; }
+
+  /* ── Order Groups ───────────────────────────────────────────────── */
+  .order-group {
+    border:1px solid rgba(255,255,255,0.07); border-radius:10px;
+    margin-bottom:0.85rem; overflow:hidden;
+  }
+  .order-group-header {
+    display:flex; align-items:center; gap:0.5rem;
+    padding:0.55rem 0.75rem; background:rgba(255,255,255,0.03);
+    border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .group-name {
+    flex:1; font-size:0.82rem; font-weight:600; letter-spacing:0.01em;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .group-name-input {
+    flex:1; background:rgba(255,255,255,0.07); border:1px solid var(--accent);
+    color:var(--text); border-radius:5px; padding:0.2rem 0.4rem;
+    font-size:0.82rem; font-weight:600; font-family:'Inter',sans-serif;
+    outline:none;
+  }
+  .group-total {
+    font-size:0.78rem; font-weight:700; color:var(--accent);
+    font-variant-numeric:tabular-nums; white-space:nowrap; margin-right:0.25rem;
+  }
+  .group-order-btn {
+    background:none; border:1px solid rgba(255,255,255,0.1); border-radius:5px;
+    color:var(--muted); cursor:pointer; font-size:0.7rem; padding:0.15rem 0.4rem;
+    font-family:'Inter',sans-serif; transition:all 0.12s; line-height:1;
+  }
+  .group-order-btn:hover { border-color:rgba(255,255,255,0.25); color:var(--text); }
+  .group-order-btn:disabled { opacity:0.25; cursor:default; }
+  .group-delete-btn {
+    background:none; border:1px solid rgba(255,255,255,0.1); border-radius:5px;
+    color:var(--muted); cursor:pointer; font-size:0.7rem; padding:0.15rem 0.4rem;
+    font-family:'Inter',sans-serif; transition:all 0.12s; line-height:1;
+  }
+  .group-delete-btn:hover { border-color:rgba(239,68,68,0.4); color:#f87171; }
+  .group-rename-btn {
+    background:none; border:1px solid rgba(255,255,255,0.1); border-radius:5px;
+    color:var(--muted); cursor:pointer; font-size:0.7rem; padding:0.15rem 0.4rem;
+    font-family:'Inter',sans-serif; transition:all 0.12s; line-height:1;
+  }
+  .group-rename-btn:hover { border-color:rgba(255,255,255,0.25); color:var(--text); }
+  .group-body { padding:0.5rem 0.75rem 0.6rem; }
+  .cost-cat-label {
+    font-size:0.62rem; font-weight:600; text-transform:uppercase;
+    letter-spacing:0.08em; color:var(--muted); padding:0.4rem 0 0.2rem;
+    border-bottom:1px solid rgba(255,255,255,0.04); margin-bottom:0.2rem;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .cost-cat-label .cat-subtotal {
+    font-variant-numeric:tabular-nums; font-size:0.67rem; color:var(--muted);
+  }
+  .group-ungrouped-header {
+    font-size:0.72rem; color:var(--muted); padding:0.5rem 0 0.3rem;
+    font-style:italic;
+  }
+  .btn-add-group {
+    display:inline-flex; align-items:center; gap:0.35rem;
+    background:none; border:1px dashed rgba(249,115,22,0.25);
+    color:rgba(249,115,22,0.6); border-radius:8px; padding:0.4rem 0.85rem;
+    font-size:0.78rem; cursor:pointer; font-family:'Inter',sans-serif;
+    transition:all 0.15s; margin-top:0.5rem;
+  }
+  .btn-add-group:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Cost code select in line item rows */
+  .li-cc-select {
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
+    color:var(--text); border-radius:5px; padding:0.22rem 0.35rem;
+    font-size:0.75rem; font-family:'Inter',sans-serif; color-scheme:dark;
+    max-width:170px; cursor:pointer;
+  }
+  .li-cc-select:focus { outline:none; border-color:var(--accent); }
+  .li-cc-select option { background:#1a1a2e; }
+  .li-cc-badge {
+    display:inline-block; font-size:0.65rem; padding:0.1rem 0.35rem;
+    background:rgba(255,255,255,0.06); border-radius:4px;
+    color:var(--muted); white-space:nowrap;
+  }
 </style>
 </head>
 <body>
@@ -3373,15 +3454,19 @@ document.getElementById('split-modal').addEventListener('click', e => {
 ══════════════════════════════════════════════ */
 
 // ── State ─────────────────────────────────────
-let estJobs           = [];      // all Supabase jobs
-let estSelectedJobId  = null;
-let estOrders         = [];      // orders for selected job
-let estExpandedOrders = new Set(); // order IDs currently expanded
-let estLineItems      = {};      // orderId → array of line items
-let estEditingLineItem= null;    // { orderId, itemId } currently in edit mode
-let estNewOrderJobId  = null;    // job_id for the new-order modal
-let estEditOrderId    = null;    // order id when editing (null = create)
-let estJobsLoaded     = false;
+let estJobs            = [];      // all Supabase jobs
+let estSelectedJobId   = null;
+let estOrders          = [];      // orders for selected job
+let estExpandedOrders  = new Set(); // order IDs currently expanded
+let estLineItems       = {};      // orderId → array of line items
+let estGroups          = {};      // orderId → array of groups
+let estEditingLineItem = null;    // { orderId, itemId } currently in edit mode
+let estNewOrderJobId   = null;    // job_id for the new-order modal
+let estEditOrderId     = null;    // order id when editing (null = create)
+let estJobsLoaded      = false;
+let estCostCodes       = [];      // shared cost codes list (loaded once per session)
+let estCostCodesLoaded = false;
+let estRenamingGroup   = null;    // groupId currently being renamed
 
 // ── Bootstrap ─────────────────────────────────
 async function loadEstimating() {
@@ -3414,6 +3499,7 @@ async function estSelectJob(jobId) {
   if (btn) btn.disabled = !jobId;
   estExpandedOrders.clear();
   estLineItems = {};
+  estGroups    = {};
 
   if (!jobId) {
     document.getElementById('est-metrics').style.display = 'none';
@@ -3488,7 +3574,7 @@ function renderEstOrders() {
     const body = document.getElementById(`order-body-${orderId}`);
     const card = document.getElementById(`order-card-${orderId}`);
     if (body) { body.classList.add('open'); card?.classList.add('expanded'); }
-    if (estLineItems[orderId]) renderLineItemsInOrder(orderId);
+    if (estLineItems[orderId] && estGroups[orderId] !== undefined) renderLineItemsInOrder(orderId);
     else fetchLineItems(orderId);
   });
 }
@@ -3573,13 +3659,30 @@ async function toggleOrderExpand(orderId) {
   }
 }
 
+// ── Cost Codes (loaded once per session) ─────
+async function ensureCostCodes() {
+  if (estCostCodesLoaded) return;
+  try {
+    const data = await apiFetch('/api/cost-codes');
+    if (Array.isArray(data.costCodes)) {
+      estCostCodes       = data.costCodes;
+      estCostCodesLoaded = true;
+    }
+  } catch (_) { /* non-fatal — pickers will just be empty */ }
+}
+
 // ── Line Items ────────────────────────────────
 async function fetchLineItems(orderId) {
   const inner = document.getElementById(`order-body-inner-${orderId}`);
   if (inner) inner.innerHTML = '<div class="state-loading" style="padding:1rem 0">Loading…</div>';
   try {
-    const data = await apiFetch(`/api/estimate-line-items?order_id=${orderId}`);
-    estLineItems[orderId] = data.lineItems || [];
+    const [lineData, groupData] = await Promise.all([
+      apiFetch(`/api/estimate-line-items?order_id=${orderId}`),
+      apiFetch(`/api/order-groups?order_id=${orderId}`),
+      ensureCostCodes(),
+    ]);
+    estLineItems[orderId] = lineData.lineItems || [];
+    estGroups[orderId]    = groupData.groups   || [];
     renderLineItemsInOrder(orderId);
   } catch (err) {
     if (inner) inner.innerHTML =
@@ -3587,22 +3690,49 @@ async function fetchLineItems(orderId) {
   }
 }
 
+// ── Helpers ───────────────────────────────────
+function liTableHead() {
+  return `<thead><tr>
+    <th style="min-width:140px">Name / Description</th>
+    <th class="num" style="width:90px">Labor</th>
+    <th class="num" style="width:90px">Materials</th>
+    <th class="num" style="width:80px">Other</th>
+    <th class="num" style="width:65px">Markup%</th>
+    <th class="num" style="width:90px">Cost</th>
+    <th class="num" style="width:90px">Price</th>
+    <th style="width:80px"></th>
+  </tr></thead>`;
+}
+
+function ccSelectOptions(selectedId) {
+  const blank = `<option value="">${selectedId ? '— remove —' : '— none —'}</option>`;
+  const opts  = estCostCodes.map(cc =>
+    `<option value="${cc.id}"${cc.id === selectedId ? ' selected' : ''}>${escHtml(cc.number)} · ${escHtml(cc.name)}</option>`
+  ).join('');
+  return blank + opts;
+}
+
+function groupSelectOptions(orderId, selectedId) {
+  const groups  = estGroups[orderId] || [];
+  const blank   = `<option value="">${selectedId ? '— ungrouped —' : '— no group —'}</option>`;
+  const opts    = groups.map(g =>
+    `<option value="${g.id}"${g.id === selectedId ? ' selected' : ''}>${escHtml(g.name)}</option>`
+  ).join('');
+  return blank + opts;
+}
+
+// ── Grouped render ────────────────────────────
 function renderLineItemsInOrder(orderId) {
   const inner = document.getElementById(`order-body-inner-${orderId}`);
   if (!inner) return;
-  const items = estLineItems[orderId] || [];
+
+  const items    = estLineItems[orderId] || [];
+  const groups   = estGroups[orderId]    || [];
+  const isEditing = estEditingLineItem?.orderId === orderId;
 
   const totalCost  = items.reduce((s, li) => s + li.totalCost, 0);
   const totalPrice = items.reduce((s, li) => s + li.price, 0);
-  const isEditing  = estEditingLineItem?.orderId === orderId;
 
-  const tableRows = items.map(li => {
-    const editing = isEditing && estEditingLineItem?.itemId === li.id;
-    if (editing) return renderLineItemEditRow(orderId, li);
-    return renderLineItemReadRow(orderId, li);
-  }).join('');
-
-  // Fetch notes from in-memory order list
   const orderMeta = estOrders.find(o => o.id === orderId);
   const notesHtml = orderMeta?.notes
     ? `<div style="font-size:0.78rem;color:var(--muted);padding:0.5rem 0 0.75rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem;line-height:1.5">
@@ -3610,47 +3740,142 @@ function renderLineItemsInOrder(orderId) {
        </div>`
     : '';
 
+  let sectionsHtml = '';
+
+  if (groups.length) {
+    // ── Render each group ──
+    groups.forEach((group, gIdx) => {
+      const groupItems  = items.filter(li => li.groupId === group.id);
+      const groupTotal  = groupItems.reduce((s, li) => s + li.price, 0);
+      const isFirst     = gIdx === 0;
+      const isLast      = gIdx === groups.length - 1;
+      const isRenaming  = estRenamingGroup === group.id;
+
+      const nameHtml = isRenaming
+        ? `<input class="group-name-input" id="grp-rename-input" value="${escHtml(group.name)}"
+               onkeydown="handleGroupRenameKey(event,'${escHtml(orderId)}','${escHtml(group.id)}')"
+               onblur="saveGroupRename('${escHtml(orderId)}','${escHtml(group.id)}')" />`
+        : `<span class="group-name" title="Double-click to rename"
+               ondblclick="startGroupRename('${escHtml(orderId)}','${escHtml(group.id)}')">${escHtml(group.name)}</span>`;
+
+      sectionsHtml += `
+        <div class="order-group" id="grp-${escHtml(group.id)}">
+          <div class="order-group-header">
+            ${nameHtml}
+            <span class="group-total">${fmtCurrencyFull(groupTotal)}</span>
+            ${isRenaming
+              ? `<button class="group-rename-btn" onclick="saveGroupRename('${escHtml(orderId)}','${escHtml(group.id)}')">✓</button>
+                 <button class="group-rename-btn" onclick="cancelGroupRename('${escHtml(orderId)}')">✕</button>`
+              : `<button class="group-rename-btn" title="Rename" onclick="startGroupRename('${escHtml(orderId)}','${escHtml(group.id)}')">✏️</button>`}
+            <button class="group-order-btn" title="Move up"   onclick="moveGroupUp('${escHtml(orderId)}','${escHtml(group.id)}')"   ${isFirst ? 'disabled' : ''}>▲</button>
+            <button class="group-order-btn" title="Move down" onclick="moveGroupDown('${escHtml(orderId)}','${escHtml(group.id)}')" ${isLast  ? 'disabled' : ''}>▼</button>
+            <button class="group-delete-btn" title="Delete group (items become ungrouped)" onclick="deleteGroup('${escHtml(orderId)}','${escHtml(group.id)}')">✕</button>
+          </div>
+          <div class="group-body">
+            ${renderGroupBody(orderId, groupItems, isEditing)}
+          </div>
+        </div>`;
+    });
+
+    // ── Ungrouped section ──
+    const ungrouped = items.filter(li => !li.groupId);
+    if (ungrouped.length || !items.length) {
+      const ungroupedTotal = ungrouped.reduce((s, li) => s + li.price, 0);
+      sectionsHtml += `
+        <div style="margin-bottom:0.85rem">
+          <div class="group-ungrouped-header">Ungrouped ${ungrouped.length ? `<span style="float:right;font-style:normal;font-weight:600;color:var(--accent)">${fmtCurrencyFull(ungroupedTotal)}</span>` : ''}</div>
+          ${renderGroupBody(orderId, ungrouped, isEditing)}
+        </div>`;
+    }
+  } else {
+    // ── No groups — flat table ──
+    const rows = items.map(li => {
+      const editing = isEditing && estEditingLineItem?.itemId === li.id;
+      return editing ? renderLineItemEditRow(orderId, li) : renderLineItemReadRow(orderId, li);
+    }).join('');
+    sectionsHtml = `
+      <table class="li-table">
+        ${liTableHead()}
+        <tbody id="li-tbody-${escHtml(orderId)}">
+          ${rows || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1rem">No line items yet</td></tr>`}
+        </tbody>
+      </table>`;
+  }
+
   inner.innerHTML = `
     ${notesHtml}
-    <table class="li-table">
-      <thead>
-        <tr>
-          <th style="min-width:140px">Name / Description</th>
-          <th class="num" style="width:90px">Labor</th>
-          <th class="num" style="width:90px">Materials</th>
-          <th class="num" style="width:80px">Other</th>
-          <th class="num" style="width:65px">Markup%</th>
-          <th class="num" style="width:90px">Cost</th>
-          <th class="num" style="width:90px">Price</th>
-          <th style="width:80px"></th>
-        </tr>
-      </thead>
-      <tbody id="li-tbody-${escHtml(orderId)}">
-        ${tableRows || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:1rem">No line items yet</td></tr>`}
-      </tbody>
-    </table>
+    ${sectionsHtml}
     ${items.length ? `
     <div class="order-totals-footer">
       <div class="order-total-item"><span>Total Cost: </span><strong>${fmtCurrencyFull(totalCost)}</strong></div>
       <div class="order-total-item price"><span>Total Price: </span><strong>${fmtCurrencyFull(totalPrice)}</strong></div>
     </div>` : ''}
-    <div class="li-add-row" style="margin-top:0.75rem">
+    <div class="li-add-row" style="margin-top:0.75rem;gap:0.5rem">
       <button class="btn-add-li" onclick="startAddLineItem('${escHtml(orderId)}')">＋ Add line item</button>
+      <button class="btn-add-group" onclick="addGroup('${escHtml(orderId)}')">＋ Add group</button>
     </div>
     ${isEditing && !estEditingLineItem?.itemId ? renderNewLineItemRow(orderId) : ''}`;
+
+  // If renaming, focus the input
+  if (estRenamingGroup) {
+    requestAnimationFrame(() => {
+      const inp = document.getElementById('grp-rename-input');
+      if (inp) { inp.focus(); inp.select(); }
+    });
+  }
+}
+
+function renderGroupBody(orderId, groupItems, isEditing) {
+  if (!groupItems.length) {
+    return `<div style="font-size:0.75rem;color:var(--muted);padding:0.4rem 0 0.2rem;font-style:italic">No items yet</div>`;
+  }
+
+  // Sub-group by cost code category
+  const categories = [];
+  const catMap     = {};
+  groupItems.forEach(li => {
+    const cat = li.costCodeCategory || 'Uncategorized';
+    if (!catMap[cat]) { catMap[cat] = []; categories.push(cat); }
+    catMap[cat].push(li);
+  });
+
+  let html = '';
+  categories.forEach(cat => {
+    const catItems   = catMap[cat];
+    const catTotal   = catItems.reduce((s, li) => s + li.price, 0);
+    const catRows    = catItems.map(li => {
+      const editing = isEditing && estEditingLineItem?.itemId === li.id;
+      return editing ? renderLineItemEditRow(orderId, li) : renderLineItemReadRow(orderId, li);
+    }).join('');
+
+    html += `
+      <div class="cost-cat-label">
+        <span>${escHtml(cat)}</span>
+        <span class="cat-subtotal">${fmtCurrencyFull(catTotal)}</span>
+      </div>
+      <table class="li-table" style="margin-bottom:0.5rem">
+        ${liTableHead()}
+        <tbody>${catRows}</tbody>
+      </table>`;
+  });
+  return html;
 }
 
 function renderLineItemReadRow(orderId, li) {
+  const ccBadge = li.costCodeName
+    ? `<span class="li-cc-badge">${escHtml(li.costCodeNumber)} · ${escHtml(li.costCodeName)}</span>`
+    : '';
   return `
     <tr id="li-row-${escHtml(li.id)}">
       <td>
         <div class="li-name-cell">${escHtml(li.name)}</div>
         ${li.description ? `<div class="li-desc-cell">${escHtml(li.description)}</div>` : ''}
+        ${ccBadge ? `<div style="margin-top:2px">${ccBadge}</div>` : ''}
       </td>
       <td class="num-muted">${li.laborCost > 0 ? fmtCurrencyFull(li.laborCost) : '—'}</td>
       <td class="num-muted">${li.materialsCost > 0 ? fmtCurrencyFull(li.materialsCost) : '—'}</td>
       <td class="num-muted">${li.otherCost > 0 ? fmtCurrencyFull(li.otherCost) : '—'}</td>
-      <td class="num-muted">${li.marginPct}%</td>
+      <td class="num-muted">${li.markupPct}%</td>
       <td class="num">${fmtCurrencyFull(li.totalCost)}</td>
       <td class="num li-price-cell">${fmtCurrencyFull(li.price)}</td>
       <td>
@@ -3668,11 +3893,19 @@ function renderLineItemEditRow(orderId, li) {
       <td>
         <input class="li-input li-input-wide" id="lie-name" value="${escHtml(li.name)}" placeholder="Name *" />
         <input class="li-input" style="margin-top:4px" id="lie-desc" value="${escHtml(li.description||'')}" placeholder="Description (optional)" />
+        <div style="display:flex;gap:0.35rem;margin-top:4px;flex-wrap:wrap">
+          <select class="li-cc-select" id="lie-cost-code" title="Cost code">
+            ${ccSelectOptions(li.costCodeId)}
+          </select>
+          <select class="li-cc-select" id="lie-group" title="Group" style="max-width:130px">
+            ${groupSelectOptions(orderId, li.groupId)}
+          </select>
+        </div>
       </td>
       <td><input class="li-input num li-input-narrow" id="lie-labor" type="number" min="0" step="0.01" value="${li.laborCost}" /></td>
       <td><input class="li-input num li-input-narrow" id="lie-mats"  type="number" min="0" step="0.01" value="${li.materialsCost}" /></td>
       <td><input class="li-input num li-input-narrow" id="lie-other" type="number" min="0" step="0.01" value="${li.otherCost}" /></td>
-      <td><input class="li-input num li-input-narrow" id="lie-margin" type="number" min="0" max="100" step="0.1" value="${li.marginPct}" /></td>
+      <td><input class="li-input num li-input-narrow" id="lie-margin" type="number" min="0" max="100" step="0.1" value="${li.markupPct}" /></td>
       <td class="num" id="lie-preview-cost" style="color:var(--muted);font-size:0.78rem">—</td>
       <td class="num li-price-cell" id="lie-preview-price">—</td>
       <td>
@@ -3685,6 +3918,7 @@ function renderLineItemEditRow(orderId, li) {
 }
 
 function renderNewLineItemRow(orderId) {
+  const hasGroups = (estGroups[orderId] || []).length > 0;
   return `
     <div id="li-new-row-${escHtml(orderId)}" style="margin-top:0.5rem;padding:0.75rem;background:rgba(249,115,22,0.04);border:1px solid rgba(249,115,22,0.15);border-radius:8px">
       <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:0.5rem;margin-bottom:0.6rem">
@@ -3714,9 +3948,26 @@ function renderNewLineItemRow(orderId) {
                  oninput="updateNewPreview()" />
         </div>
       </div>
-      <div style="margin-bottom:0.6rem">
-        <label class="form-label" style="font-size:0.65rem">Description (optional)</label>
-        <input class="li-input" id="lin-desc" placeholder="Brief description" />
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.6rem">
+        <div>
+          <label class="form-label" style="font-size:0.65rem">Description (optional)</label>
+          <input class="li-input" id="lin-desc" placeholder="Brief description" />
+        </div>
+        <div style="display:flex;gap:0.5rem">
+          <div style="flex:1">
+            <label class="form-label" style="font-size:0.65rem">Cost Code</label>
+            <select class="li-input li-cc-select" id="lin-cost-code" style="max-width:100%;width:100%">
+              ${ccSelectOptions(null)}
+            </select>
+          </div>
+          ${hasGroups ? `
+          <div style="flex:1">
+            <label class="form-label" style="font-size:0.65rem">Group</label>
+            <select class="li-input li-cc-select" id="lin-group" style="max-width:100%;width:100%">
+              ${groupSelectOptions(orderId, null)}
+            </select>
+          </div>` : ''}
+        </div>
       </div>
       <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
         <button class="li-save-btn" onclick="submitNewLineItem('${escHtml(orderId)}')">Add Item</button>
@@ -3731,9 +3982,9 @@ function updateNewPreview() {
   const labor  = parseFloat(document.getElementById('lin-labor')?.value  || 0) || 0;
   const mats   = parseFloat(document.getElementById('lin-mats')?.value   || 0) || 0;
   const other  = parseFloat(document.getElementById('lin-other')?.value  || 0) || 0;
-  const margin = parseFloat(document.getElementById('lin-margin')?.value || 20) || 20;
+  const markup = parseFloat(document.getElementById('lin-margin')?.value || 20) || 20;
   const cost   = labor + mats + other;
-  const price  = cost * (1 + margin / 100);
+  const price  = cost * (1 + markup / 100);
   const preview = document.getElementById('lin-preview');
   if (preview && cost > 0) {
     preview.textContent = `Cost: ${fmtCurrencyFull(cost)} → Price: ${fmtCurrencyFull(price)}`;
@@ -3761,9 +4012,9 @@ function updateEditPreview() {
   const labor  = parseFloat(document.getElementById('lie-labor')?.value  || 0) || 0;
   const mats   = parseFloat(document.getElementById('lie-mats')?.value   || 0) || 0;
   const other  = parseFloat(document.getElementById('lie-other')?.value  || 0) || 0;
-  const margin = parseFloat(document.getElementById('lie-margin')?.value || 20) || 20;
+  const markup = parseFloat(document.getElementById('lie-margin')?.value || 20) || 20;
   const cost   = labor + mats + other;
-  const price  = cost * (1 + margin / 100);
+  const price  = cost * (1 + markup / 100);
   const costEl  = document.getElementById('lie-preview-cost');
   const priceEl = document.getElementById('lie-preview-price');
   if (costEl)  costEl.textContent  = fmtCurrencyFull(cost);
@@ -3784,7 +4035,9 @@ async function saveEditLineItem(orderId, itemId) {
     laborCost:     parseFloat(document.getElementById('lie-labor')?.value  || 0) || 0,
     materialsCost: parseFloat(document.getElementById('lie-mats')?.value   || 0) || 0,
     otherCost:     parseFloat(document.getElementById('lie-other')?.value  || 0) || 0,
-    marginPct:     parseFloat(document.getElementById('lie-margin')?.value || 20) || 20,
+    markupPct:     parseFloat(document.getElementById('lie-margin')?.value || 20) || 20,
+    costCodeId:    document.getElementById('lie-cost-code')?.value || null,
+    groupId:       document.getElementById('lie-group')?.value     || null,
   };
   const btn = document.querySelector(`#li-row-${itemId} .li-save-btn`);
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
@@ -3835,7 +4088,9 @@ async function submitNewLineItem(orderId) {
     laborCost:     parseFloat(document.getElementById('lin-labor')?.value  || 0) || 0,
     materialsCost: parseFloat(document.getElementById('lin-mats')?.value   || 0) || 0,
     otherCost:     parseFloat(document.getElementById('lin-other')?.value  || 0) || 0,
-    marginPct:     parseFloat(document.getElementById('lin-margin')?.value || 20) || 20,
+    markupPct:     parseFloat(document.getElementById('lin-margin')?.value || 20) || 20,
+    costCodeId:    document.getElementById('lin-cost-code')?.value || null,
+    groupId:       document.getElementById('lin-group')?.value     || null,
   };
   const btn = document.querySelector(`#li-new-row-${orderId} .li-save-btn`);
   if (btn) { btn.disabled = true; btn.textContent = 'Adding…'; }
@@ -3866,6 +4121,97 @@ async function deleteLineItem(orderId, itemId) {
   } catch (err) {
     alert('Delete failed: ' + err.message);
   }
+}
+
+// ── Group management ──────────────────────────
+async function addGroup(orderId) {
+  const name = prompt('Group name (e.g. Bathroom Remodel, Landscape):');
+  if (!name?.trim()) return;
+  try {
+    const data = await apiPost('/api/order-groups', { order_id: orderId, name: name.trim() });
+    if (!estGroups[orderId]) estGroups[orderId] = [];
+    estGroups[orderId].push(data.group);
+    renderLineItemsInOrder(orderId);
+  } catch (err) {
+    alert('Failed to add group: ' + err.message);
+  }
+}
+
+async function deleteGroup(orderId, groupId) {
+  const group = (estGroups[orderId] || []).find(g => g.id === groupId);
+  if (!confirm(`Delete group "${group?.name || 'this group'}"?\nLine items in it will become ungrouped (not deleted).`)) return;
+  try {
+    await fetch(`/api/order-groups?id=${groupId}`, { method: 'DELETE', headers: authHeaders() });
+    estGroups[orderId] = (estGroups[orderId] || []).filter(g => g.id !== groupId);
+    // Un-group line items in memory
+    (estLineItems[orderId] || []).forEach(li => {
+      if (li.groupId === groupId) li.groupId = null;
+    });
+    renderLineItemsInOrder(orderId);
+  } catch (err) {
+    alert('Delete failed: ' + err.message);
+  }
+}
+
+async function moveGroupUp(orderId, groupId) {
+  const groups = estGroups[orderId] || [];
+  const idx    = groups.findIndex(g => g.id === groupId);
+  if (idx <= 0) return;
+  [groups[idx - 1], groups[idx]] = [groups[idx], groups[idx - 1]];
+  reassignGroupSortOrders(orderId);
+  renderLineItemsInOrder(orderId);
+  await persistGroupOrder(orderId);
+}
+
+async function moveGroupDown(orderId, groupId) {
+  const groups = estGroups[orderId] || [];
+  const idx    = groups.findIndex(g => g.id === groupId);
+  if (idx < 0 || idx >= groups.length - 1) return;
+  [groups[idx], groups[idx + 1]] = [groups[idx + 1], groups[idx]];
+  reassignGroupSortOrders(orderId);
+  renderLineItemsInOrder(orderId);
+  await persistGroupOrder(orderId);
+}
+
+function reassignGroupSortOrders(orderId) {
+  (estGroups[orderId] || []).forEach((g, i) => { g.sortOrder = i; });
+}
+
+async function persistGroupOrder(orderId) {
+  const body = (estGroups[orderId] || []).map(g => ({ id: g.id, sort_order: g.sortOrder }));
+  try {
+    await apiPatch('/api/order-groups?action=reorder', body);
+  } catch (_) { /* best-effort */ }
+}
+
+function startGroupRename(orderId, groupId) {
+  estRenamingGroup = groupId;
+  renderLineItemsInOrder(orderId);
+}
+
+function cancelGroupRename(orderId) {
+  estRenamingGroup = null;
+  renderLineItemsInOrder(orderId);
+}
+
+function handleGroupRenameKey(e, orderId, groupId) {
+  if (e.key === 'Enter')  { e.preventDefault(); saveGroupRename(orderId, groupId); }
+  if (e.key === 'Escape') { e.preventDefault(); cancelGroupRename(orderId); }
+}
+
+async function saveGroupRename(orderId, groupId) {
+  const inp  = document.getElementById('grp-rename-input');
+  const name = inp?.value.trim();
+  if (!name) { cancelGroupRename(orderId); return; }
+  estRenamingGroup = null;
+  try {
+    const data = await apiPatch(`/api/order-groups?id=${groupId}`, { name });
+    const idx  = (estGroups[orderId] || []).findIndex(g => g.id === groupId);
+    if (idx !== -1 && data.group) estGroups[orderId][idx] = data.group;
+  } catch (err) {
+    alert('Rename failed: ' + err.message);
+  }
+  renderLineItemsInOrder(orderId);
 }
 
 // ── Refresh order card after any line item change ──
@@ -4009,7 +4355,7 @@ async function duplicateOrder(orderId) {
           laborCost:     li.laborCost,
           materialsCost: li.materialsCost,
           otherCost:     li.otherCost,
-          marginPct:     li.marginPct,
+          markupPct:     li.markupPct,
           sortOrder:     li.sortOrder ?? idx,
         })
       )
