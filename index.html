@@ -527,6 +527,29 @@
   .contact-expand-actions { display:flex; gap:0.5rem; margin-top:0.85rem; }
   .contact-empty { text-align:center; color:var(--muted); padding:3rem 1rem; font-size:0.85rem; }
   .contacts-count { font-size:0.72rem; color:var(--muted); margin-bottom:0.75rem; }
+
+  /* ─── SPLIT BUTTON ─── */
+  .btn-split { background:rgba(139,92,246,0.15); color:#a78bfa; border:1px solid rgba(139,92,246,0.3); padding:0.5rem 1rem; border-radius:8px; font-size:0.82rem; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; }
+  .btn-split:hover { background:rgba(139,92,246,0.25); }
+
+  /* ─── SPLIT MODAL ─── */
+  .split-row { display:grid; grid-template-columns:1fr 1fr 7rem 1.75rem; gap:0.5rem; align-items:end; margin-bottom:0.7rem; }
+  @media(max-width:520px) { .split-row { grid-template-columns:1fr 1fr; gap:0.4rem; } }
+  .split-row-label { font-size:0.68rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.25rem; }
+  .split-row select { width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:0.48rem 0.65rem; font-size:0.83rem; font-family:'Inter',sans-serif; color-scheme:dark; transition:border-color 0.15s; box-sizing:border-box; }
+  .split-row select:focus { outline:none; border-color:var(--accent); }
+  .split-row select option { background:#1a1a2e; color:#e2e8f0; }
+  .split-amount { width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:0.48rem 0.65rem; font-size:0.83rem; font-family:'Inter',sans-serif; box-sizing:border-box; transition:border-color 0.15s; }
+  .split-amount:focus { outline:none; border-color:var(--accent); }
+  .btn-split-remove { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; padding:0; line-height:1; align-self:center; margin-bottom:0.1rem; }
+  .btn-split-remove:hover { color:#f87171; }
+  .btn-split-remove:disabled { opacity:0.25; cursor:default; }
+  .split-divider { border:none; border-top:1px solid var(--border); margin:0.25rem 0 0.75rem; }
+  .split-remaining-bar { display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; padding:0.5rem 0.75rem; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:8px; margin:0.5rem 0; color:var(--muted); transition:border-color 0.2s, color 0.2s; }
+  .split-remaining-bar.ok   { border-color:rgba(34,197,94,0.4);  color:var(--green); }
+  .split-remaining-bar.over { border-color:rgba(239,68,68,0.4);  color:#f87171; }
+  .btn-split-add { background:none; border:none; color:var(--accent); cursor:pointer; font-size:0.8rem; font-family:'Inter',sans-serif; padding:0.2rem 0; display:inline-block; }
+  .btn-split-add:hover { text-decoration:underline; }
 </style>
 </head>
 <body>
@@ -937,6 +960,30 @@
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeNewProject()">Cancel</button>
       <button class="btn" onclick="submitNewProject()">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SPLIT TRANSACTION MODAL
+════════════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="split-modal">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-title">✂️ Split Transaction</div>
+    <div id="split-modal-info" style="font-size:0.84rem;color:var(--muted);margin-bottom:1.1rem;line-height:1.5"></div>
+
+    <div id="split-rows-container"></div>
+
+    <button class="btn-split-add" onclick="addSplitRow()">+ Add another split</button>
+
+    <div class="split-remaining-bar" id="split-remaining-bar">
+      <span>Remaining</span>
+      <span id="split-remaining-val">—</span>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeSplitModal()">Cancel</button>
+      <button class="btn" id="split-confirm-btn" onclick="submitSplit()" disabled>Confirm Split</button>
     </div>
   </div>
 </div>
@@ -1463,6 +1510,7 @@ function renderTxCard(tx) {
     </div>
     <div class="tx-coding-actions">
       <button class="btn-code" onclick="submitTxCode('${tx.id}')">Save</button>
+      <button class="btn-split" onclick="openSplitModal('${tx.id}')">✂️ Split</button>
       <button class="btn-review" onclick="submitTxStatus('${tx.id}','review')">⚑ Flag for Review</button>
       <button class="btn-exclude" onclick="submitTxStatus('${tx.id}','excluded')">✕ Exclude</button>
     </div>
@@ -2765,6 +2813,274 @@ document.getElementById('contact-modal').addEventListener('click', e => {
 });
 
 // Contacts load triggered by showTab above
+
+/* ══════════════════════════════════════════════
+   SPLIT TRANSACTION MODAL
+══════════════════════════════════════════════ */
+
+let splitTxId = null; // id of transaction being split
+
+/**
+ * Open the split modal for a given transaction.
+ * Pre-populates with 2 rows — first carrying the full amount.
+ */
+function openSplitModal(txId) {
+  const tx = inboxTxAll.find(t => t.id === txId);
+  if (!tx) return;
+  splitTxId = txId;
+
+  const amount   = Number(tx.amount) || 0;
+  const merchant = tx.merchant || tx.description || '—';
+  const dateStr  = fmtDate(tx.date);
+  const amtFmt   = (amount < 0 ? '-' : '') + fmtCurrency(Math.abs(amount));
+
+  // Header info line
+  document.getElementById('split-modal-info').innerHTML =
+    `<strong>${escHtml(merchant)}</strong> &nbsp;·&nbsp; ${dateStr}` +
+    ` &nbsp;·&nbsp; <span style="color:var(--accent);font-weight:700">${amtFmt}</span>` +
+    `<br><span style="font-size:0.76rem">Divide this amount across 2 or more jobs. Amounts must add up exactly.</span>`;
+
+  // Build 2 empty rows
+  const container = document.getElementById('split-rows-container');
+  container.innerHTML = '';
+  _appendSplitRow();
+  _appendSplitRow();
+
+  // Pre-fill first row with the full amount so the user just picks a job
+  const firstAmt = document.getElementById('split-amt-0');
+  if (firstAmt) firstAmt.value = Math.abs(amount).toFixed(2);
+
+  updateSplitRemaining();
+  document.getElementById('split-modal').classList.remove('hidden');
+
+  // Focus first job select
+  const firstSel = document.getElementById('split-job-0');
+  if (firstSel) setTimeout(() => firstSel.focus(), 50);
+}
+
+/** Build and append a new split row into the container. */
+function _appendSplitRow() {
+  const container = document.getElementById('split-rows-container');
+  const idx       = container.querySelectorAll('.split-row').length;
+
+  // Job options
+  const jobOpts = `<option value="">— No Job —</option>` +
+    inboxJobs.map(j =>
+      `<option value="${escHtml(j.id)}">${escHtml(j.name)}</option>`
+    ).join('');
+
+  // Cost code options grouped by category
+  const CC_CATEGORY_ORDER = [
+    'General', 'Preconstruction', 'Site Work', 'Structure & Envelope',
+    'MEP', 'Finishes', 'Fixtures & Features', 'Exterior',
+  ];
+  const ccByCategory = {};
+  inboxCostCodes.forEach(cc => {
+    if (!ccByCategory[cc.category]) ccByCategory[cc.category] = [];
+    ccByCategory[cc.category].push(cc);
+  });
+  const sortedCats = [
+    ...CC_CATEGORY_ORDER.filter(c => ccByCategory[c]),
+    ...Object.keys(ccByCategory).filter(c => !CC_CATEGORY_ORDER.includes(c)),
+  ];
+  const ccOpts = `<option value="">— No Code —</option>` +
+    sortedCats.map(cat => {
+      const codes = ccByCategory[cat];
+      return `<optgroup label="${escHtml(cat)}">${
+        codes.map(cc =>
+          `<option value="${escHtml(cc.id)}">${cc.number} · ${escHtml(cc.name)}</option>`
+        ).join('')
+      }</optgroup>`;
+    }).join('');
+
+  const row = document.createElement('div');
+  row.className = 'split-row';
+  row.dataset.idx = idx;
+  row.innerHTML = `
+    <div>
+      <div class="split-row-label">Split ${idx + 1} — Job</div>
+      <select id="split-job-${idx}">${jobOpts}</select>
+    </div>
+    <div>
+      <div class="split-row-label">Cost Code</div>
+      <select id="split-cc-${idx}">${ccOpts}</select>
+    </div>
+    <div>
+      <div class="split-row-label">Amount ($)</div>
+      <input type="number" class="split-amount" id="split-amt-${idx}"
+        min="0.01" step="0.01" placeholder="0.00"
+        oninput="updateSplitRemaining()">
+    </div>
+    <button class="btn-split-remove" title="Remove row"
+      onclick="removeSplitRow(${idx})">✕</button>
+  `;
+  container.appendChild(row);
+  _refreshRemoveButtons();
+}
+
+/** Add a new split row (triggered by "+ Add another split" button). */
+function addSplitRow() {
+  _appendSplitRow();
+  updateSplitRemaining();
+  // Focus the new row's job select
+  const rows = document.querySelectorAll('#split-rows-container .split-row');
+  const lastRow = rows[rows.length - 1];
+  if (lastRow) {
+    const sel = lastRow.querySelector('select');
+    if (sel) setTimeout(() => sel.focus(), 30);
+  }
+}
+
+/** Remove a split row by index, preserving the other rows' values. */
+function removeSplitRow(targetIdx) {
+  const container = document.getElementById('split-rows-container');
+  const rows = container.querySelectorAll('.split-row');
+  if (rows.length <= 2) return; // enforce minimum 2 splits
+
+  // Capture current values of all rows except the removed one
+  const saved = [];
+  rows.forEach((_, i) => {
+    if (i === targetIdx) return;
+    saved.push({
+      job_id:       document.getElementById(`split-job-${i}`)?.value || '',
+      cost_code_id: document.getElementById(`split-cc-${i}`)?.value  || '',
+      amount:       document.getElementById(`split-amt-${i}`)?.value  || '',
+    });
+  });
+
+  // Rebuild rows with saved values
+  container.innerHTML = '';
+  saved.forEach(v => {
+    _appendSplitRow();
+    const i = container.querySelectorAll('.split-row').length - 1;
+    const jobSel  = document.getElementById(`split-job-${i}`);
+    const ccSel   = document.getElementById(`split-cc-${i}`);
+    const amtInp  = document.getElementById(`split-amt-${i}`);
+    const label   = container.querySelectorAll('.split-row')[i]?.querySelector('.split-row-label');
+    if (jobSel)  jobSel.value  = v.job_id;
+    if (ccSel)   ccSel.value   = v.cost_code_id;
+    if (amtInp)  amtInp.value  = v.amount;
+    if (label)   label.textContent = `Split ${i + 1} — Job`;
+  });
+
+  updateSplitRemaining();
+}
+
+/** Disable remove buttons when only 2 rows remain. */
+function _refreshRemoveButtons() {
+  const container = document.getElementById('split-rows-container');
+  if (!container) return;
+  const rows = container.querySelectorAll('.split-row');
+  rows.forEach(row => {
+    const btn = row.querySelector('.btn-split-remove');
+    if (btn) btn.disabled = rows.length <= 2;
+  });
+}
+
+/** Recalculate remaining amount and update the balance bar + confirm button. */
+function updateSplitRemaining() {
+  const tx = inboxTxAll.find(t => t.id === splitTxId);
+  if (!tx) return;
+
+  const origAmount = Math.abs(Number(tx.amount) || 0);
+
+  let total = 0;
+  document.querySelectorAll('#split-rows-container .split-amount').forEach(inp => {
+    total += parseFloat(inp.value || 0) || 0;
+  });
+
+  const remaining  = origAmount - total;
+  const isBalanced = Math.abs(remaining) < 0.015;
+
+  const bar     = document.getElementById('split-remaining-bar');
+  const valEl   = document.getElementById('split-remaining-val');
+  const confirm = document.getElementById('split-confirm-btn');
+
+  bar.className = 'split-remaining-bar' +
+    (isBalanced ? ' ok' : remaining < 0 ? ' over' : '');
+
+  if (isBalanced) {
+    valEl.textContent = '✓ Balanced';
+  } else if (remaining < 0) {
+    valEl.textContent = `Over by ${fmtCurrency(Math.abs(remaining))}`;
+  } else {
+    valEl.textContent = `${fmtCurrency(remaining)} remaining`;
+  }
+
+  confirm.disabled = !isBalanced;
+  _refreshRemoveButtons();
+}
+
+/** Close and reset the split modal. */
+function closeSplitModal() {
+  document.getElementById('split-modal').classList.add('hidden');
+  splitTxId = null;
+}
+
+/** Collect rows, validate, and POST to /api/transactions/split. */
+async function submitSplit() {
+  const tx = inboxTxAll.find(t => t.id === splitTxId);
+  if (!tx) return;
+
+  const rows   = document.querySelectorAll('#split-rows-container .split-row');
+  const splits = [];
+  let valid    = true;
+
+  rows.forEach((_, i) => {
+    const jobId  = document.getElementById(`split-job-${i}`)?.value || '';
+    const ccId   = document.getElementById(`split-cc-${i}`)?.value  || '';
+    const amount = parseFloat(document.getElementById(`split-amt-${i}`)?.value || 0);
+    if (!jobId || !ccId || !amount || amount <= 0) { valid = false; return; }
+    splits.push({ job_id: jobId, cost_code_id: ccId, amount });
+  });
+
+  if (!valid || splits.length < 2) {
+    alert('Each split must have a job, a cost code, and a positive amount.');
+    return;
+  }
+
+  const confirmBtn = document.getElementById('split-confirm-btn');
+  confirmBtn.disabled  = true;
+  confirmBtn.textContent = 'Splitting…';
+
+  try {
+    const data = await apiPost('/api/transactions/split', {
+      original_id: splitTxId,
+      splits,
+    });
+
+    if (data?.ok) {
+      const n = data.splits_created;
+      closeSplitModal();
+
+      // Remove original from local list
+      const removedId = splitTxId;
+      inboxTxAll = inboxTxAll.filter(t => t.id !== removedId);
+      inboxUncodedCount = data.uncoded_count ?? Math.max(0, inboxUncodedCount - 1);
+      updateInboxRemaining(inboxUncodedCount);
+
+      const next = inboxTxAll.find(t => t.status === 'uncoded');
+      inboxExpanded = null;
+      renderInboxList(inboxTxAll);
+      if (inboxFilter === 'uncoded' && next) expandTxCard(next.id);
+
+      showCopyToast(`✂️ Split into ${n} transactions`);
+    } else {
+      alert('Failed to split: ' + (data?.error || 'Unknown error'));
+      confirmBtn.disabled  = false;
+      confirmBtn.textContent = 'Confirm Split';
+    }
+  } catch (err) {
+    alert('Error: ' + err.message);
+    confirmBtn.disabled  = false;
+    confirmBtn.textContent = 'Confirm Split';
+  }
+}
+
+// Close split modal on overlay click
+document.getElementById('split-modal').addEventListener('click', e => {
+  if (e.target.id === 'split-modal') closeSplitModal();
+});
 </script>
 </body>
 </html>
