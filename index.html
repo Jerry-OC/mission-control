@@ -1462,7 +1462,7 @@ function renderTxCard(tx) {
         onkeydown="if(event.key==='Enter'){event.preventDefault();submitTxCode('${tx.id}')}">
     </div>
     <div class="tx-coding-actions">
-      <button class="btn-code" onclick="submitTxCode('${tx.id}')">✓ Code It</button>
+      <button class="btn-code" onclick="submitTxCode('${tx.id}')">Save</button>
       <button class="btn-review" onclick="submitTxStatus('${tx.id}','review')">⚑ Flag for Review</button>
       <button class="btn-exclude" onclick="submitTxStatus('${tx.id}','excluded')">✕ Exclude</button>
     </div>
