@@ -1,8 +1,65 @@
-// /api/jobs — Live JobTread active jobs
+// /api/jobs — Job data
+//   GET /api/jobs                     → JobTread active jobs (live)
+//   GET /api/jobs?source=estimating   → Supabase jobs with estimating totals
+
+import { requireAuth } from './_auth.js';
+
+const SB_URL = process.env.SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
+
+function sbHeaders() {
+  return {
+    'apikey':        SB_KEY,
+    'Authorization': `Bearer ${SB_KEY}`,
+    'Content-Type':  'application/json',
+  };
+}
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SB_URL}/rest/v1${path}`, {
+    ...options,
+    headers: { ...sbHeaders(), ...(options.headers || {}) },
+  });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!res.ok) throw new Error(data?.message || data?.error || `Supabase ${res.status}`);
+  return data;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 's-maxage=120'); // cache 2 min
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') { res.status(204).end(); return; }
 
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
+  // ── Estimating source: Supabase job_estimating_summary view ──────────
+  if (req.query?.source === 'estimating') {
+    if (!requireAuth(req, res)) return;
+    try {
+      const jobs = await sbFetch('/job_estimating_summary?select=*&order=name.asc');
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).json({
+        jobs: (jobs || []).map(j => ({
+          id:                   j.id,
+          name:                 j.name,
+          status:               j.status,
+          totalEstimatedCost:   Number(j.total_estimated_cost  ?? 0),
+          totalEstimatedPrice:  Number(j.total_estimated_price ?? 0),
+          contractCost:         Number(j.contract_cost         ?? 0),
+          contractPrice:        Number(j.contract_price        ?? 0),
+          orderCount:           Number(j.order_count           ?? 0),
+          signedOrderCount:     Number(j.signed_order_count    ?? 0),
+        })),
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  // ── Default: JobTread active jobs ─────────────────────────────────────
+  res.setHeader('Cache-Control', 's-maxage=120'); // cache 2 min
   try {
     const response = await fetch('https://api.jobtread.com/pave', {
       method: 'POST',
@@ -37,7 +94,7 @@ export default async function handler(req, res) {
     const data = await response.json();
     const jobs = data?.organization?.jobs || [];
 
-    res.json({
+    return res.json({
       jobs: jobs.map(j => ({
         id: j.id,
         name: j.name,
@@ -56,6 +113,6 @@ export default async function handler(req, res) {
       totalValue: jobs.reduce((sum, j) => sum + (j.totalContractValue || 0), 0)
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }

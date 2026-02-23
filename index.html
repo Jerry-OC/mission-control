@@ -3344,7 +3344,7 @@ async function loadEstimating() {
 
 async function fetchEstJobs() {
   try {
-    const data = await apiFetch('/api/estimate-jobs');
+    const data = await apiFetch('/api/jobs?source=estimating');
     estJobs = data.jobs || [];
     estJobsLoaded = true;
     renderEstJobSelect();
@@ -3385,7 +3385,7 @@ async function fetchEstOrders(jobId) {
   try {
     const [ordersData, jobsData] = await Promise.all([
       apiFetch(`/api/orders?job_id=${jobId}`),
-      apiFetch('/api/estimate-jobs'),
+      apiFetch('/api/jobs?source=estimating'),
     ]);
     estOrders = ordersData.orders || [];
     estJobs   = jobsData.jobs    || [];
@@ -3794,7 +3794,7 @@ async function refreshOrderCard(orderId) {
     }
     card.replaceWith(newCard);
     // Refresh job metrics
-    const jobsData = await apiFetch('/api/estimate-jobs');
+    const jobsData = await apiFetch('/api/jobs?source=estimating');
     estJobs = jobsData.jobs || [];
     const job = estJobs.find(j => j.id === estSelectedJobId);
     renderEstMetrics(job);
