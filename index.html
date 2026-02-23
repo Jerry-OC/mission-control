@@ -1383,20 +1383,30 @@ function renderTxCard(tx) {
       ).join('')
     : `<option value="">No jobs loaded</option>`;
 
-  // Cost code options grouped by category
+  // Cost code options grouped by category (in logical build order)
+  const CC_CATEGORY_ORDER = [
+    'General', 'Preconstruction', 'Site Work', 'Structure & Envelope',
+    'MEP', 'Finishes', 'Fixtures & Features', 'Exterior'
+  ];
   const ccByCategory = {};
   inboxCostCodes.forEach(cc => {
     if (!ccByCategory[cc.category]) ccByCategory[cc.category] = [];
     ccByCategory[cc.category].push(cc);
   });
+  // Sort categories in defined order, then any unknown ones at the end
+  const sortedCategories = [
+    ...CC_CATEGORY_ORDER.filter(c => ccByCategory[c]),
+    ...Object.keys(ccByCategory).filter(c => !CC_CATEGORY_ORDER.includes(c))
+  ];
   const ccOptions = `<option value="">— No Code —</option>` +
-    Object.entries(ccByCategory).map(([cat, codes]) =>
-      `<optgroup label="${escHtml(cat)}">${
+    sortedCategories.map(cat => {
+      const codes = ccByCategory[cat];
+      return `<optgroup label="${escHtml(cat)}">${
         codes.map(cc =>
           `<option value="${escHtml(cc.id)}" ${tx.cost_code_id === cc.id ? 'selected' : ''}>${cc.number} · ${escHtml(cc.name)}</option>`
         ).join('')
-      }</optgroup>`
-    ).join('');
+      }</optgroup>`;
+    }).join('');
 
   // Auto-suggest job hint
   const merchantUpper = merchant.toUpperCase();

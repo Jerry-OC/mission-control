@@ -48,7 +48,7 @@ export default async function handler(req, res) {
       // Resource: cost codes list
       if (resource === 'cost_codes') {
         const rows = await sql(
-          `SELECT id, number, name, category FROM cost_codes ORDER BY category, CAST(number AS INTEGER) NULLS LAST, number`
+          `SELECT id, number, name, category FROM cost_codes ORDER BY CAST(number AS INTEGER)`
         );
         return res.json({ cost_codes: rows });
       }
