@@ -377,6 +377,19 @@
   .state-loading { text-align:center; padding:2rem; color:var(--muted); font-size:0.85rem; }
   .state-error { text-align:center; padding:1.5rem; color:var(--red); font-size:0.82rem; background:rgba(239,68,68,0.06); border-radius:8px; border:1px solid rgba(239,68,68,0.15); }
 
+  /* ─── SKELETON LOADERS ─── */
+  @keyframes shimmer {
+    0%   { background-position:-800px 0 }
+    100% { background-position: 800px 0 }
+  }
+  .skel {
+    display:block;
+    background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.09) 50%,rgba(255,255,255,0.04) 75%);
+    background-size:1600px 100%;
+    animation:shimmer 1.8s infinite linear;
+    border-radius:5px;
+  }
+
   /* ─── TASKS ─── */
   .tasks-header { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-bottom:1rem; }
   .tasks-header h2 { margin:0; flex:1; }
@@ -924,7 +937,7 @@
 <div id="tab-jobs" class="tab-panel">
   <h2>Active Jobs</h2>
   <div id="jobs-list">
-    <div class="state-loading">Loading jobs…</div>
+    <!-- skeleton populated by loadData() -->
   </div>
 </div>
 
@@ -932,7 +945,7 @@
 <div id="tab-inbox" class="tab-panel">
   <div class="inbox-header">
     <h2>💸 Cost Inbox</h2>
-    <span class="inbox-remaining" id="inbox-remaining">Loading…</span>
+    <span class="inbox-remaining" id="inbox-remaining"></span>
     <button onclick="inboxLoaded=false; loadInbox(true)" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:0.3rem 0.65rem;font-size:0.82rem;cursor:pointer;" title="Refresh">↺</button>
   </div>
 
@@ -945,7 +958,7 @@
   </div>
 
   <div id="inbox-list" class="tx-list">
-    <div class="state-loading">Loading transactions…</div>
+    <!-- skeleton populated by fetchInboxTransactions() -->
   </div>
 
   <div class="tx-load-more" id="inbox-load-more" style="display:none">
@@ -1048,7 +1061,7 @@
 
   <div class="contacts-count" id="contacts-count"></div>
   <div class="contacts-list" id="contacts-list">
-    <div class="state-loading">Loading contacts…</div>
+    <!-- skeleton populated by fetchContacts() -->
   </div>
 </div>
 
@@ -1689,7 +1702,7 @@ async function loadInbox(forceReload) {
 
 async function fetchInboxTransactions() {
   const container = document.getElementById('inbox-list');
-  container.innerHTML = '<div class="state-loading">Loading…</div>';
+  container.innerHTML = skelTxCards(6);
 
   try {
     const status = inboxFilter;
@@ -2185,6 +2198,77 @@ function escHtml(str) {
 
 
 /* ══════════════════════════════════════════════
+   SKELETON LOADERS
+══════════════════════════════════════════════ */
+function skelJobs(n = 3) {
+  const widths = [['52%','34%'],['45%','40%'],['58%','30%']];
+  return Array.from({length: n}, (_, i) => {
+    const [w1, w2] = widths[i % widths.length];
+    return `
+<div class="job-card" style="pointer-events:none">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+    <div style="flex:1">
+      <span class="skel" style="height:1rem;width:${w1};margin-bottom:0.45rem"></span>
+      <span class="skel" style="height:0.7rem;width:${w2}"></span>
+    </div>
+    <span class="skel" style="height:1.4rem;width:3.5rem;border-radius:20px;flex-shrink:0;margin-left:1rem"></span>
+  </div>
+  <span class="skel" style="height:0.7rem;width:100%;margin-bottom:0.42rem"></span>
+  <span class="skel" style="height:0.7rem;width:100%;margin-bottom:0.42rem"></span>
+  <span class="skel" style="height:0.7rem;width:100%;margin-bottom:0.85rem"></span>
+  <span class="skel" style="height:6px;width:100%;border-radius:3px"></span>
+  <span class="skel" style="height:0.6rem;width:22%;margin-top:0.42rem"></span>
+</div>`;
+  }).join('');
+}
+
+function skelInvoiceRows(n = 5) {
+  const nameWidths  = ['80%','70%','75%','65%','85%'];
+  const invWidths   = ['60%','70%','55%','75%','62%'];
+  const dateWidths  = ['50%','55%','45%','52%','48%'];
+  const amtWidths   = ['40%','45%','38%','42%','44%'];
+  return Array.from({length: n}, (_, i) => `
+<tr style="pointer-events:none">
+  <td><span class="skel" style="height:0.75rem;width:${nameWidths[i%nameWidths.length]}"></span></td>
+  <td><span class="skel" style="height:0.75rem;width:${invWidths[i%invWidths.length]}"></span></td>
+  <td><span class="skel" style="height:0.75rem;width:${dateWidths[i%dateWidths.length]}"></span></td>
+  <td><span class="skel" style="height:0.75rem;width:${amtWidths[i%amtWidths.length]}"></span></td>
+  <td><span class="skel" style="height:1.25rem;width:3.2rem;border-radius:20px"></span></td>
+</tr>`).join('');
+}
+
+function skelTxCards(n = 6) {
+  const nameW = ['58%','45%','62%','38%','52%','66%'];
+  const metaW = ['30%','42%','28%','38%','34%','44%'];
+  return Array.from({length: n}, (_, i) => `
+<div class="tx-card" style="pointer-events:none">
+  <div class="tx-card-header" style="cursor:default">
+    <div class="tx-merchant">
+      <span class="skel" style="height:0.85rem;width:${nameW[i%nameW.length]};margin-bottom:0.42rem"></span>
+      <span class="skel" style="height:0.7rem;width:${metaW[i%metaW.length]}"></span>
+    </div>
+    <span class="skel" style="height:1rem;width:4rem;border-radius:4px;flex-shrink:0;margin:0 0.75rem"></span>
+    <span class="skel" style="height:1.4rem;width:4rem;border-radius:20px;flex-shrink:0"></span>
+  </div>
+</div>`).join('');
+}
+
+function skelContactCards(n = 8) {
+  const nameW = ['55%','48%','62%','44%','58%','50%','54%','46%'];
+  const subW  = ['38%','45%','30%','52%','36%','42%','40%','34%'];
+  return Array.from({length: n}, (_, i) => `
+<div class="contact-card" style="pointer-events:none">
+  <div class="contact-card-header" style="cursor:default">
+    <div class="contact-avatar" style="background:rgba(255,255,255,0.05);color:transparent;flex-shrink:0">AA</div>
+    <div style="flex:1;min-width:0">
+      <span class="skel" style="height:0.85rem;width:${nameW[i%nameW.length]};margin-bottom:0.45rem"></span>
+      <span class="skel" style="height:0.7rem;width:${subW[i%subW.length]}"></span>
+    </div>
+  </div>
+</div>`).join('');
+}
+
+/* ══════════════════════════════════════════════
    LIVE DATA LOADING
 ══════════════════════════════════════════════ */
 async function loadData() {
@@ -2193,6 +2277,12 @@ async function loadData() {
   const headers = token
     ? { 'Authorization': `Bearer ${token}` }
     : {};
+
+  // Show skeletons immediately while data loads
+  const jobsEl = document.getElementById('jobs-list');
+  if (jobsEl) jobsEl.innerHTML = skelJobs(3);
+  const invoiceEl = document.getElementById('invoice-rows');
+  if (invoiceEl) invoiceEl.innerHTML = skelInvoiceRows(5);
 
   let jobsData, inboxData, invoicesData;
 
@@ -3059,6 +3149,10 @@ function toggleContact(id) {
 }
 
 async function fetchContacts(search = '', type = '') {
+  const list = document.getElementById('contacts-list');
+  const count = document.getElementById('contacts-count');
+  if (list) list.innerHTML = skelContactCards(8);
+  if (count) count.textContent = '';
   try {
     const params = new URLSearchParams({ limit: 500 });
     if (search) params.set('search', search);
@@ -3068,7 +3162,7 @@ async function fetchContacts(search = '', type = '') {
     allContacts = data.contacts || [];
     renderContacts(allContacts);
   } catch (err) {
-    document.getElementById('contacts-list').innerHTML = `<div class="state-error">Failed to load: ${err.message}</div>`;
+    if (list) list.innerHTML = `<div class="state-error">Failed to load: ${err.message}</div>`;
   }
 }
 
