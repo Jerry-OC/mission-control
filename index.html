@@ -868,11 +868,16 @@ function getToken() {
 function showApp() {
   document.getElementById('auth-overlay').classList.add('hidden');
   document.getElementById('app').style.display = 'block';
-  // Restore last active tab
-  const lastTab = localStorage.getItem('mc_active_tab') || 'dashboard';
-  const btn = [...document.querySelectorAll('nav button')].find(b => b.getAttribute('onclick')?.includes(`'${lastTab}'`));
-  if (btn) showTab(lastTab, btn);
   loadData();
+  // Restore last active tab from hash or localStorage
+  const hash    = window.location.hash.replace('#', '');
+  const lastTab = hash || localStorage.getItem('mc_active_tab') || 'dashboard';
+  const tabs    = ['dashboard','jobs','inbox','revenue','agents','tasks','contacts'];
+  const target  = tabs.includes(lastTab) ? lastTab : 'dashboard';
+  if (target !== 'dashboard') {
+    const btn = [...document.querySelectorAll('nav button')].find(b => b.getAttribute('onclick')?.includes(`'${target}'`));
+    if (btn) showTab(target, btn);
+  }
 }
 
 function showAuthOverlay() {
@@ -978,6 +983,7 @@ function showTab(name, btn) {
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
   localStorage.setItem('mc_active_tab', name);
+  history.replaceState(null, '', '#' + name);
   if (name === 'tasks') fetchTasks();
   if (name === 'agents') fetchAgents();
   if (name === 'contacts') fetchContacts(contactSearchTerm, contactFilter);
