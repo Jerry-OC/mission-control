@@ -61,13 +61,17 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Transaction not found' });
     }
     const orig = origRows[0];
-    const origAmount = parseFloat(orig.amount);
+    const origAmount    = parseFloat(orig.amount);
+    const origAbsolute  = Math.abs(origAmount);
+    // Negative original = credit; frontend always sends positive split amounts.
+    // We compare absolute values, then apply the original sign to each child.
+    const sign          = origAmount < 0 ? -1 : 1;
 
-    // ── Validate split amounts sum to original ──────────────
+    // ── Validate split amounts sum to original (absolute) ───
     const splitTotal = splits.reduce((sum, s) => sum + parseFloat(s.amount), 0);
-    if (Math.abs(splitTotal - origAmount) > 0.015) {
+    if (Math.abs(splitTotal - origAbsolute) > 0.015) {
       return res.status(400).json({
-        error: `Split amounts (${splitTotal.toFixed(2)}) must equal original amount (${origAmount.toFixed(2)})`,
+        error: `Split amounts (${splitTotal.toFixed(2)}) must equal original amount (${origAbsolute.toFixed(2)})`,
       });
     }
 
@@ -84,7 +88,8 @@ export default async function handler(req, res) {
 
     // ── Insert child split records ───────────────────────────
     for (const s of splits) {
-      const splitAmt   = parseFloat(s.amount).toFixed(2);
+      // Preserve sign of original (credit stays negative, debit stays positive)
+      const splitAmt   = (sign * Math.abs(parseFloat(s.amount))).toFixed(2);
       const splitNotes = s.notes
         ? esc(s.notes)
         : esc(`Split from tx ${original_id}`);

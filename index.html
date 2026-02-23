@@ -1749,7 +1749,7 @@ function renderTxCard(tx) {
     </div>
     <div class="tx-coding-actions">
       <button class="btn-code" onclick="submitTxCode('${tx.id}')">Save</button>
-      <button class="btn-split" onclick="openSplitModal('${tx.id}')">✂️ Split</button>
+      ${status !== 'excluded' ? `<button class="btn-split" onclick="openSplitModal('${tx.id}')">✂️ Split</button>` : ''}
       <button class="btn-review" onclick="submitTxStatus('${tx.id}','review')">⚑ Flag for Review</button>
       <button class="btn-exclude" onclick="submitTxStatus('${tx.id}','excluded')">✕ Exclude</button>
     </div>
