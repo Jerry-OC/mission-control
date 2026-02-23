@@ -868,6 +868,10 @@ function getToken() {
 function showApp() {
   document.getElementById('auth-overlay').classList.add('hidden');
   document.getElementById('app').style.display = 'block';
+  // Restore last active tab
+  const lastTab = localStorage.getItem('mc_active_tab') || 'dashboard';
+  const btn = [...document.querySelectorAll('nav button')].find(b => b.getAttribute('onclick')?.includes(`'${lastTab}'`));
+  if (btn) showTab(lastTab, btn);
   loadData();
 }
 
@@ -973,6 +977,7 @@ function showTab(name, btn) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
+  localStorage.setItem('mc_active_tab', name);
   if (name === 'tasks') fetchTasks();
   if (name === 'agents') fetchAgents();
   if (name === 'contacts') fetchContacts(contactSearchTerm, contactFilter);
