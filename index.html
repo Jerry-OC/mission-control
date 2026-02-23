@@ -3290,10 +3290,10 @@ async function submitSplit() {
 
     if (data?.ok) {
       const n = data.splits_created;
+      const removedId = splitTxId; // capture before closeSplitModal() nulls it
       closeSplitModal();
 
       // Remove original from local list
-      const removedId = splitTxId;
       inboxTxAll = inboxTxAll.filter(t => t.id !== removedId);
       inboxUncodedCount = data.uncoded_count ?? Math.max(0, inboxUncodedCount - 1);
       updateInboxRemaining(inboxUncodedCount);
