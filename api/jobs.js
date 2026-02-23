@@ -1,17 +1,19 @@
 // /api/jobs — Job data
-//   GET /api/jobs                     → JobTread active jobs (live)
-//   GET /api/jobs?source=estimating   → Supabase jobs with estimating totals
+//   GET  /api/jobs                     → JobTread active jobs (live)
+//   GET  /api/jobs?source=estimating   → Supabase jobs with estimating totals
+//   POST /api/jobs?source=estimating   → Create a new Supabase job record
 
 import { requireAuth } from './_auth.js';
 
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-function sbHeaders() {
+function sbHeaders(extra = {}) {
   return {
     'apikey':        SB_KEY,
     'Authorization': `Bearer ${SB_KEY}`,
     'Content-Type':  'application/json',
+    ...extra,
   };
 }
 
@@ -28,13 +30,44 @@ async function sbFetch(path, options = {}) {
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
 
+  // ── POST — create a new Supabase job (estimating flow only) ──────────
+  if (req.method === 'POST') {
+    if (!requireAuth(req, res)) return;
+    if (req.query?.source !== 'estimating') {
+      return res.status(400).json({ error: 'POST only supported for source=estimating' });
+    }
+    try {
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+      if (!body.name?.trim()) {
+        return res.status(400).json({ error: 'name required' });
+      }
+      const row = {
+        name:            body.name.trim(),
+        status:          body.status           || 'estimating',
+        address:         body.address          || null,
+        city:            body.city             || null,
+        description:     body.description      || null,
+        contract_amount: body.contractAmount != null ? Number(body.contractAmount) : null,
+        projected_cost:  body.projectedCost  != null ? Number(body.projectedCost)  : null,
+      };
+      const [created] = await sbFetch('/jobs', {
+        method:  'POST',
+        body:    JSON.stringify(row),
+        headers: { 'Prefer': 'return=representation' },
+      });
+      return res.status(201).json({ ok: true, id: created.id, name: created.name });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  // ── Estimating source: Supabase job_estimating_summary view ──────────
+  // ── GET: Estimating source — Supabase job_estimating_summary view ─────
   if (req.query?.source === 'estimating') {
     if (!requireAuth(req, res)) return;
     try {
@@ -60,7 +93,8 @@ export default async function handler(req, res) {
     }
   }
 
-  // ── Default: JobTread active jobs ─────────────────────────────────────
+  // ── GET: Default — JobTread active jobs (live) ────────────────────────
+  if (!requireAuth(req, res)) return;
   res.setHeader('Cache-Control', 's-maxage=120'); // cache 2 min
   try {
     const response = await fetch('https://api.jobtread.com/pave', {

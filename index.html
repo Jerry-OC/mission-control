@@ -672,9 +672,18 @@
   .order-total-item strong { color:var(--text); font-variant-numeric:tabular-nums; }
   .order-total-item.price strong { color:var(--accent); font-size:0.95rem; }
 
-  /* Create order modal */
-  #new-order-modal.hidden { display:none; }
-  #new-order-modal {
+  /* Outline button variant */
+  .btn-outline {
+    background:transparent; border:1px solid rgba(255,255,255,0.2);
+    color:var(--muted); border-radius:8px; padding:0.45rem 0.9rem;
+    font-size:0.82rem; font-weight:600; cursor:pointer;
+    font-family:'Inter',sans-serif; transition:all 0.15s;
+  }
+  .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* Estimating modals (order + job) — shared overlay */
+  #new-order-modal.hidden, #new-job-modal.hidden { display:none; }
+  #new-order-modal, #new-job-modal {
     position:fixed; inset:0; z-index:900;
     background:rgba(0,0,0,0.6); backdrop-filter:blur(6px);
     display:flex; align-items:center; justify-content:center;
@@ -1028,12 +1037,13 @@
 <!-- ═══════════════ ESTIMATING TAB ═══════════════ -->
 <div id="tab-estimating" class="tab-panel">
 
-  <!-- Header row: title + job picker + new order button -->
+  <!-- Header row: title + job picker + action buttons -->
   <div class="est-header">
     <h2 style="margin:0">📋 Estimating</h2>
     <select class="est-job-select" id="est-job-select" onchange="estSelectJob(this.value)">
       <option value="">— Select a job —</option>
     </select>
+    <button class="btn-outline" onclick="openNewJobModal()" title="Add a new estimating job to Supabase">+ New Job</button>
     <button class="btn" onclick="openNewOrderModal()" id="est-new-order-btn" disabled>+ New Order</button>
   </div>
 
@@ -1111,6 +1121,40 @@
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeNewOrderModal()">Cancel</button>
       <button class="btn" id="no-save-btn" onclick="submitNewOrder()">Create Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ NEW ESTIMATING JOB MODAL ═══════════════ -->
+<div id="new-job-modal" class="hidden">
+  <div class="new-order-box" onclick="event.stopPropagation()">
+    <h3>New Estimating Job</h3>
+    <div class="form-row" style="margin-bottom:0.75rem">
+      <label class="form-label">Job Name *</label>
+      <input class="form-input" id="nj-name" placeholder="e.g. 714 Taraval Kitchen Remodel" />
+    </div>
+    <div class="form-row-2col" style="margin-bottom:0.75rem">
+      <div>
+        <label class="form-label">Status</label>
+        <select class="form-input" id="nj-status">
+          <option value="estimating">Estimating</option>
+          <option value="lead">Lead</option>
+          <option value="proposed">Proposed</option>
+          <option value="active">Active</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">City</label>
+        <input class="form-input" id="nj-city" placeholder="San Francisco" />
+      </div>
+    </div>
+    <div class="form-row" style="margin-bottom:1.25rem">
+      <label class="form-label">Address (optional)</label>
+      <input class="form-input" id="nj-address" placeholder="123 Main St" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeNewJobModal()">Cancel</button>
+      <button class="btn" id="nj-save-btn" onclick="submitNewJob()">Create Job</button>
     </div>
   </div>
 </div>
@@ -2824,6 +2868,9 @@ document.addEventListener('keydown', e => {
     document.getElementById('new-project-modal').classList.add('hidden');
     document.getElementById('contact-modal').classList.add('hidden');
     _editContactId = null;
+    // Estimating modals
+    closeNewOrderModal();
+    closeNewJobModal();
   }
 });
 
@@ -3446,10 +3493,28 @@ function renderEstOrders() {
   });
 }
 
-function orderStatusBadge(status) {
-  if (status === 'Signed') return '<span class="badge badge-green">Signed</span>';
-  if (status === 'Sent')   return '<span class="badge badge-blue">Sent</span>';
-  return '<span class="badge badge-muted">Draft</span>';
+function orderStatusBadge(status, orderId) {
+  const title = 'Click to change status';
+  const click = orderId ? `onclick="event.stopPropagation();cycleOrderStatus('${escHtml(orderId)}')" title="${title}" style="cursor:pointer"` : '';
+  if (status === 'Signed') return `<span class="badge badge-green" ${click}>✓ Signed</span>`;
+  if (status === 'Sent')   return `<span class="badge badge-blue"  ${click}>→ Sent</span>`;
+  return `<span class="badge badge-muted" ${click}>Draft</span>`;
+}
+
+// Cycle order status: Draft → Sent → Signed → Draft
+const STATUS_CYCLE = { 'Draft': 'Sent', 'Sent': 'Signed', 'Signed': 'Draft' };
+async function cycleOrderStatus(orderId) {
+  const order = estOrders.find(o => o.id === orderId);
+  if (!order) return;
+  const next = STATUS_CYCLE[order.status] || 'Draft';
+  try {
+    await apiPatch(`/api/orders?id=${orderId}`, { status: next });
+    const idx = estOrders.findIndex(o => o.id === orderId);
+    if (idx !== -1) estOrders[idx] = { ...estOrders[idx], status: next };
+    await refreshOrderCard(orderId);
+  } catch (err) {
+    alert('Status update failed: ' + err.message);
+  }
 }
 
 function renderOrderCard(order) {
@@ -3466,7 +3531,7 @@ function renderOrderCard(order) {
           <div class="order-card-name">${escHtml(order.name)}</div>
           <div class="order-card-meta">${escHtml(order.type)} · ${order.lineItemCount} ${itemWord}</div>
         </div>
-        ${orderStatusBadge(order.status)}
+        ${orderStatusBadge(order.status, order.id)}
         <div class="order-card-totals">
           <div><span>Cost </span><strong>${fmtCurrency(order.totalCost)}</strong></div>
           <div class="order-price-highlight">${fmtCurrency(order.totalPrice)}</div>
@@ -3537,7 +3602,16 @@ function renderLineItemsInOrder(orderId) {
     return renderLineItemReadRow(orderId, li);
   }).join('');
 
+  // Fetch notes from in-memory order list
+  const orderMeta = estOrders.find(o => o.id === orderId);
+  const notesHtml = orderMeta?.notes
+    ? `<div style="font-size:0.78rem;color:var(--muted);padding:0.5rem 0 0.75rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem;line-height:1.5">
+         📝 ${escHtml(orderMeta.notes)}
+       </div>`
+    : '';
+
   inner.innerHTML = `
+    ${notesHtml}
     <table class="li-table">
       <thead>
         <tr>
@@ -3545,7 +3619,7 @@ function renderLineItemsInOrder(orderId) {
           <th class="num" style="width:90px">Labor</th>
           <th class="num" style="width:90px">Materials</th>
           <th class="num" style="width:80px">Other</th>
-          <th class="num" style="width:65px">Margin%</th>
+          <th class="num" style="width:65px">Markup%</th>
           <th class="num" style="width:90px">Cost</th>
           <th class="num" style="width:90px">Price</th>
           <th style="width:80px"></th>
@@ -3635,7 +3709,7 @@ function renderNewLineItemRow(orderId) {
                  oninput="updateNewPreview()" />
         </div>
         <div>
-          <label class="form-label" style="font-size:0.65rem">Margin %</label>
+          <label class="form-label" style="font-size:0.65rem">Markup %</label>
           <input class="li-input num" id="lin-margin" type="number" min="0" max="100" step="0.1" placeholder="20" value="20"
                  oninput="updateNewPreview()" />
         </div>
@@ -3962,6 +4036,59 @@ document.getElementById('new-order-modal').addEventListener('click', function(e)
 // Allow Enter on order name field
 document.getElementById('no-name').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') submitNewOrder();
+});
+
+// ── New Job modal (creates a bare Supabase job for estimating) ────────────
+function openNewJobModal() {
+  document.getElementById('nj-name').value    = '';
+  document.getElementById('nj-status').value  = 'estimating';
+  document.getElementById('nj-city').value    = '';
+  document.getElementById('nj-address').value = '';
+  document.getElementById('nj-save-btn').disabled    = false;
+  document.getElementById('nj-save-btn').textContent = 'Create Job';
+  document.getElementById('new-job-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('nj-name').focus(), 60);
+}
+
+function closeNewJobModal() {
+  const modal = document.getElementById('new-job-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function submitNewJob() {
+  const name = document.getElementById('nj-name').value.trim();
+  if (!name) { document.getElementById('nj-name').focus(); return; }
+  const btn = document.getElementById('nj-save-btn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  try {
+    const data = await apiPost('/api/jobs?source=estimating', {
+      name,
+      status:  document.getElementById('nj-status').value,
+      city:    document.getElementById('nj-city').value.trim()    || null,
+      address: document.getElementById('nj-address').value.trim() || null,
+    });
+    closeNewJobModal();
+    // Reload job list and select the new job
+    estJobsLoaded = false;
+    await fetchEstJobs();
+    if (data.id) {
+      document.getElementById('est-job-select').value = data.id;
+      estSelectJob(data.id);
+    }
+  } catch (err) {
+    alert('Failed to create job: ' + err.message);
+    btn.disabled = false; btn.textContent = 'Create Job';
+  }
+}
+
+// Close new-job modal on overlay click
+document.getElementById('new-job-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeNewJobModal();
+});
+
+// Allow Enter on job name field
+document.getElementById('nj-name').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') submitNewJob();
 });
 </script>
 </body>
