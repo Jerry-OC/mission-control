@@ -326,6 +326,12 @@
   .btn-review:hover { background:rgba(234,179,8,0.25); }
   .btn-exclude { background:transparent; color:var(--muted); border:1px solid var(--border); padding:0.5rem 0.9rem; border-radius:8px; font-size:0.82rem; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; }
   .btn-exclude:hover { border-color:rgba(255,255,255,0.2); color:var(--text); }
+  .tx-rule-prompt { margin-top:0.75rem; padding:0.65rem 0.9rem; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:8px; font-size:0.82rem; color:var(--muted); display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; }
+  .tx-rule-prompt strong { color:var(--text); }
+  .btn-rule-yes { background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); padding:0.3rem 0.75rem; border-radius:6px; font-size:0.78rem; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; }
+  .btn-rule-yes:hover { background:rgba(239,68,68,0.25); }
+  .btn-rule-no { background:transparent; color:var(--muted); border:1px solid var(--border); padding:0.3rem 0.75rem; border-radius:6px; font-size:0.78rem; cursor:pointer; font-family:'Inter',sans-serif; }
+  .btn-rule-no:hover { color:var(--text); }
   .tx-suggest { font-size:0.72rem; color:var(--accent); margin-top:0.3rem; cursor:pointer; display:none; }
   .tx-suggest:hover { text-decoration:underline; }
   .tx-load-more { text-align:center; margin-top:1rem; max-width:680px; }
@@ -1606,6 +1612,24 @@ async function submitTxStatus(id, newStatus) {
       if (newStatus === 'excluded') {
         inboxUncodedCount = data.uncoded_count ?? Math.max(0, inboxUncodedCount - 1);
         updateInboxRemaining(inboxUncodedCount);
+
+        // Show "always exclude?" rule prompt before removing card
+        const tx = inboxTxAll.find(t => t.id === id);
+        const merchant = tx?.merchant || tx?.description || '';
+        if (merchant) {
+          const codingEl = document.getElementById('coding-' + id);
+          if (codingEl) {
+            codingEl.innerHTML = `
+              <div class="tx-rule-prompt">
+                Always exclude <strong>${escHtml(merchant)}</strong>?
+                <button class="btn-rule-yes" onclick="createExclusionRule('${id}','merchant','${escHtml(merchant).replace(/'/g,"\\'")}')">Yes, always</button>
+                <button class="btn-rule-no" onclick="dismissRulePrompt('${id}')">Just this one</button>
+              </div>`;
+            // Auto-dismiss and advance after 6s if no action
+            setTimeout(() => dismissRulePrompt(id), 6000);
+            return; // Don't remove card yet — let user respond first
+          }
+        }
       }
 
       if (inboxFilter === 'uncoded') {
@@ -1630,11 +1654,68 @@ async function submitTxStatus(id, newStatus) {
   }
 }
 
+function advanceAfterExclude(id) {
+  inboxTxAll = inboxTxAll.filter(t => t.id !== id);
+  const next = inboxTxAll.find(t => t.status === 'uncoded');
+  inboxExpanded = null;
+  renderInboxList(inboxTxAll);
+  if (next) expandTxCard(next.id);
+}
+
+function dismissRulePrompt(id) {
+  if (inboxFilter === 'uncoded') advanceAfterExclude(id);
+  else {
+    const card = document.getElementById('tx-' + id);
+    const tx = inboxTxAll.find(t => t.id === id);
+    if (card && tx) card.outerHTML = renderTxCard(tx);
+  }
+}
+
+async function createExclusionRule(txId, patternType, patternValue) {
+  const btn = document.querySelector(`#coding-${txId} .btn-rule-yes`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  try {
+    const data = await apiPost('/api/exclusion-rules', {
+      pattern_type: patternType, pattern_value: patternValue, apply_now: true,
+    });
+
+    if (data?.ok) {
+      const applied = data.applied || 0;
+      // Remove all newly-excluded transactions from the list
+      if (applied > 0) {
+        // Reload inbox to reflect bulk exclusion
+        inboxLoaded = false;
+        await loadInbox(true);
+      } else {
+        advanceAfterExclude(txId);
+      }
+      // Brief toast
+      showCopyToast(`Rule saved — ${applied > 1 ? applied + ' transactions excluded' : 'future matches auto-excluded'}`);
+    }
+  } catch (err) {
+    alert('Error creating rule: ' + err.message);
+    advanceAfterExclude(txId);
+  }
+}
+
 // ── Helper: authenticated API fetcher ──
 async function apiFetch(url) {
   const token = getToken();
   const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
   const res = await fetch(url, { headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function apiPost(url, body) {
+  const token = getToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || `HTTP ${res.status}`);
@@ -2484,16 +2565,16 @@ function copyField(text) {
   navigator.clipboard.writeText(text).then(() => showCopyToast());
 }
 
-function showCopyToast() {
+function showCopyToast(msg) {
   let toast = document.getElementById('copy-toast');
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'copy-toast';
-    toast.textContent = 'Copied!';
     document.body.appendChild(toast);
   }
+  toast.textContent = msg || 'Copied!';
   toast.classList.remove('show');
-  void toast.offsetWidth; // force reflow to restart animation
+  void toast.offsetWidth;
   toast.classList.add('show');
 }
 
