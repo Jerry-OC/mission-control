@@ -4,6 +4,8 @@
 // PATCH  /api/tasks?id=uuid      → update a task
 // DELETE /api/tasks?id=uuid      → delete a task
 
+import { requireAuth } from './_auth.js';
+
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
 
@@ -31,6 +33,8 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
+
+  if (!requireAuth(req, res)) return;
 
   const id = req.query?.id;
 

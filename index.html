@@ -372,6 +372,13 @@
   .pri-low    { background:rgba(107,114,128,0.12);color:var(--muted); border:1px solid var(--border); }
   .pri-badge  { font-size:0.63rem; padding:0.1rem 0.42rem; border-radius:20px; font-weight:500; white-space:nowrap; }
 
+  /* Overdue tasks */
+  .task-card.task-overdue { border-color:rgba(239,68,68,0.4); }
+  .task-card.task-overdue:hover { border-color:rgba(239,68,68,0.6); }
+  .mini-card.task-overdue { border-color:rgba(239,68,68,0.4); }
+  .due-overdue { color:var(--red) !important; }
+  .overdue-pip { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--red); margin-right:3px; vertical-align:middle; }
+
   /* Kanban column accent colors */
   .col-todo .kanban-col-header,.mini-col.col-todo .mini-col-header { color:#60a5fa; }
   .col-todo .kanban-count { background:rgba(59,130,246,0.15); color:#60a5fa; }
@@ -865,6 +872,15 @@ function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
 
+/** Returns headers object with Authorization + optional Content-Type */
+function authHeaders(json = false) {
+  const t = getToken();
+  const h = {};
+  if (t) h['Authorization'] = `Bearer ${t}`;
+  if (json) h['Content-Type'] = 'application/json';
+  return h;
+}
+
 function showApp() {
   document.getElementById('auth-overlay').classList.add('hidden');
   document.getElementById('app').style.display = 'block';
@@ -1056,7 +1072,10 @@ function fmtCurrencyFull(n) {
 function fmtDate(str) {
   if (!str) return '—';
   try {
-    return new Date(str).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    // Append T12:00:00 so bare YYYY-MM-DD dates aren't parsed as UTC midnight
+    // (which shifts to the previous day in US timezones)
+    const d = str.includes('T') ? new Date(str) : new Date(str + 'T12:00:00');
+    return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
   } catch { return str; }
 }
 
@@ -1619,15 +1638,24 @@ function renderKanban(tasks, container) {
   }).join('');
 }
 
+/** Returns true if the task has a due date in the past and isn't Done */
+function isTaskOverdue(t) {
+  if (!t.dueDate || t.status === 'Done') return false;
+  // en-CA locale gives YYYY-MM-DD in LOCAL time (not UTC), safe to compare directly
+  const today = new Date().toLocaleDateString('en-CA');
+  return t.dueDate < today;
+}
+
 function buildCard(t, mini) {
   const proj = projectByName(t.job);
   const showProject = (selProject === null || selProject === '__jobs__' || selProject === '__dev__') && t.job;
+  const overdue = isTaskOverdue(t);
   const nextBtns = !mini ? (NEXT_STATUS[t.status] || [])
     .map(n => `<button class="status-btn" onclick="event.stopPropagation();quickComplete('${t.id}','${n.status}')">${n.label}</button>`)
     .join('') : '';
 
   if (mini) {
-    return `<div class="mini-card" draggable="true"
+    return `<div class="mini-card${overdue ? ' task-overdue' : ''}" draggable="true"
         data-task-id="${t.id}" data-status="${escHtml(t.status)}"
         ondragstart="onCardDragStart(event)" ondragend="onCardDragEnd(event)"
         onclick="openEditTask('${t.id}')">
@@ -1635,18 +1663,23 @@ function buildCard(t, mini) {
       <div class="mini-card-meta">
         <span class="badge pri-badge ${priClass(t.priority)}" style="font-size:0.58rem">${t.priority}</span>
         ${t.assignee ? `<span style="font-size:0.62rem;color:var(--muted)">${t.assignee}</span>` : ''}
+        ${overdue ? `<span style="font-size:0.6rem;color:var(--red)">⚠ overdue</span>` : ''}
       </div>
     </div>`;
   }
 
-  return `<div class="task-card" draggable="true" data-task-id="${t.id}" data-status="${escHtml(t.status)}"
+  const dueDateEl = t.dueDate
+    ? `<span class="task-card-tag${overdue ? ' due-overdue' : ''}">${overdue ? '<span class="overdue-pip"></span>' : '📅 '}${fmtDateShort(t.dueDate)}</span>`
+    : '';
+
+  return `<div class="task-card${overdue ? ' task-overdue' : ''}" draggable="true" data-task-id="${t.id}" data-status="${escHtml(t.status)}"
       ondragstart="onCardDragStart(event)" ondragend="onCardDragEnd(event)">
     <div class="task-card-name" onclick="openEditTask('${t.id}')">${escHtml(t.name)}</div>
     <div class="task-card-meta">
       <span class="badge pri-badge ${priClass(t.priority)}">${t.priority}</span>
       ${showProject ? `<span class="task-card-tag">${proj ? proj.icon : '📌'} ${escHtml(t.job)}</span>` : ''}
       ${t.assignee ? `<span class="task-card-tag">👤 ${t.assignee}</span>` : ''}
-      ${t.dueDate ? `<span class="task-card-tag">📅 ${fmtDateShort(t.dueDate)}</span>` : ''}
+      ${dueDateEl}
     </div>
     ${nextBtns ? `<div class="task-card-actions">${nextBtns}</div>` : ''}
   </div>`;
@@ -1705,13 +1738,17 @@ function renderList(tasks, container) {
     const sorted = groups[key].sort((a,b) => (PRI_ORDER[a.priority]??3) - (PRI_ORDER[b.priority]??3));
     const rows = sorted.map(t => {
       const done = t.status === 'Done';
+      const overdue = isTaskOverdue(t);
+      const dueMeta = t.dueDate
+        ? `<span style="font-size:0.72rem;color:${overdue ? 'var(--red)' : 'var(--muted)'}">${overdue ? '⚠ ' : '📅 '}${fmtDateShort(t.dueDate)}</span>`
+        : '';
       return `<div class="task-row" onclick="openEditTask('${t.id}')">
         <div class="task-row-check ${done?'done':''}" onclick="event.stopPropagation();quickComplete('${t.id}','${done?'To Do':'Done'}')">${done?'✓':''}</div>
         <div class="task-row-name ${done?'done-text':''}">${escHtml(t.name)}</div>
         <div class="task-row-right">
           <span class="badge pri-badge ${priClass(t.priority)}">${t.priority}</span>
           ${t.assignee ? `<span style="font-size:0.72rem;color:var(--muted)">${t.assignee}</span>` : ''}
-          ${t.dueDate ? `<span style="font-size:0.72rem;color:var(--muted)">📅 ${fmtDateShort(t.dueDate)}</span>` : ''}
+          ${dueMeta}
         </div>
       </div>`;
     }).join('');
@@ -1750,7 +1787,7 @@ function onColDrop(e) {
 // ── Fetch + quick complete ─────────────────────────────────────────────────
 async function fetchTasks() {
   try {
-    const res = await fetch('/api/tasks');
+    const res = await fetch('/api/tasks', { headers: authHeaders() });
     const data = await res.json();
     if (data.tasks) {
       allTasks = data.tasks;
@@ -1773,8 +1810,9 @@ async function quickComplete(id, newStatus) {
   renderTasks();
   try {
     await fetch(`/api/tasks?id=${id}`, {
-      method:'PATCH', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ status: newStatus })
+      method: 'PATCH',
+      headers: authHeaders(true),
+      body: JSON.stringify({ status: newStatus }),
     });
   } catch {}
 }
@@ -1828,7 +1866,8 @@ async function submitAddTask() {
   const job = document.getElementById('t-project').value;
   try {
     const res = await fetch('/api/tasks', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers: authHeaders(true),
       body: JSON.stringify({
         name, description: document.getElementById('t-desc').value.trim(),
         status:   document.getElementById('t-status').value,
@@ -1837,7 +1876,7 @@ async function submitAddTask() {
         dueDate:  document.getElementById('t-due').value || null,
         job: job || null,
         level: job ? 'Job' : 'Org',
-      })
+      }),
     });
     const data = await res.json();
     if (data.ok) { closeAddTask(); fetchTasks(); }
@@ -1871,7 +1910,8 @@ async function submitEditTask() {
   const job = document.getElementById('t-project').value;
   try {
     const res = await fetch(`/api/tasks?id=${_editTaskId}`, {
-      method:'PATCH', headers:{'Content-Type':'application/json'},
+      method: 'PATCH',
+      headers: authHeaders(true),
       body: JSON.stringify({
         name:        document.getElementById('t-name').value.trim(),
         description: document.getElementById('t-desc').value.trim(),
@@ -1881,7 +1921,7 @@ async function submitEditTask() {
         dueDate:     document.getElementById('t-due').value || null,
         job: job || null,
         level: job ? 'Job' : 'Org',
-      })
+      }),
     });
     const data = await res.json();
     if (data.ok) { closeAddTask(); fetchTasks(); }
@@ -1892,7 +1932,10 @@ async function submitEditTask() {
 async function deleteCurrentTask() {
   if (!_editTaskId || !confirm('Delete this task?')) return;
   try {
-    await fetch(`/api/tasks?id=${_editTaskId}`, { method:'DELETE' });
+    await fetch(`/api/tasks?id=${_editTaskId}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
     closeAddTask(); fetchTasks();
   } catch {}
 }
@@ -1928,6 +1971,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     document.getElementById('add-task-modal').classList.add('hidden');
     document.getElementById('new-project-modal').classList.add('hidden');
+    document.getElementById('contact-modal').classList.add('hidden');
+    _editContactId = null;
   }
 });
 
@@ -2039,7 +2084,7 @@ async function fetchContacts(search = '', type = '') {
     const params = new URLSearchParams({ limit: 500 });
     if (search) params.set('search', search);
     if (type)   params.set('type', type);
-    const res = await fetch(`/api/contacts?${params}`);
+    const res = await fetch(`/api/contacts?${params}`, { headers: authHeaders() });
     const data = await res.json();
     allContacts = data.contacts || [];
     renderContacts(allContacts);
@@ -2129,7 +2174,11 @@ async function submitContactModal() {
   try {
     const method = _editContactId ? 'PATCH' : 'POST';
     const url    = _editContactId ? `/api/contacts?id=${_editContactId}` : '/api/contacts';
-    const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const res = await fetch(url, {
+      method,
+      headers: authHeaders(true),
+      body: JSON.stringify(body),
+    });
     const data = await res.json();
     if (data.ok) { closeContactModal(); fetchContacts(contactSearchTerm, contactFilter); }
     else { btn.disabled = false; btn.textContent = 'Error — retry'; }
@@ -2138,7 +2187,10 @@ async function submitContactModal() {
 
 async function deleteCurrentContact() {
   if (!_editContactId || !confirm('Archive this contact?')) return;
-  await fetch(`/api/contacts?id=${_editContactId}`, { method:'DELETE' });
+  await fetch(`/api/contacts?id=${_editContactId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
   closeContactModal();
   fetchContacts(contactSearchTerm, contactFilter);
 }
