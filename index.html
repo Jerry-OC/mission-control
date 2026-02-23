@@ -254,14 +254,83 @@
   .agents-live-badge { display:flex; align-items:center; gap:0.4rem; font-size:0.72rem; color:var(--muted); }
   .agents-live-badge .dot { width:5px; height:5px; }
 
-  /* ─── INBOX ITEMS ─── */
-  .inbox-item { display:flex; align-items:center; justify-content:space-between; padding:0.75rem; background:rgba(255,255,255,0.02); border-radius:8px; margin-bottom:0.5rem; border:1px solid var(--border); }
-  .inbox-left { display:flex; flex-direction:column; gap:0.2rem; }
-  .inbox-vendor { font-size:0.875rem; font-weight:500; }
-  .inbox-desc { font-size:0.75rem; color:var(--muted); }
-  .inbox-amount { font-size:1rem; font-weight:600; }
-  .inbox-amount.debit { color:var(--red); }
-  .inbox-amount.credit { color:var(--green); }
+  /* ─── TRANSACTION CODING UI ─── */
+  .inbox-header { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem; max-width:680px; }
+  .inbox-header h2 { margin:0; flex:1; }
+  .inbox-remaining { font-size:0.82rem; color:var(--muted); white-space:nowrap; }
+  .inbox-filter-pills { display:flex; gap:0.35rem; flex-wrap:wrap; margin-bottom:1rem; max-width:680px; }
+
+  .tx-list { display:flex; flex-direction:column; gap:0.5rem; max-width:680px; }
+  .tx-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden;
+    transition:border-color 0.15s, box-shadow 0.2s;
+  }
+  .tx-card.status-uncoded { border-color:rgba(255,255,255,0.12); }
+  .tx-card.status-coded   { border-color:rgba(34,197,94,0.25); background:rgba(34,197,94,0.04); }
+  .tx-card.status-review  { border-color:rgba(234,179,8,0.3);  background:rgba(234,179,8,0.04); }
+  .tx-card.status-excluded{ border-color:rgba(107,114,128,0.2); opacity:0.55; }
+  .tx-card.flash-green { box-shadow:0 0 0 2px var(--green); animation:flashGreen 0.6s ease forwards; }
+  .tx-card.flash-yellow { box-shadow:0 0 0 2px var(--yellow); animation:flashYellow 0.6s ease forwards; }
+  @keyframes flashGreen  { 0%{box-shadow:0 0 0 3px var(--green)} 100%{box-shadow:0 0 0 0 transparent} }
+  @keyframes flashYellow { 0%{box-shadow:0 0 0 3px var(--yellow)} 100%{box-shadow:0 0 0 0 transparent} }
+
+  .tx-card-header {
+    display:flex; align-items:center; gap:0.75rem;
+    padding:0.85rem 1rem; cursor:pointer;
+    user-select:none;
+  }
+  .tx-card-header:hover { background:rgba(255,255,255,0.02); }
+  .tx-merchant { flex:1; min-width:0; }
+  .tx-merchant-name { font-size:0.9rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tx-meta { font-size:0.72rem; color:var(--muted); margin-top:0.15rem; }
+  .tx-amount { font-size:1.25rem; font-weight:700; color:var(--accent); white-space:nowrap; flex-shrink:0; }
+  .tx-amount.negative { color:var(--red); }
+  .tx-status-pill { flex-shrink:0; font-size:0.65rem; padding:0.15rem 0.5rem; border-radius:20px; font-weight:600; }
+  .tx-status-pill.uncoded  { background:rgba(255,255,255,0.08); color:var(--muted); }
+  .tx-status-pill.coded    { background:rgba(34,197,94,0.15);  color:var(--green); }
+  .tx-status-pill.review   { background:rgba(234,179,8,0.15);  color:var(--yellow); }
+  .tx-status-pill.excluded { background:rgba(107,114,128,0.12);color:var(--muted); }
+  .tx-chevron { font-size:0.75rem; color:var(--muted); flex-shrink:0; transition:transform 0.2s; }
+  .tx-card.expanded .tx-chevron { transform:rotate(180deg); }
+
+  .tx-coding {
+    display:none; padding:0 1rem 1rem;
+    border-top:1px solid var(--border);
+    background:rgba(255,255,255,0.01);
+  }
+  .tx-coding.open { display:block; }
+  .tx-full-desc { font-size:0.78rem; color:var(--muted); padding:0.65rem 0 0.85rem; line-height:1.4; }
+  .tx-coding-row { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-bottom:0.6rem; }
+  @media(max-width:520px) { .tx-coding-row { grid-template-columns:1fr; } }
+  .tx-coding label { display:block; font-size:0.68rem; color:var(--muted); margin-bottom:0.25rem; text-transform:uppercase; letter-spacing:0.06em; }
+  .tx-coding select, .tx-coding input[type=text] {
+    width:100%; background:rgba(255,255,255,0.05);
+    border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:0.48rem 0.65rem;
+    font-size:0.83rem; font-family:'Inter',sans-serif;
+    transition:border-color 0.15s;
+  }
+  .tx-coding select:focus, .tx-coding input[type=text]:focus {
+    outline:none; border-color:var(--accent);
+  }
+  .tx-coding select { color-scheme:dark; }
+  .tx-coding select option { background:#1a1a2e; color:#e2e8f0; }
+  .tx-existing { font-size:0.75rem; color:var(--muted); margin-top:0.2rem; display:flex; align-items:center; gap:0.3rem; }
+  .tx-existing strong { color:var(--text); }
+  .tx-coding-actions { display:flex; gap:0.5rem; margin-top:0.75rem; flex-wrap:wrap; }
+  .btn-code { background:var(--accent); color:#fff; border:none; padding:0.5rem 1.2rem; border-radius:8px; font-size:0.82rem; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:opacity 0.15s; }
+  .btn-code:hover { opacity:0.85; }
+  .btn-code:disabled { opacity:0.4; cursor:default; }
+  .btn-review { background:rgba(234,179,8,0.15); color:var(--yellow); border:1px solid rgba(234,179,8,0.3); padding:0.5rem 1rem; border-radius:8px; font-size:0.82rem; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; }
+  .btn-review:hover { background:rgba(234,179,8,0.25); }
+  .btn-exclude { background:transparent; color:var(--muted); border:1px solid var(--border); padding:0.5rem 0.9rem; border-radius:8px; font-size:0.82rem; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; }
+  .btn-exclude:hover { border-color:rgba(255,255,255,0.2); color:var(--text); }
+  .tx-suggest { font-size:0.72rem; color:var(--accent); margin-top:0.3rem; cursor:pointer; display:none; }
+  .tx-suggest:hover { text-decoration:underline; }
+  .tx-load-more { text-align:center; margin-top:1rem; max-width:680px; }
+  .tx-load-more button { background:transparent; border:1px solid var(--border); color:var(--muted); padding:0.5rem 1.5rem; border-radius:8px; font-family:'Inter',sans-serif; font-size:0.82rem; cursor:pointer; transition:all 0.15s; }
+  .tx-load-more button:hover { border-color:rgba(255,255,255,0.2); color:var(--text); }
 
   /* ─── SECTION HEADERS ─── */
   h2 { font-size:1.2rem; font-weight:700; margin-bottom:1rem; letter-spacing:-0.02em; }
@@ -594,19 +663,25 @@
 
 <!-- ═══════════════ COST INBOX TAB ═══════════════ -->
 <div id="tab-inbox" class="tab-panel">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-    <h2 style="margin:0">Cost Inbox — Plaid Transactions</h2>
-    <span class="badge badge-red" id="inbox-badge">—</span>
+  <div class="inbox-header">
+    <h2>💸 Cost Inbox</h2>
+    <span class="inbox-remaining" id="inbox-remaining">Loading…</span>
   </div>
 
-  <div class="card" style="margin-bottom:1rem">
-    <div style="font-size:0.82rem;color:var(--muted)">
-      These are bank transactions pulled from <strong style="color:var(--text)">Business Checking ...4687</strong> via Plaid that haven't been coded to a job yet.
-    </div>
+  <div class="inbox-filter-pills">
+    <button class="pill active" id="inbox-pill-uncoded" onclick="setInboxFilter('uncoded',this)">Uncoded</button>
+    <button class="pill" id="inbox-pill-all"     onclick="setInboxFilter('all',this)">All</button>
+    <button class="pill" id="inbox-pill-coded"   onclick="setInboxFilter('coded',this)">Coded</button>
+    <button class="pill" id="inbox-pill-review"  onclick="setInboxFilter('review',this)">Review</button>
+    <button class="pill" id="inbox-pill-excluded" onclick="setInboxFilter('excluded',this)">Excluded</button>
   </div>
 
-  <div id="inbox-list">
+  <div id="inbox-list" class="tx-list">
     <div class="state-loading">Loading transactions…</div>
+  </div>
+
+  <div class="tx-load-more" id="inbox-load-more" style="display:none">
+    <button onclick="loadMoreTransactions()">Load More</button>
   </div>
 </div>
 
@@ -1003,6 +1078,7 @@ function showTab(name, btn) {
   if (name === 'tasks') fetchTasks();
   if (name === 'agents') fetchAgents();
   if (name === 'contacts') fetchContacts(contactSearchTerm, contactFilter);
+  if (name === 'inbox') loadInbox();
 }
 
 
@@ -1137,38 +1213,435 @@ function renderJobs(data) {
   }).join('');
 }
 
-function renderInbox(data) {
-  const transactions = data.transactions || [];
-  const count        = data.count ?? transactions.length;
-  const totalAmt     = data.totalAmount;
+/* ══════════════════════════════════════════════
+   COST INBOX — Transaction Coding UI
+══════════════════════════════════════════════ */
 
-  // Update header badge
-  document.getElementById('inbox-badge').textContent =
-    count > 0 ? `${count} uncoded` : '0 uncoded';
+let inboxTxAll      = [];   // full loaded list for current filter
+let inboxFilter     = 'uncoded';
+let inboxJobs       = [];
+let inboxCostCodes  = [];
+let inboxExpanded   = null; // id of expanded card
+let inboxUncodedCount = 0;
+let inboxLoaded     = false;
+let inboxOffset     = 0;
+const INBOX_PAGE    = 100;
 
-  const container = document.getElementById('inbox-list');
+// Merchant keyword → suggested job name fragments (auto-suggest)
+const MERCHANT_HINTS = {
+  'HOME DEPOT'    : 'construction',
+  'LOWES'         : 'construction',
+  "LOWE'S"        : 'construction',
+  'GOLDEN STATE'  : 'construction',
+  'PACIFIC COAST' : 'construction',
+  'LUMBER'        : 'construction',
+  'HARDWARE'      : 'construction',
+  'CONCRETE'      : 'construction',
+  'PLYWOOD'       : 'construction',
+};
 
-  if (!transactions.length) {
-    container.innerHTML = '<div class="state-loading">No uncoded transactions — inbox is clear! ✅</div>';
-    return;
+async function loadInbox(forceReload) {
+  if (inboxLoaded && !forceReload) return;
+
+  // Load reference data once
+  if (!inboxCostCodes.length) {
+    try {
+      const [ccRes, jobsRes] = await Promise.all([
+        apiFetch('/api/transactions?resource=cost_codes'),
+        apiFetch('/api/transactions?resource=jobs'),
+      ]);
+      inboxCostCodes = (ccRes?.cost_codes || []);
+      inboxJobs      = (jobsRes?.jobs      || []);
+    } catch (e) {
+      console.warn('Could not load cost codes / jobs:', e);
+    }
+    // Fallback: try to get jobs from JobTread endpoint
+    if (!inboxJobs.length) {
+      try {
+        const jtRes = await apiFetch('/api/jobs');
+        inboxJobs = (jtRes?.jobs || []).map(j => ({ id: j.id, name: j.name, status: j.status || 'active' }));
+      } catch (_) {}
+    }
   }
 
-  container.innerHTML = transactions.map(tx => {
-    const amount   = Number(tx.amount) || 0;
-    const isDebit  = amount < 0;
-    const cls      = isDebit ? 'debit' : 'credit';
-    const dateStr  = fmtDate(tx.date);
-    const account  = tx.account ? ` · ${escHtml(tx.account)}` : '';
+  await fetchInboxTransactions();
+}
 
-    return `
-      <div class="inbox-item">
-        <div class="inbox-left">
-          <div class="inbox-vendor">${escHtml(tx.name || '—')}</div>
-          <div class="inbox-desc">${dateStr}${account}</div>
-        </div>
-        <div class="inbox-amount ${cls}">${isDebit ? '-' : '+'}${fmtCurrency(Math.abs(amount))}</div>
-      </div>`;
-  }).join('');
+async function fetchInboxTransactions() {
+  const container = document.getElementById('inbox-list');
+  container.innerHTML = '<div class="state-loading">Loading…</div>';
+
+  try {
+    const status = inboxFilter;
+    const url = `/api/transactions?status=${status}&limit=${INBOX_PAGE}`;
+    const data = await apiFetch(url);
+    if (!data) throw new Error('No data');
+
+    inboxTxAll = data.transactions || [];
+    inboxUncodedCount = data.uncoded_count ?? 0;
+    inboxLoaded = true;
+    inboxOffset = inboxTxAll.length;
+
+    updateInboxRemaining(inboxUncodedCount);
+
+    // Show/hide load-more
+    const loadMore = document.getElementById('inbox-load-more');
+    if (loadMore) loadMore.style.display = data.total >= INBOX_PAGE ? 'block' : 'none';
+
+    renderInboxList(inboxTxAll);
+
+    // Auto-expand first uncoded card
+    if (inboxFilter === 'uncoded') {
+      const first = inboxTxAll.find(t => t.status === 'uncoded');
+      if (first) expandTxCard(first.id);
+    }
+  } catch (err) {
+    container.innerHTML = `<div class="state-error">Failed to load transactions: ${escHtml(err.message)}</div>`;
+  }
+}
+
+async function loadMoreTransactions() {
+  const btn = document.querySelector('#inbox-load-more button');
+  if (btn) { btn.textContent = 'Loading…'; btn.disabled = true; }
+  try {
+    const data = await apiFetch(`/api/transactions?status=${inboxFilter}&limit=${INBOX_PAGE}&offset=${inboxOffset}`);
+    if (data?.transactions?.length) {
+      inboxTxAll = [...inboxTxAll, ...data.transactions];
+      inboxOffset = inboxTxAll.length;
+      renderInboxList(inboxTxAll);
+      const loadMore = document.getElementById('inbox-load-more');
+      if (loadMore) loadMore.style.display = data.transactions.length >= INBOX_PAGE ? 'block' : 'none';
+    } else {
+      if (document.getElementById('inbox-load-more')) document.getElementById('inbox-load-more').style.display = 'none';
+    }
+  } catch(e) {}
+  if (btn) { btn.textContent = 'Load More'; btn.disabled = false; }
+}
+
+function updateInboxRemaining(count) {
+  const el = document.getElementById('inbox-remaining');
+  if (!el) return;
+  if (inboxFilter === 'uncoded') {
+    el.textContent = count > 0 ? `${count} uncoded remaining` : '✅ All coded!';
+    el.style.color = count > 0 ? 'var(--muted)' : 'var(--green)';
+  } else {
+    el.textContent = `${inboxUncodedCount} uncoded remaining`;
+    el.style.color = 'var(--muted)';
+  }
+  // Also update dashboard metric
+  const metricEl = document.getElementById('metric-inbox-count');
+  if (metricEl) metricEl.textContent = inboxUncodedCount;
+}
+
+function setInboxFilter(filter, btn) {
+  inboxFilter = filter;
+  inboxLoaded = false;
+  inboxExpanded = null;
+  document.querySelectorAll('.inbox-filter-pills .pill').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  fetchInboxTransactions();
+}
+
+function renderInboxList(transactions) {
+  const container = document.getElementById('inbox-list');
+  if (!transactions.length) {
+    container.innerHTML = '<div class="state-loading">No transactions found. ✅</div>';
+    return;
+  }
+  container.innerHTML = transactions.map(tx => renderTxCard(tx)).join('');
+
+  // Re-expand previously expanded card
+  if (inboxExpanded) {
+    const card = document.getElementById('tx-' + inboxExpanded);
+    if (card) {
+      card.classList.add('expanded');
+      const coding = card.querySelector('.tx-coding');
+      if (coding) coding.classList.add('open');
+    }
+  }
+}
+
+function renderTxCard(tx) {
+  const amount   = Number(tx.amount) || 0;
+  const amtClass = amount < 0 ? 'negative' : '';
+  const amtFmt   = (amount < 0 ? '-' : '') + fmtCurrency(Math.abs(amount));
+  const dateStr  = fmtDate(tx.date);
+  const account  = tx.account_name ? escHtml(tx.account_name) : '';
+  const merchant = tx.merchant || tx.description || '—';
+  const status   = tx.status || 'uncoded';
+
+  const statusLabels = { uncoded:'Uncoded', coded:'Coded', review:'Review', excluded:'Excluded' };
+  const statusLabel  = statusLabels[status] || status;
+
+  const existingJob  = tx.job_name       ? `<div class="tx-existing">Job: <strong>${escHtml(tx.job_name)}</strong></div>` : '';
+  const existingCode = tx.cost_code_name ? `<div class="tx-existing">Code: <strong>${escHtml(tx.cost_code_number + ' ' + tx.cost_code_name)}</strong></div>` : '';
+
+  // Job options
+  const jobOptions = inboxJobs.length
+    ? `<option value="">— No Job —</option>` + inboxJobs.map(j =>
+        `<option value="${escHtml(j.id)}" ${tx.job_id === j.id ? 'selected' : ''}>${escHtml(j.name)}</option>`
+      ).join('')
+    : `<option value="">No jobs loaded</option>`;
+
+  // Cost code options grouped by category
+  const ccByCategory = {};
+  inboxCostCodes.forEach(cc => {
+    if (!ccByCategory[cc.category]) ccByCategory[cc.category] = [];
+    ccByCategory[cc.category].push(cc);
+  });
+  const ccOptions = `<option value="">— No Code —</option>` +
+    Object.entries(ccByCategory).map(([cat, codes]) =>
+      `<optgroup label="${escHtml(cat)}">${
+        codes.map(cc =>
+          `<option value="${escHtml(cc.id)}" ${tx.cost_code_id === cc.id ? 'selected' : ''}>${cc.number} · ${escHtml(cc.name)}</option>`
+        ).join('')
+      }</optgroup>`
+    ).join('');
+
+  // Auto-suggest job hint
+  const merchantUpper = merchant.toUpperCase();
+  let suggestHint = '';
+  for (const [kw, hint] of Object.entries(MERCHANT_HINTS)) {
+    if (merchantUpper.includes(kw)) {
+      const match = inboxJobs.find(j => j.name.toLowerCase().includes(hint));
+      if (match) {
+        suggestHint = `<div class="tx-suggest" onclick="applySuggestedJob('${tx.id}','${escHtml(match.id)}','${escHtml(match.name).replace(/'/g,"\\'")}')" id="suggest-${tx.id}">💡 Suggest: ${escHtml(match.name)}</div>`;
+        break;
+      }
+    }
+  }
+
+  return `
+<div class="tx-card status-${status}" id="tx-${tx.id}">
+  <div class="tx-card-header" onclick="toggleTxCard('${tx.id}')">
+    <div class="tx-merchant">
+      <div class="tx-merchant-name">${escHtml(merchant)}</div>
+      <div class="tx-meta">${dateStr}${account ? ' · ' + account : ''}</div>
+      ${existingJob}${existingCode}
+    </div>
+    <div class="tx-amount ${amtClass}">${amtFmt}</div>
+    <span class="tx-status-pill ${status}">${statusLabel}</span>
+    <span class="tx-chevron">▼</span>
+  </div>
+  <div class="tx-coding" id="coding-${tx.id}">
+    <div class="tx-full-desc">${escHtml(tx.description || tx.merchant || '')}</div>
+    <div class="tx-coding-row">
+      <div>
+        <label>Job</label>
+        <select id="sel-job-${tx.id}">${jobOptions}</select>
+        ${suggestHint}
+      </div>
+      <div>
+        <label>Cost Code</label>
+        <select id="sel-cc-${tx.id}">${ccOptions}</select>
+      </div>
+    </div>
+    <div>
+      <label>Notes (optional)</label>
+      <input type="text" id="notes-${tx.id}" value="${escHtml(tx.notes || '')}"
+        placeholder="e.g. materials for bathroom remodel"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();submitTxCode('${tx.id}')}">
+    </div>
+    <div class="tx-coding-actions">
+      <button class="btn-code" onclick="submitTxCode('${tx.id}')">✓ Code It</button>
+      <button class="btn-review" onclick="submitTxStatus('${tx.id}','review')">⚑ Flag for Review</button>
+      <button class="btn-exclude" onclick="submitTxStatus('${tx.id}','excluded')">✕ Exclude</button>
+    </div>
+  </div>
+</div>`;
+}
+
+function toggleTxCard(id) {
+  const card   = document.getElementById('tx-' + id);
+  const coding = document.getElementById('coding-' + id);
+  if (!card || !coding) return;
+
+  const isExpanded = card.classList.contains('expanded');
+  if (isExpanded) {
+    card.classList.remove('expanded');
+    coding.classList.remove('open');
+    if (inboxExpanded === id) inboxExpanded = null;
+  } else {
+    expandTxCard(id);
+  }
+}
+
+function expandTxCard(id) {
+  // Collapse previously expanded
+  if (inboxExpanded && inboxExpanded !== id) {
+    const prev = document.getElementById('tx-' + inboxExpanded);
+    const prevCoding = document.getElementById('coding-' + inboxExpanded);
+    if (prev) prev.classList.remove('expanded');
+    if (prevCoding) prevCoding.classList.remove('open');
+  }
+  const card   = document.getElementById('tx-' + id);
+  const coding = document.getElementById('coding-' + id);
+  if (!card || !coding) return;
+
+  card.classList.add('expanded');
+  coding.classList.add('open');
+  inboxExpanded = id;
+
+  // Scroll into view
+  setTimeout(() => {
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const notesInput = document.getElementById('notes-' + id);
+    if (notesInput) notesInput.focus();
+  }, 80);
+}
+
+function applySuggestedJob(txId, jobId, jobName) {
+  const sel = document.getElementById('sel-job-' + txId);
+  if (sel) sel.value = jobId;
+  const hint = document.getElementById('suggest-' + txId);
+  if (hint) hint.style.display = 'none';
+}
+
+async function submitTxCode(id) {
+  const jobSel  = document.getElementById('sel-job-' + id);
+  const ccSel   = document.getElementById('sel-cc-' + id);
+  const notesEl = document.getElementById('notes-' + id);
+  const btn     = document.querySelector(`#coding-${id} .btn-code`);
+
+  const jobId  = jobSel?.value  || null;
+  const ccId   = ccSel?.value   || null;
+  const notes  = notesEl?.value || '';
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  try {
+    const data = await apiPatch(`/api/transactions?id=${id}`, {
+      job_id: jobId || '',
+      cost_code_id: ccId || '',
+      status: 'coded',
+      notes,
+    });
+
+    if (data?.ok) {
+      // Update local cache
+      const tx = inboxTxAll.find(t => t.id === id);
+      if (tx) {
+        tx.status = 'coded';
+        tx.job_id = jobId;
+        tx.cost_code_id = ccId;
+        tx.notes = notes;
+        if (jobId) tx.job_name = inboxJobs.find(j => j.id === jobId)?.name || '';
+        if (ccId) {
+          const cc = inboxCostCodes.find(c => c.id === ccId);
+          tx.cost_code_name = cc?.name || '';
+          tx.cost_code_number = cc?.number || '';
+        }
+      }
+
+      // Flash card green, then update
+      const card = document.getElementById('tx-' + id);
+      if (card) {
+        card.classList.add('flash-green');
+        setTimeout(() => card.classList.remove('flash-green'), 700);
+      }
+
+      inboxUncodedCount = data.uncoded_count ?? Math.max(0, inboxUncodedCount - 1);
+      updateInboxRemaining(inboxUncodedCount);
+
+      // If in uncoded filter, collapse & remove card after flash, advance to next
+      if (inboxFilter === 'uncoded') {
+        const idx = inboxTxAll.findIndex(t => t.id === id);
+        setTimeout(() => {
+          // Remove from list
+          inboxTxAll = inboxTxAll.filter(t => t.id !== id);
+          const nextUncoded = inboxTxAll.find(t => t.status === 'uncoded');
+          inboxExpanded = null;
+          renderInboxList(inboxTxAll);
+          if (nextUncoded) expandTxCard(nextUncoded.id);
+        }, 500);
+      } else {
+        // Just re-render the card in place
+        inboxExpanded = null;
+        const oldCard = document.getElementById('tx-' + id);
+        if (oldCard) {
+          const txUpdated = inboxTxAll.find(t => t.id === id);
+          if (txUpdated) oldCard.outerHTML = renderTxCard(txUpdated);
+        }
+      }
+    } else {
+      alert('Failed to save: ' + (data?.error || 'Unknown error'));
+      if (btn) { btn.disabled = false; btn.textContent = '✓ Code It'; }
+    }
+  } catch (err) {
+    alert('Error: ' + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Code It'; }
+  }
+}
+
+async function submitTxStatus(id, newStatus) {
+  const notesEl = document.getElementById('notes-' + id);
+  const notes   = notesEl?.value || '';
+
+  try {
+    const data = await apiPatch(`/api/transactions?id=${id}`, { status: newStatus, notes });
+
+    if (data?.ok) {
+      const tx = inboxTxAll.find(t => t.id === id);
+      if (tx) { tx.status = newStatus; tx.notes = notes; }
+
+      const card = document.getElementById('tx-' + id);
+      if (card) {
+        const flashClass = newStatus === 'review' ? 'flash-yellow' : '';
+        if (flashClass) {
+          card.classList.add(flashClass);
+          setTimeout(() => card.classList.remove(flashClass), 700);
+        }
+      }
+
+      if (newStatus === 'excluded') {
+        inboxUncodedCount = data.uncoded_count ?? Math.max(0, inboxUncodedCount - 1);
+        updateInboxRemaining(inboxUncodedCount);
+      }
+
+      if (inboxFilter === 'uncoded') {
+        setTimeout(() => {
+          inboxTxAll = inboxTxAll.filter(t => t.id !== id);
+          const next = inboxTxAll.find(t => t.status === 'uncoded');
+          inboxExpanded = null;
+          renderInboxList(inboxTxAll);
+          if (next) expandTxCard(next.id);
+        }, newStatus === 'review' ? 600 : 200);
+      } else {
+        inboxExpanded = null;
+        const oldCard = document.getElementById('tx-' + id);
+        if (oldCard) {
+          const txUpdated = inboxTxAll.find(t => t.id === id);
+          if (txUpdated) oldCard.outerHTML = renderTxCard(txUpdated);
+        }
+      }
+    }
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+// ── Helper: authenticated API fetcher ──
+async function apiFetch(url) {
+  const token = getToken();
+  const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function apiPatch(url, body) {
+  const token = getToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(url, { method: 'PATCH', headers, body: JSON.stringify(body) });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return res.json();
 }
 
 function renderInvoices(data) {
@@ -1219,9 +1692,9 @@ async function loadData() {
 
   try {
     [jobsData, inboxData, invoicesData] = await Promise.all([
-      fetch('/api/jobs',     { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/api/inbox',    { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/api/invoices', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/jobs',                              { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/transactions?status=uncoded&limit=1', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/invoices',                          { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
     ]);
   } catch (e) {
     console.error('loadData failed:', e);
@@ -1250,16 +1723,13 @@ async function loadData() {
       '<div class="state-error">Could not load jobs — API unavailable.</div>';
   }
 
-  // ── INBOX ─────────────────────────────────
+  // ── INBOX (dashboard metric only — full UI loads on tab open) ──────
   if (inboxData) {
-    const count = inboxData.count ?? (inboxData.transactions || []).length;
+    const count = inboxData.uncoded_count ?? inboxData.count ?? 0;
     document.getElementById('metric-inbox-count').textContent = count;
-    renderInbox(inboxData);
+    inboxUncodedCount = count;
   } else {
     document.getElementById('metric-inbox-count').textContent = '—';
-    document.getElementById('inbox-list').innerHTML =
-      '<div class="state-error">Could not load inbox — API unavailable.</div>';
-    document.getElementById('inbox-badge').textContent = 'error';
   }
 
   // ── INVOICES ──────────────────────────────
