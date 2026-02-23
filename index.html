@@ -764,15 +764,6 @@
   }
   .group-rename-btn:hover { border-color:rgba(255,255,255,0.25); color:var(--text); }
   .group-body { padding:0.5rem 0.75rem 0.6rem; }
-  .cost-cat-label {
-    font-size:0.62rem; font-weight:600; text-transform:uppercase;
-    letter-spacing:0.08em; color:var(--muted); padding:0.4rem 0 0.2rem;
-    border-bottom:1px solid rgba(255,255,255,0.04); margin-bottom:0.2rem;
-    display:flex; align-items:center; justify-content:space-between;
-  }
-  .cost-cat-label .cat-subtotal {
-    font-variant-numeric:tabular-nums; font-size:0.67rem; color:var(--muted);
-  }
   .group-ungrouped-header {
     font-size:0.72rem; color:var(--muted); padding:0.5rem 0 0.3rem;
     font-style:italic;
@@ -786,7 +777,7 @@
   }
   .btn-add-group:hover { border-color:var(--accent); color:var(--accent); }
 
-  /* Cost code select in line item rows */
+  /* Group select in line item rows */
   .li-cc-select {
     background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
     color:var(--text); border-radius:5px; padding:0.22rem 0.35rem;
@@ -795,11 +786,6 @@
   }
   .li-cc-select:focus { outline:none; border-color:var(--accent); }
   .li-cc-select option { background:#1a1a2e; }
-  .li-cc-badge {
-    display:inline-block; font-size:0.65rem; padding:0.1rem 0.35rem;
-    background:rgba(255,255,255,0.06); border-radius:4px;
-    color:var(--muted); white-space:nowrap;
-  }
 </style>
 </head>
 <body>
@@ -3558,8 +3544,6 @@ let estEditingLineItem = null;    // { orderId, itemId } currently in edit mode
 let estNewOrderJobId   = null;    // job_id for the new-order modal
 let estEditOrderId     = null;    // order id when editing (null = create)
 let estJobsLoaded      = false;
-let estCostCodes       = [];      // shared cost codes list (loaded once per session)
-let estCostCodesLoaded = false;
 let estRenamingGroup   = null;    // groupId currently being renamed
 
 // ── Bootstrap ─────────────────────────────────
@@ -3753,18 +3737,6 @@ async function toggleOrderExpand(orderId) {
   }
 }
 
-// ── Cost Codes (loaded once per session) ─────
-async function ensureCostCodes() {
-  if (estCostCodesLoaded) return;
-  try {
-    const data = await apiFetch('/api/cost-codes');
-    if (Array.isArray(data.costCodes)) {
-      estCostCodes       = data.costCodes;
-      estCostCodesLoaded = true;
-    }
-  } catch (_) { /* non-fatal — pickers will just be empty */ }
-}
-
 // ── Line Items ────────────────────────────────
 async function fetchLineItems(orderId) {
   const inner = document.getElementById(`order-body-inner-${orderId}`);
@@ -3773,7 +3745,6 @@ async function fetchLineItems(orderId) {
     const [lineData, groupData] = await Promise.all([
       apiFetch(`/api/estimate-line-items?order_id=${orderId}`),
       apiFetch(`/api/order-groups?order_id=${orderId}`),
-      ensureCostCodes(),
     ]);
     estLineItems[orderId] = lineData.lineItems || [];
     estGroups[orderId]    = groupData.groups   || [];
@@ -3796,14 +3767,6 @@ function liTableHead() {
     <th class="num" style="width:90px">Price</th>
     <th style="width:80px"></th>
   </tr></thead>`;
-}
-
-function ccSelectOptions(selectedId) {
-  const blank = `<option value="">${selectedId ? '— remove —' : '— none —'}</option>`;
-  const opts  = estCostCodes.map(cc =>
-    `<option value="${cc.id}"${cc.id === selectedId ? ' selected' : ''}>${escHtml(cc.number)} · ${escHtml(cc.name)}</option>`
-  ).join('');
-  return blank + opts;
 }
 
 function groupSelectOptions(orderId, selectedId) {
@@ -3924,47 +3887,19 @@ function renderGroupBody(orderId, groupItems, isEditing) {
     return `<div style="font-size:0.75rem;color:var(--muted);padding:0.4rem 0 0.2rem;font-style:italic">No items yet</div>`;
   }
 
-  // Sub-group by cost code category
-  const categories = [];
-  const catMap     = {};
-  groupItems.forEach(li => {
-    const cat = li.costCodeCategory || 'Uncategorized';
-    if (!catMap[cat]) { catMap[cat] = []; categories.push(cat); }
-    catMap[cat].push(li);
-  });
-
-  let html = '';
-  categories.forEach(cat => {
-    const catItems   = catMap[cat];
-    const catTotal   = catItems.reduce((s, li) => s + li.price, 0);
-    const catRows    = catItems.map(li => {
-      const editing = isEditing && estEditingLineItem?.itemId === li.id;
-      return editing ? renderLineItemEditRow(orderId, li) : renderLineItemReadRow(orderId, li);
-    }).join('');
-
-    html += `
-      <div class="cost-cat-label">
-        <span>${escHtml(cat)}</span>
-        <span class="cat-subtotal">${fmtCurrencyFull(catTotal)}</span>
-      </div>
-      <table class="li-table" style="margin-bottom:0.5rem">
-        ${liTableHead()}
-        <tbody>${catRows}</tbody>
-      </table>`;
-  });
-  return html;
+  const rows = groupItems.map(li => {
+    const editing = isEditing && estEditingLineItem?.itemId === li.id;
+    return editing ? renderLineItemEditRow(orderId, li) : renderLineItemReadRow(orderId, li);
+  }).join('');
+  return `<table class="li-table"><tbody>${rows}</tbody></table>`;
 }
 
 function renderLineItemReadRow(orderId, li) {
-  const ccBadge = li.costCodeName
-    ? `<span class="li-cc-badge">${escHtml(li.costCodeNumber)} · ${escHtml(li.costCodeName)}</span>`
-    : '';
   return `
     <tr id="li-row-${escHtml(li.id)}">
       <td>
         <div class="li-name-cell">${escHtml(li.name)}</div>
         ${li.description ? `<div class="li-desc-cell">${escHtml(li.description)}</div>` : ''}
-        ${ccBadge ? `<div style="margin-top:2px">${ccBadge}</div>` : ''}
       </td>
       <td class="num-muted">${li.laborCost > 0 ? fmtCurrencyFull(li.laborCost) : '—'}</td>
       <td class="num-muted">${li.materialsCost > 0 ? fmtCurrencyFull(li.materialsCost) : '—'}</td>
@@ -3987,11 +3922,8 @@ function renderLineItemEditRow(orderId, li) {
       <td>
         <input class="li-input li-input-wide" id="lie-name" value="${escHtml(li.name)}" placeholder="Name *" />
         <input class="li-input" style="margin-top:4px" id="lie-desc" value="${escHtml(li.description||'')}" placeholder="Description (optional)" />
-        <div style="display:flex;gap:0.35rem;margin-top:4px;flex-wrap:wrap">
-          <select class="li-cc-select" id="lie-cost-code" title="Cost code">
-            ${ccSelectOptions(li.costCodeId)}
-          </select>
-          <select class="li-cc-select" id="lie-group" title="Group" style="max-width:130px">
+        <div style="margin-top:4px">
+          <select class="li-cc-select" id="lie-group" title="Group" style="max-width:160px">
             ${groupSelectOptions(orderId, li.groupId)}
           </select>
         </div>
@@ -4042,26 +3974,18 @@ function renderNewLineItemRow(orderId) {
                  oninput="updateNewPreview()" />
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.6rem">
+      <div style="display:grid;grid-template-columns:${hasGroups ? '2fr 1fr' : '1fr'};gap:0.5rem;margin-bottom:0.6rem">
         <div>
           <label class="form-label" style="font-size:0.65rem">Description (optional)</label>
           <input class="li-input" id="lin-desc" placeholder="Brief description" />
         </div>
-        <div style="display:flex;gap:0.5rem">
-          <div style="flex:1">
-            <label class="form-label" style="font-size:0.65rem">Cost Code</label>
-            <select class="li-input li-cc-select" id="lin-cost-code" style="max-width:100%;width:100%">
-              ${ccSelectOptions(null)}
-            </select>
-          </div>
-          ${hasGroups ? `
-          <div style="flex:1">
-            <label class="form-label" style="font-size:0.65rem">Group</label>
-            <select class="li-input li-cc-select" id="lin-group" style="max-width:100%;width:100%">
-              ${groupSelectOptions(orderId, null)}
-            </select>
-          </div>` : ''}
-        </div>
+        ${hasGroups ? `
+        <div>
+          <label class="form-label" style="font-size:0.65rem">Group</label>
+          <select class="li-input li-cc-select" id="lin-group" style="width:100%">
+            ${groupSelectOptions(orderId, null)}
+          </select>
+        </div>` : ''}
       </div>
       <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
         <button class="li-save-btn" onclick="submitNewLineItem('${escHtml(orderId)}')">Add Item</button>
@@ -4130,7 +4054,6 @@ async function saveEditLineItem(orderId, itemId) {
     materialsCost: parseFloat(document.getElementById('lie-mats')?.value   || 0) || 0,
     otherCost:     parseFloat(document.getElementById('lie-other')?.value  || 0) || 0,
     markupPct:     parseFloat(document.getElementById('lie-margin')?.value || 20) || 20,
-    costCodeId:    document.getElementById('lie-cost-code')?.value || null,
     groupId:       document.getElementById('lie-group')?.value     || null,
   };
   const btn = document.querySelector(`#li-row-${itemId} .li-save-btn`);
@@ -4183,7 +4106,6 @@ async function submitNewLineItem(orderId) {
     materialsCost: parseFloat(document.getElementById('lin-mats')?.value   || 0) || 0,
     otherCost:     parseFloat(document.getElementById('lin-other')?.value  || 0) || 0,
     markupPct:     parseFloat(document.getElementById('lin-margin')?.value || 20) || 20,
-    costCodeId:    document.getElementById('lin-cost-code')?.value || null,
     groupId:       document.getElementById('lin-group')?.value     || null,
   };
   const btn = document.querySelector(`#li-new-row-${orderId} .li-save-btn`);
