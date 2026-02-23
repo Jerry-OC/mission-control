@@ -672,6 +672,7 @@
   <div class="inbox-header">
     <h2>💸 Cost Inbox</h2>
     <span class="inbox-remaining" id="inbox-remaining">Loading…</span>
+    <button onclick="inboxLoaded=false; loadInbox(true)" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:0.3rem 0.65rem;font-size:0.82rem;cursor:pointer;" title="Refresh">↺</button>
   </div>
 
   <div class="inbox-filter-pills">
@@ -1084,7 +1085,7 @@ function showTab(name, btn) {
   if (name === 'tasks') fetchTasks();
   if (name === 'agents') fetchAgents();
   if (name === 'contacts') fetchContacts(contactSearchTerm, contactFilter);
-  if (name === 'inbox') loadInbox();
+  if (name === 'inbox') loadInbox(true);
 }
 
 
