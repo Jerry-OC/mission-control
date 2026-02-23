@@ -47,6 +47,8 @@ export default async function handler(req, res) {
           status:               j.status,
           totalEstimatedCost:   Number(j.total_estimated_cost  ?? 0),
           totalEstimatedPrice:  Number(j.total_estimated_price ?? 0),
+          signedCost:           Number(j.signed_cost           ?? 0),
+          signedPrice:          Number(j.signed_price          ?? 0),
           contractCost:         Number(j.contract_cost         ?? 0),
           contractPrice:        Number(j.contract_price        ?? 0),
           orderCount:           Number(j.order_count           ?? 0),

@@ -3400,18 +3400,21 @@ async function fetchEstOrders(jobId) {
 
 // ── Metrics ───────────────────────────────────
 function renderEstMetrics(job) {
-  const cost     = Number(job?.totalEstimatedCost  ?? 0);
-  const price    = Number(job?.totalEstimatedPrice ?? 0);
-  const contract = Number(job?.contractPrice       ?? 0);
-  const orders   = Number(job?.orderCount          ?? 0);
-  const signed   = Number(job?.signedOrderCount    ?? 0);
-  const margin   = price > 0 ? Math.round(((price - cost) / price) * 100) : 0;
+  const cost        = Number(job?.totalEstimatedCost  ?? 0);
+  const price       = Number(job?.totalEstimatedPrice ?? 0);
+  const signedPrice = Number(job?.signedPrice         ?? 0);
+  const orders      = Number(job?.orderCount          ?? 0);
+  const signed      = Number(job?.signedOrderCount    ?? 0);
+  const margin      = price > 0 ? Math.round(((price - cost) / price) * 100) : 0;
 
   document.getElementById('est-metric-cost').textContent     = job ? fmtCurrency(cost) : '—';
   document.getElementById('est-metric-price').textContent    = job ? fmtCurrency(price) : '—';
   document.getElementById('est-metric-margin-sub').textContent =
     job ? `${margin}% gross margin` : '—';
-  document.getElementById('est-metric-contract').textContent = job ? fmtCurrency(contract) : '—';
+  // Contract Value = sum of Signed order prices (spec: "approved orders only for contract total")
+  document.getElementById('est-metric-contract').textContent = job ? fmtCurrency(signedPrice) : '—';
+  document.getElementById('est-metric-contract-sub').textContent =
+    job ? (signed ? `${signed} signed order${signed !== 1 ? 's' : ''}` : 'no signed orders') : 'signed only';
   document.getElementById('est-metric-orders').textContent   = job ? orders : '—';
   document.getElementById('est-metric-orders-sub').textContent =
     job ? `${signed} signed` : '—';
@@ -3471,6 +3474,7 @@ function renderOrderCard(order) {
         </div>
         <div class="order-header-actions" onclick="event.stopPropagation()">
           <button class="btn-icon" title="Edit order" onclick="openEditOrderModal('${escHtml(order.id)}')">✏️</button>
+          <button class="btn-icon" title="Duplicate order" onclick="duplicateOrder('${escHtml(order.id)}')">⧉</button>
           <button class="btn-icon danger" title="Delete order" onclick="deleteOrder('${escHtml(order.id)}')">🗑</button>
         </div>
         <span class="order-chevron">▼</span>
@@ -3609,38 +3613,60 @@ function renderLineItemEditRow(orderId, li) {
 function renderNewLineItemRow(orderId) {
   return `
     <div id="li-new-row-${escHtml(orderId)}" style="margin-top:0.5rem;padding:0.75rem;background:rgba(249,115,22,0.04);border:1px solid rgba(249,115,22,0.15);border-radius:8px">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:0.5rem;margin-bottom:0.6rem">
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:0.5rem;margin-bottom:0.6rem">
         <div>
           <label class="form-label" style="font-size:0.65rem">Name *</label>
-          <input class="li-input" id="lin-name" placeholder="e.g. Rough Plumbing" />
+          <input class="li-input" id="lin-name" placeholder="e.g. Rough Plumbing"
+                 onkeydown="if(event.key==='Enter')submitNewLineItem('${escHtml(orderId)}')" />
         </div>
         <div>
           <label class="form-label" style="font-size:0.65rem">Labor ($)</label>
-          <input class="li-input num" id="lin-labor" type="number" min="0" step="0.01" placeholder="0" />
+          <input class="li-input num" id="lin-labor" type="number" min="0" step="0.01" placeholder="0"
+                 oninput="updateNewPreview()" />
         </div>
         <div>
           <label class="form-label" style="font-size:0.65rem">Materials ($)</label>
-          <input class="li-input num" id="lin-mats" type="number" min="0" step="0.01" placeholder="0" />
+          <input class="li-input num" id="lin-mats" type="number" min="0" step="0.01" placeholder="0"
+                 oninput="updateNewPreview()" />
         </div>
         <div>
           <label class="form-label" style="font-size:0.65rem">Other ($)</label>
-          <input class="li-input num" id="lin-other" type="number" min="0" step="0.01" placeholder="0" />
+          <input class="li-input num" id="lin-other" type="number" min="0" step="0.01" placeholder="0"
+                 oninput="updateNewPreview()" />
         </div>
         <div>
           <label class="form-label" style="font-size:0.65rem">Margin %</label>
-          <input class="li-input num" id="lin-margin" type="number" min="0" max="100" step="0.1" placeholder="20" value="20" />
+          <input class="li-input num" id="lin-margin" type="number" min="0" max="100" step="0.1" placeholder="20" value="20"
+                 oninput="updateNewPreview()" />
         </div>
       </div>
       <div style="margin-bottom:0.6rem">
         <label class="form-label" style="font-size:0.65rem">Description (optional)</label>
         <input class="li-input" id="lin-desc" placeholder="Brief description" />
       </div>
-      <div style="display:flex;gap:0.5rem;align-items:center">
+      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
         <button class="li-save-btn" onclick="submitNewLineItem('${escHtml(orderId)}')">Add Item</button>
         <button class="li-cancel-btn" onclick="cancelNewLineItem('${escHtml(orderId)}')">Cancel</button>
+        <span id="lin-preview" style="font-size:0.78rem;color:var(--muted);margin-left:0.25rem"></span>
         <span id="lin-error" style="font-size:0.75rem;color:var(--red);display:none"></span>
       </div>
     </div>`;
+}
+
+function updateNewPreview() {
+  const labor  = parseFloat(document.getElementById('lin-labor')?.value  || 0) || 0;
+  const mats   = parseFloat(document.getElementById('lin-mats')?.value   || 0) || 0;
+  const other  = parseFloat(document.getElementById('lin-other')?.value  || 0) || 0;
+  const margin = parseFloat(document.getElementById('lin-margin')?.value || 20) || 20;
+  const cost   = labor + mats + other;
+  const price  = cost * (1 + margin / 100);
+  const preview = document.getElementById('lin-preview');
+  if (preview && cost > 0) {
+    preview.textContent = `Cost: ${fmtCurrencyFull(cost)} → Price: ${fmtCurrencyFull(price)}`;
+    preview.style.color = 'var(--accent)';
+  } else if (preview) {
+    preview.textContent = '';
+  }
 }
 
 // ── Inline edit entry points ──────────────────
@@ -3870,6 +3896,61 @@ async function deleteOrder(orderId) {
     await fetchEstOrders(estSelectedJobId);
   } catch (err) {
     alert('Delete failed: ' + err.message);
+  }
+}
+
+// ── Duplicate order (copy order + all line items as a new Draft) ──────────
+async function duplicateOrder(orderId) {
+  const order = estOrders.find(o => o.id === orderId);
+  if (!order) return;
+
+  const defaultName = order.name.match(/\bcopy\b/i) ? order.name : order.name + ' (copy)';
+  const newName = prompt('Name for the duplicate order:', defaultName);
+  if (!newName?.trim()) return;
+
+  try {
+    // Create new order
+    const created = await apiPost('/api/orders', {
+      job_id: estSelectedJobId,
+      name:   newName.trim(),
+      type:   order.type,
+      status: 'Draft',
+      notes:  order.notes || null,
+    });
+    const newOrderId = created.id;
+
+    // Fetch source line items if not already loaded
+    if (!estLineItems[orderId]) {
+      const data = await apiFetch(`/api/estimate-line-items?order_id=${orderId}`);
+      estLineItems[orderId] = data.lineItems || [];
+    }
+
+    // Copy each line item to new order
+    await Promise.all(
+      (estLineItems[orderId] || []).map((li, idx) =>
+        apiPost('/api/estimate-line-items', {
+          order_id:      newOrderId,
+          name:          li.name,
+          description:   li.description   || null,
+          laborCost:     li.laborCost,
+          materialsCost: li.materialsCost,
+          otherCost:     li.otherCost,
+          marginPct:     li.marginPct,
+          sortOrder:     li.sortOrder ?? idx,
+        })
+      )
+    );
+
+    // Refresh and auto-expand the new order
+    await fetchEstOrders(estSelectedJobId);
+    estExpandedOrders.add(newOrderId);
+    const newOrder = estOrders.find(o => o.id === newOrderId);
+    if (newOrder) {
+      renderEstOrders();
+      await fetchLineItems(newOrderId);
+    }
+  } catch (err) {
+    alert('Duplicate failed: ' + err.message);
   }
 }
 

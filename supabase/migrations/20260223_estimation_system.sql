@@ -72,18 +72,26 @@ GROUP BY o.id, o.job_id, o.name, o.type, o.status,
 
 -- ----------------------------------------------------------------
 -- 4. job_estimating_summary VIEW — jobs with all estimating totals
+--    Note: signed_cost / signed_price = sum of Signed orders only
+--          (spec: "approved orders only for contract total")
 -- ----------------------------------------------------------------
-CREATE OR REPLACE VIEW job_estimating_summary AS
+DROP VIEW IF EXISTS job_estimating_summary;
+
+CREATE VIEW job_estimating_summary AS
 SELECT
   j.id,
   j.name,
   j.status,
-  j.projected_cost                                                AS contract_cost,
-  j.contract_amount                                               AS contract_price,
-  COALESCE(SUM(os.total_cost), 0)                                AS total_estimated_cost,
-  COALESCE(SUM(os.total_price), 0)                               AS total_estimated_price,
-  COUNT(DISTINCT o.id)                                           AS order_count,
-  COUNT(DISTINCT CASE WHEN o.status = 'Signed' THEN o.id END)   AS signed_order_count
+  j.projected_cost                                                    AS contract_cost,
+  j.contract_amount                                                   AS contract_price,
+  COALESCE(SUM(os.total_cost),  0)                                   AS total_estimated_cost,
+  COALESCE(SUM(os.total_price), 0)                                   AS total_estimated_price,
+  COALESCE(SUM(CASE WHEN o.status = 'Signed' THEN os.total_cost  ELSE 0 END), 0)
+                                                                     AS signed_cost,
+  COALESCE(SUM(CASE WHEN o.status = 'Signed' THEN os.total_price ELSE 0 END), 0)
+                                                                     AS signed_price,
+  COUNT(DISTINCT o.id)                                               AS order_count,
+  COUNT(DISTINCT CASE WHEN o.status = 'Signed' THEN o.id END)       AS signed_order_count
 FROM jobs j
 LEFT JOIN orders o ON o.job_id = j.id
 LEFT JOIN order_summary os ON os.id = o.id
