@@ -1,18 +1,12 @@
-// /api/orders — Estimation orders + order groups
+// /api/orders — Estimation orders
 //
-// ORDERS
 // GET    /api/orders                        → list all orders
 // GET    /api/orders?job_id=uuid            → orders for a specific job
 // POST   /api/orders                        → create an order
 // PATCH  /api/orders?id=uuid                → update an order
 // DELETE /api/orders?id=uuid                → delete an order
 //
-// ORDER GROUPS  (resource=groups)
-// GET    /api/orders?resource=groups&order_id=uuid   → list groups
-// POST   /api/orders?resource=groups                 → create group
-// PATCH  /api/orders?resource=groups&id=uuid         → update group
-// PATCH  /api/orders?resource=groups&action=reorder  → bulk reorder
-// DELETE /api/orders?resource=groups&id=uuid         → delete group
+// Order groups have been extracted to /api/order-groups
 
 import { requireAuth } from './_auth.js';
 
@@ -57,17 +51,6 @@ function normalizeOrder(o) {
   };
 }
 
-function normalizeGroup(g) {
-  return {
-    id:        g.id,
-    orderId:   g.order_id,
-    name:      g.name,
-    sortOrder: Number(g.sort_order ?? 0),
-    createdAt: g.created_at,
-    updatedAt: g.updated_at,
-  };
-}
-
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
@@ -76,105 +59,7 @@ export default async function handler(req, res) {
 
   if (!requireAuth(req, res)) return;
 
-  const { id, job_id, resource, order_id, action } = req.query || {};
-
-  // ══════════════════════════════════════════════════════
-  // ORDER GROUPS  (resource=groups)
-  // ══════════════════════════════════════════════════════
-  if (resource === 'groups') {
-
-    // GET — list groups for an order
-    if (req.method === 'GET') {
-      if (!order_id) { res.status(400).json({ error: 'order_id required' }); return; }
-      try {
-        const raw = await sbFetch(
-          `/order_groups?order_id=eq.${order_id}&select=*&order=sort_order.asc,created_at.asc`
-        );
-        res.setHeader('Cache-Control', 'no-store');
-        res.status(200).json({ groups: (raw || []).map(normalizeGroup) });
-      } catch (err) { res.status(500).json({ error: err.message }); }
-      return;
-    }
-
-    // POST — create group
-    if (req.method === 'POST') {
-      try {
-        const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-        const orderId = body.order_id || body.orderId;
-        if (!orderId) { res.status(400).json({ error: 'order_id required' }); return; }
-        if (!body.name) { res.status(400).json({ error: 'name required' }); return; }
-
-        let sortOrder = body.sort_order ?? body.sortOrder;
-        if (sortOrder == null) {
-          const existing = await sbFetch(
-            `/order_groups?order_id=eq.${orderId}&select=sort_order&order=sort_order.desc&limit=1`
-          );
-          sortOrder = existing?.length ? (existing[0].sort_order + 1) : 0;
-        }
-        const [created] = await sbFetch('/order_groups', {
-          method:  'POST',
-          body:    JSON.stringify({ order_id: orderId, name: body.name, sort_order: Number(sortOrder) }),
-          headers: { 'Prefer': 'return=representation' },
-        });
-        res.status(201).json({ ok: true, group: normalizeGroup(created) });
-      } catch (err) { res.status(500).json({ error: err.message }); }
-      return;
-    }
-
-    // PATCH — bulk reorder or single update
-    if (req.method === 'PATCH') {
-      if (action === 'reorder') {
-        try {
-          const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || []);
-          const updates = Array.isArray(body) ? body : (body.items || []);
-          await Promise.all(
-            updates.map(item =>
-              sbFetch(`/order_groups?id=eq.${item.id}`, {
-                method:  'PATCH',
-                body:    JSON.stringify({ sort_order: item.sort_order ?? item.sortOrder }),
-                headers: { 'Prefer': 'return=minimal' },
-              })
-            )
-          );
-          res.status(200).json({ ok: true });
-        } catch (err) { res.status(500).json({ error: err.message }); }
-        return;
-      }
-      if (!id) { res.status(400).json({ error: 'id required' }); return; }
-      try {
-        const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-        const patch = {};
-        if (body.name       !== undefined) patch.name       = body.name;
-        if (body.sort_order !== undefined) patch.sort_order = Number(body.sort_order);
-        if (body.sortOrder  !== undefined) patch.sort_order = Number(body.sortOrder);
-        patch.updated_at = new Date().toISOString();
-        const [updated] = await sbFetch(`/order_groups?id=eq.${id}`, {
-          method:  'PATCH',
-          body:    JSON.stringify(patch),
-          headers: { 'Prefer': 'return=representation' },
-        });
-        res.status(200).json({ ok: true, group: normalizeGroup(updated) });
-      } catch (err) { res.status(500).json({ error: err.message }); }
-      return;
-    }
-
-    // DELETE — delete group (line items become ungrouped via SET NULL)
-    if (req.method === 'DELETE') {
-      if (!id) { res.status(400).json({ error: 'id required' }); return; }
-      try {
-        await sbFetch(`/order_groups?id=eq.${id}`, { method: 'DELETE' });
-        res.status(200).json({ ok: true, id });
-      } catch (err) { res.status(500).json({ error: err.message }); }
-      return;
-    }
-
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
-  }
-
-  // ══════════════════════════════════════════════════════
-  // ORDERS
-  // ══════════════════════════════════════════════════════
+  const { id, job_id } = req.query || {};
 
   // GET
   if (req.method === 'GET') {

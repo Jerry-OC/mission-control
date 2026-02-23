@@ -1,10 +1,11 @@
-// /api/estimate-line-items — Line items + cost code lookup for estimation orders
-// GET    /api/estimate-line-items?order_id=uuid       → all line items (with cost code join)
-// GET    /api/estimate-line-items?resource=cost-codes → full cost codes list
-// POST   /api/estimate-line-items                     → create a line item
-// PATCH  /api/estimate-line-items?id=uuid             → update a line item
-// DELETE /api/estimate-line-items?id=uuid             → delete a line item
-// PATCH  /api/estimate-line-items?action=reorder      → update sort_order array
+// /api/estimate-line-items — Line items for estimation orders
+// GET    /api/estimate-line-items?order_id=uuid  → all line items (with cost code join)
+// POST   /api/estimate-line-items                → create a line item
+// PATCH  /api/estimate-line-items?id=uuid        → update a line item
+// DELETE /api/estimate-line-items?id=uuid        → delete a line item
+// PATCH  /api/estimate-line-items?action=reorder → update sort_order array
+//
+// Cost codes have been extracted to /api/cost-codes
 
 import { requireAuth } from './_auth.js';
 
@@ -64,19 +65,7 @@ export default async function handler(req, res) {
 
   if (!requireAuth(req, res)) return;
 
-  const { id, order_id, action, resource } = req.query || {};
-
-  // ── GET cost-codes (resource=cost-codes) ─────────────────────────────────
-  if (req.method === 'GET' && resource === 'cost-codes') {
-    try {
-      const raw = await sbFetch('/cost_codes?select=id,name,number,category&order=number.asc');
-      res.setHeader('Cache-Control', 'public, max-age=300');
-      res.status(200).json({ costCodes: raw || [] });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-    return;
-  }
+  const { id, order_id, action } = req.query || {};
 
   // ── GET — list line items for an order ────────────────────────────────────
   if (req.method === 'GET') {
