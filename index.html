@@ -24,6 +24,7 @@
     --purple: #a855f7;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
+  html { font-size:17px; }
   body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; }
 
   /* ─── AUTH GATE ─── */
@@ -399,14 +400,22 @@
   .inline-add { display:flex; align-items:center; gap:0.5rem; padding:0.5rem; border:1px dashed rgba(255,255,255,0.1); border-radius:8px; cursor:pointer; color:var(--muted); font-size:0.78rem; transition:all 0.15s; margin-top:0.4rem; }
   .inline-add:hover { border-color:var(--accent); color:var(--accent); }
   /* ─── CONTACTS ─── */
-  .contacts-header { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-bottom:1rem; }
+  .contacts-header { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; margin-bottom:1rem; max-width:680px; }
   .contacts-header h2 { margin:0; flex:1; }
   .contacts-search-wrap { position:relative; flex:1; min-width:180px; max-width:320px; }
   .contacts-search { width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:0.45rem 0.65rem 0.45rem 2rem; font-size:0.83rem; font-family:'Inter',sans-serif; }
   .contacts-search:focus { outline:none; border-color:var(--accent); }
   .contacts-search-icon { position:absolute; left:0.6rem; top:50%; transform:translateY(-50%); color:var(--muted); font-size:0.8rem; pointer-events:none; }
-  .contacts-type-pills { display:flex; gap:0.3rem; flex-wrap:wrap; margin-bottom:1rem; }
-  .contacts-list { display:flex; flex-direction:column; gap:0.55rem; }
+  .contacts-type-pills { display:flex; gap:0.35rem; flex-wrap:wrap; margin-bottom:1rem; max-width:680px; }
+  .pill { display:inline-flex; align-items:center; padding:0.28rem 0.75rem; border-radius:20px; font-size:0.75rem; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; white-space:nowrap; }
+  .pill:hover { border-color:rgba(255,255,255,0.25); color:var(--text); }
+  .pill.active            { border-color:var(--accent);           color:var(--accent);  background:rgba(249,115,22,0.12); }
+  .pill-client.active     { border-color:#34d399; color:#34d399;  background:rgba(52,211,153,0.1); }
+  .pill-sub.active        { border-color:var(--accent); color:var(--accent); background:rgba(249,115,22,0.12); }
+  .pill-vendor.active     { border-color:#60a5fa; color:#60a5fa;  background:rgba(96,165,250,0.1); }
+  .pill-personal.active   { border-color:#c084fc; color:#c084fc;  background:rgba(192,132,252,0.1); }
+  .pill-professional.active{ border-color:#fbbf24; color:#fbbf24; background:rgba(251,191,36,0.1); }
+  .contacts-list { display:flex; flex-direction:column; gap:0.55rem; max-width:680px; }
   .contact-card { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:border-color 0.15s; }
   .contact-card:hover { border-color:rgba(255,255,255,0.12); }
   .contact-card-header { display:flex; align-items:center; gap:0.75rem; padding:0.85rem 1rem; cursor:pointer; }
@@ -422,13 +431,13 @@
   .contact-badge.type-professional  { border-color:rgba(234,179,8,0.4);  color:#fbbf24; }
   .contact-expand { display:none; padding:0 1rem 1rem; border-top:1px solid var(--border); }
   .contact-expand.open { display:block; }
-  .contact-field { display:flex; align-items:center; gap:0.5rem; padding:0.35rem 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .contact-field { display:flex; align-items:center; gap:0; padding:0.35rem 0; border-bottom:1px solid rgba(255,255,255,0.04); }
   .contact-field:last-child { border-bottom:none; }
   .contact-field-label { font-size:0.65rem; color:var(--muted); width:72px; flex-shrink:0; text-transform:uppercase; letter-spacing:0.04em; }
-  .contact-field-value { flex:1; font-size:0.8rem; }
+  .contact-field-value { font-size:0.82rem; display:inline-flex; align-items:center; gap:0.4rem; flex-wrap:wrap; }
   .contact-field-value a { color:var(--text); text-decoration:none; }
   .contact-field-value a:hover { color:var(--accent); }
-  .copy-btn { font-size:0.65rem; padding:0.1rem 0.35rem; border-radius:5px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; transition:all 0.15s; flex-shrink:0; }
+  .copy-btn { font-size:0.6rem; padding:0.08rem 0.3rem; border-radius:4px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; transition:all 0.15s; flex-shrink:0; line-height:1.4; }
   .copy-btn:hover { border-color:var(--accent); color:var(--accent); }
   .copy-btn.copied { border-color:var(--green); color:var(--green); }
   .contact-expand-actions { display:flex; gap:0.5rem; margin-top:0.85rem; }
@@ -677,12 +686,12 @@
   </div>
 
   <div class="contacts-type-pills" id="contacts-type-pills">
-    <button class="pill active" onclick="setContactFilter('',this)">All</button>
-    <button class="pill" onclick="setContactFilter('client',this)">Clients</button>
-    <button class="pill" onclick="setContactFilter('subcontractor',this)">Subs</button>
-    <button class="pill" onclick="setContactFilter('vendor',this)">Vendors</button>
-    <button class="pill" onclick="setContactFilter('personal',this)">Personal</button>
-    <button class="pill" onclick="setContactFilter('professional',this)">Professional</button>
+    <button class="pill active"              onclick="setContactFilter('',this)">All</button>
+    <button class="pill pill-client"         onclick="setContactFilter('client',this)">Clients</button>
+    <button class="pill pill-sub"            onclick="setContactFilter('subcontractor',this)">Subs</button>
+    <button class="pill pill-vendor"         onclick="setContactFilter('vendor',this)">Vendors</button>
+    <button class="pill pill-personal"       onclick="setContactFilter('personal',this)">Personal</button>
+    <button class="pill pill-professional"   onclick="setContactFilter('professional',this)">Professional</button>
   </div>
 
   <div class="contacts-count" id="contacts-count"></div>
@@ -1971,8 +1980,7 @@ function renderContacts(contacts) {
     const fieldRows = fields.map(f => `
       <div class="contact-field">
         <span class="contact-field-label">${f.label}</span>
-        <span class="contact-field-value">${f.value}</span>
-        ${f.copy ? `<button class="copy-btn" onclick="copyField(${JSON.stringify(f.copy)},this)">📋</button>` : ''}
+        <span class="contact-field-value">${f.value}${f.copy ? ` <button class="copy-btn" onclick="copyField(${JSON.stringify(f.copy)},this)">📋</button>` : ''}</span>
       </div>`).join('');
 
     return `<div class="contact-card" id="cc-${c.id}">
