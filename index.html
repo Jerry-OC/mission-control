@@ -778,14 +778,14 @@
   .btn-add-group:hover { border-color:var(--accent); color:var(--accent); }
 
   /* Group select in line item rows */
-  .li-cc-select {
+  .li-group-select {
     background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
     color:var(--text); border-radius:5px; padding:0.22rem 0.35rem;
     font-size:0.75rem; font-family:'Inter',sans-serif; color-scheme:dark;
     max-width:170px; cursor:pointer;
   }
-  .li-cc-select:focus { outline:none; border-color:var(--accent); }
-  .li-cc-select option { background:#1a1a2e; }
+  .li-group-select:focus { outline:none; border-color:var(--accent); }
+  .li-group-select option { background:#1a1a2e; }
 </style>
 </head>
 <body>
@@ -3762,9 +3762,9 @@ function liTableHead() {
     <th class="num" style="width:90px">Labor</th>
     <th class="num" style="width:90px">Materials</th>
     <th class="num" style="width:80px">Other</th>
-    <th class="num" style="width:65px">Markup%</th>
+    <th class="num" style="width:65px" title="Markup on cost — Price = Cost × (1 + Markup%)">Markup%</th>
     <th class="num" style="width:90px">Cost</th>
-    <th class="num" style="width:90px">Price</th>
+    <th class="num" style="width:90px" title="Price = Cost × (1 + Markup%)">Price</th>
     <th style="width:80px"></th>
   </tr></thead>`;
 }
@@ -3900,6 +3900,7 @@ function renderLineItemReadRow(orderId, li) {
       <td>
         <div class="li-name-cell">${escHtml(li.name)}</div>
         ${li.description ? `<div class="li-desc-cell">${escHtml(li.description)}</div>` : ''}
+        ${li.notes ? `<div class="li-desc-cell" style="font-style:italic;color:rgba(255,255,255,0.3)" title="Internal note">📝 ${escHtml(li.notes)}</div>` : ''}
       </td>
       <td class="num-muted">${li.laborCost > 0 ? fmtCurrencyFull(li.laborCost) : '—'}</td>
       <td class="num-muted">${li.materialsCost > 0 ? fmtCurrencyFull(li.materialsCost) : '—'}</td>
@@ -3922,8 +3923,9 @@ function renderLineItemEditRow(orderId, li) {
       <td>
         <input class="li-input li-input-wide" id="lie-name" value="${escHtml(li.name)}" placeholder="Name *" />
         <input class="li-input" style="margin-top:4px" id="lie-desc" value="${escHtml(li.description||'')}" placeholder="Description (optional)" />
+        <input class="li-input" style="margin-top:4px;font-size:0.76rem" id="lie-notes" value="${escHtml(li.notes||'')}" placeholder="Notes (internal only)" />
         <div style="margin-top:4px">
-          <select class="li-cc-select" id="lie-group" title="Group" style="max-width:160px">
+          <select class="li-group-select" id="lie-group" title="Group" style="max-width:160px">
             ${groupSelectOptions(orderId, li.groupId)}
           </select>
         </div>
@@ -3974,15 +3976,19 @@ function renderNewLineItemRow(orderId) {
                  oninput="updateNewPreview()" />
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:${hasGroups ? '2fr 1fr' : '1fr'};gap:0.5rem;margin-bottom:0.6rem">
+      <div style="display:grid;grid-template-columns:${hasGroups ? '2fr 1fr 1fr' : '1fr 1fr'};gap:0.5rem;margin-bottom:0.6rem">
         <div>
           <label class="form-label" style="font-size:0.65rem">Description (optional)</label>
           <input class="li-input" id="lin-desc" placeholder="Brief description" />
         </div>
+        <div>
+          <label class="form-label" style="font-size:0.65rem">Notes (internal only)</label>
+          <input class="li-input" id="lin-notes" placeholder="e.g. allowance, exclusion…" />
+        </div>
         ${hasGroups ? `
         <div>
           <label class="form-label" style="font-size:0.65rem">Group</label>
-          <select class="li-input li-cc-select" id="lin-group" style="width:100%">
+          <select class="li-input li-group-select" id="lin-group" style="width:100%">
             ${groupSelectOptions(orderId, null)}
           </select>
         </div>` : ''}
@@ -4049,7 +4055,8 @@ async function saveEditLineItem(orderId, itemId) {
   if (!name) { alert('Name is required'); return; }
   const body = {
     name,
-    description:   document.getElementById('lie-desc')?.value.trim() || null,
+    description:   document.getElementById('lie-desc')?.value.trim()  || null,
+    notes:         document.getElementById('lie-notes')?.value.trim() || null,
     laborCost:     parseFloat(document.getElementById('lie-labor')?.value  || 0) || 0,
     materialsCost: parseFloat(document.getElementById('lie-mats')?.value   || 0) || 0,
     otherCost:     parseFloat(document.getElementById('lie-other')?.value  || 0) || 0,
@@ -4102,6 +4109,7 @@ async function submitNewLineItem(orderId) {
     order_id:      orderId,
     name,
     description:   document.getElementById('lin-desc')?.value.trim()  || null,
+    notes:         document.getElementById('lin-notes')?.value.trim() || null,
     laborCost:     parseFloat(document.getElementById('lin-labor')?.value  || 0) || 0,
     materialsCost: parseFloat(document.getElementById('lin-mats')?.value   || 0) || 0,
     otherCost:     parseFloat(document.getElementById('lin-other')?.value  || 0) || 0,
@@ -4367,7 +4375,8 @@ async function duplicateOrder(orderId) {
         apiPost('/api/estimate-line-items', {
           order_id:      newOrderId,
           name:          li.name,
-          description:   li.description   || null,
+          description:   li.description || null,
+          notes:         li.notes       || null,
           laborCost:     li.laborCost,
           materialsCost: li.materialsCost,
           otherCost:     li.otherCost,
