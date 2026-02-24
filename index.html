@@ -579,6 +579,7 @@
   /* Job summary metrics */
   .est-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:0.75rem; margin-bottom:1.5rem; }
   @media(max-width:700px) { .est-metrics { grid-template-columns:repeat(2,1fr); } }
+  @media(max-width:400px) { .est-metrics { grid-template-columns:1fr 1fr; gap:0.5rem; } }
 
   /* Orders list */
   .order-list { display:flex; flex-direction:column; gap:0.75rem; }
@@ -786,6 +787,77 @@
   }
   .li-group-select:focus { outline:none; border-color:var(--accent); }
   .li-group-select option { background:#1a1a2e; }
+
+  /* ── New line item form ─────────────────────────────────────────────── */
+  .li-new-form {
+    margin-top:0.5rem; padding:0.75rem;
+    background:rgba(249,115,22,0.04); border:1px solid rgba(249,115,22,0.15);
+    border-radius:8px;
+  }
+  .li-new-label { font-size:0.65rem; }
+  .li-new-form-costs {
+    display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr;
+    gap:0.5rem; margin-bottom:0.6rem;
+  }
+  .li-new-form-meta {
+    display:grid; grid-template-columns:1fr 1fr;
+    gap:0.5rem; margin-bottom:0.6rem;
+  }
+  .li-new-form-meta.has-groups { grid-template-columns:2fr 1fr 1fr; }
+  .li-new-form-actions {
+    display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;
+  }
+  .li-new-preview { font-size:0.78rem; color:var(--muted); margin-left:0.25rem; }
+  .li-new-error { font-size:0.75rem; color:var(--red); display:none; }
+
+  /* ── Estimating: mobile responsive ─────────────────────────────────── */
+  @media(max-width:640px) {
+    /* Header: let select grow, wrap buttons */
+    .est-header { flex-wrap:wrap; }
+    .est-header h2 { flex:1 0 100%; }
+    .est-job-select { flex:1 1 0; min-width:0; }
+
+    /* Order card header: wrap badge+totals onto second row */
+    .order-card-header { flex-wrap:wrap; row-gap:0.4rem; }
+    .order-card-title { flex:1 0 calc(100% - 7rem); }
+    .order-header-actions { margin-left:auto; flex-shrink:0; }
+    .order-chevron { flex-shrink:0; }
+    .order-card-totals {
+      flex:0 0 100%;
+      padding:0.35rem 0 0;
+      border-top:1px solid var(--border);
+      justify-content:flex-end;
+      gap:0.75rem;
+    }
+    .order-price-highlight { font-size:0.92rem; }
+
+    /* Line item table: horizontal scroll on small screens */
+    .li-table { display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+
+    /* New item form: 2-column costs on mobile (name spans 2 cols, then 2×2) */
+    .li-new-form-costs { grid-template-columns:1fr 1fr; }
+    .li-new-form-costs > div:first-child { grid-column:1 / -1; }
+    .li-new-form-meta { grid-template-columns:1fr; }
+    .li-new-form-meta.has-groups { grid-template-columns:1fr; }
+
+    /* Order totals footer: compact */
+    .order-totals-footer { gap:0.75rem; }
+
+    /* Groups: smaller header */
+    .order-group-header { gap:0.35rem; font-size:0.82rem; }
+    .group-total { font-size:0.82rem; }
+
+    /* Modal: tighter padding */
+    .new-order-box { padding:1.25rem; }
+  }
+
+  @media(max-width:420px) {
+    .est-metrics { grid-template-columns:1fr 1fr; }
+    .metric-card .metric-value { font-size:1.1rem; }
+    .order-card-totals { gap:0.5rem; }
+    .li-new-form-costs { grid-template-columns:1fr; }
+    .li-new-form-costs > div:first-child { grid-column:unset; }
+  }
 </style>
 </head>
 <body>
@@ -3976,56 +4048,56 @@ function renderLineItemEditRow(orderId, li) {
 function renderNewLineItemRow(orderId) {
   const hasGroups = (estGroups[orderId] || []).length > 0;
   return `
-    <div id="li-new-row-${escHtml(orderId)}" style="margin-top:0.5rem;padding:0.75rem;background:rgba(249,115,22,0.04);border:1px solid rgba(249,115,22,0.15);border-radius:8px">
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:0.5rem;margin-bottom:0.6rem">
+    <div id="li-new-row-${escHtml(orderId)}" class="li-new-form">
+      <div class="li-new-form-costs">
         <div>
-          <label class="form-label" style="font-size:0.65rem">Name *</label>
+          <label class="form-label li-new-label">Name *</label>
           <input class="li-input" id="lin-name" placeholder="e.g. Rough Plumbing"
                  onkeydown="if(event.key==='Enter')submitNewLineItem('${escHtml(orderId)}')" />
         </div>
         <div>
-          <label class="form-label" style="font-size:0.65rem">Labor ($)</label>
+          <label class="form-label li-new-label">Labor ($)</label>
           <input class="li-input num" id="lin-labor" type="number" min="0" step="0.01" placeholder="0"
                  oninput="updateNewPreview()" />
         </div>
         <div>
-          <label class="form-label" style="font-size:0.65rem">Materials ($)</label>
+          <label class="form-label li-new-label">Materials ($)</label>
           <input class="li-input num" id="lin-mats" type="number" min="0" step="0.01" placeholder="0"
                  oninput="updateNewPreview()" />
         </div>
         <div>
-          <label class="form-label" style="font-size:0.65rem">Other ($)</label>
+          <label class="form-label li-new-label">Other ($)</label>
           <input class="li-input num" id="lin-other" type="number" min="0" step="0.01" placeholder="0"
                  oninput="updateNewPreview()" />
         </div>
         <div>
-          <label class="form-label" style="font-size:0.65rem">Markup %</label>
+          <label class="form-label li-new-label">Markup %</label>
           <input class="li-input num" id="lin-margin" type="number" min="0" max="100" step="0.1" placeholder="20" value="20"
                  oninput="updateNewPreview()" />
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:${hasGroups ? '2fr 1fr 1fr' : '1fr 1fr'};gap:0.5rem;margin-bottom:0.6rem">
+      <div class="li-new-form-meta${hasGroups ? ' has-groups' : ''}">
         <div>
-          <label class="form-label" style="font-size:0.65rem">Description (optional)</label>
+          <label class="form-label li-new-label">Description (optional)</label>
           <input class="li-input" id="lin-desc" placeholder="Brief description" />
         </div>
         <div>
-          <label class="form-label" style="font-size:0.65rem">Notes (internal only)</label>
+          <label class="form-label li-new-label">Notes (internal only)</label>
           <input class="li-input" id="lin-notes" placeholder="e.g. allowance, exclusion…" />
         </div>
         ${hasGroups ? `
         <div>
-          <label class="form-label" style="font-size:0.65rem">Group</label>
+          <label class="form-label li-new-label">Group</label>
           <select class="li-input li-group-select" id="lin-group" style="width:100%">
             ${groupSelectOptions(orderId, null)}
           </select>
         </div>` : ''}
       </div>
-      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+      <div class="li-new-form-actions">
         <button class="li-save-btn" onclick="submitNewLineItem('${escHtml(orderId)}')">Add Item</button>
         <button class="li-cancel-btn" onclick="cancelNewLineItem('${escHtml(orderId)}')">Cancel</button>
-        <span id="lin-preview" style="font-size:0.78rem;color:var(--muted);margin-left:0.25rem"></span>
-        <span id="lin-error" style="font-size:0.75rem;color:var(--red);display:none"></span>
+        <span id="lin-preview" class="li-new-preview"></span>
+        <span id="lin-error" class="li-new-error"></span>
       </div>
     </div>`;
 }
