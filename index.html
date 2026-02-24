@@ -242,6 +242,7 @@
   .dot-gray { background:var(--muted); }
   @keyframes pulse-green { 0%,100%{box-shadow:0 0 4px var(--green);} 50%{box-shadow:0 0 10px var(--green);} }
   .agent-last-active { font-size:0.7rem; color:var(--muted); margin-bottom:0.75rem; }
+  .agent-updated { font-size:0.68rem; color:rgba(107,114,128,0.7); font-style:italic; }
   .agent-caps { display:flex; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.85rem; }
   .agent-model-row { display:flex; align-items:center; gap:0.5rem; margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--border); }
   .agent-model-label { font-size:0.72rem; color:var(--muted); white-space:nowrap; }
@@ -859,6 +860,8 @@
     .li-new-form-costs > div:first-child { grid-column:unset; }
   }
 </style>
+<!-- Supabase Realtime (anon key — agent status is not sensitive) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 
@@ -2322,6 +2325,7 @@ setInterval(loadData, 5 * 60 * 1000);
    AGENTS — Live Status + Model Switcher
 ══════════════════════════════════════════════ */
 const LOCAL_API = 'http://127.0.0.1:18900';
+const SB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2ZmdyanNsZnJqd3lvcHl6cXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODk4ODMsImV4cCI6MjA4NzM2NTg4M30.M7P2XEKNeYwoWvi8mxHgaggDfay_3gAEsOhi6XES9I4';
 const MODELS = [
   { id: 'anthropic/claude-sonnet-4-6',  label: 'Claude Sonnet 4.6 (default)' },
   { id: 'anthropic/claude-opus-4-5',    label: 'Claude Opus 4.5' },
@@ -2334,6 +2338,7 @@ const MODELS = [
 let agentsData = null;          // last fetched payload
 let agentModelDraft = {};       // { agentId: selectedModel } — unsaved changes
 let localAvailable = false;
+let supabaseClient = null;
 
 function fmtAgo(seconds) {
   if (!seconds) return 'never';
@@ -2341,6 +2346,21 @@ function fmtAgo(seconds) {
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+function fmtUpdatedAgo(isoString) {
+  if (!isoString) return '';
+  const diffSec = Math.round((Date.now() - new Date(isoString).getTime()) / 1000);
+  if (diffSec < 5) return 'just now';
+  if (diffSec < 60) return `${diffSec}s ago`;
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+  return `${Math.floor(diffSec / 3600)}h ago`;
+}
+
+function shortModel(model) {
+  if (!model) return '—';
+  const parts = model.split('/');
+  return parts[parts.length - 1];
 }
 
 function statusMeta(agent) {
@@ -2355,6 +2375,9 @@ function renderAgentCard(agent) {
   const draft = agentModelDraft[agent.id] ?? agent.model;
   const isDirty = draft !== agent.model;
   const channelStr = agent.channel ? ` · ${agent.channel}` : '';
+  const gwIndicator = agent.gatewayUp
+    ? `<span style="color:var(--green);font-size:0.68rem">▲ gw up</span>`
+    : `<span style="color:var(--muted);font-size:0.68rem">▼ gw down</span>`;
 
   const modelOptions = MODELS.map(m =>
     `<option value="${m.id}" ${draft === m.id ? 'selected' : ''}>${m.label}</option>`
@@ -2364,21 +2387,26 @@ function renderAgentCard(agent) {
     .map(c => `<span class="badge badge-muted">${c}</span>`)
     .join('');
 
+  const updatedAgoStr = agent.updatedAt
+    ? `<span class="agent-updated" data-updated-at="${agent.updatedAt}">Updated ${fmtUpdatedAgo(agent.updatedAt)}</span>`
+    : '';
+
   return `
   <div class="agent-card ${agent.status === 'active' ? 'agent-active' : ''}" id="card-${agent.id}">
     <div class="agent-header">
       <div class="agent-emoji">${agent.emoji}</div>
-      <div>
+      <div style="flex:1">
         <div class="agent-name">${agent.name}</div>
         <div class="agent-role">${agent.role}</div>
       </div>
+      ${gwIndicator}
     </div>
     <div class="agent-status-row">
       <div class="dot ${sm.dot}"></div>
       <span style="color:${sm.color}">${sm.label}</span>
       <span style="color:var(--muted)">${channelStr}</span>
     </div>
-    <div class="agent-last-active">Last active: ${fmtAgo(agent.lastActiveAgo)}</div>
+    <div class="agent-last-active">Last active: ${fmtAgo(agent.lastActiveAgo)}${updatedAgoStr ? ` &nbsp;·&nbsp; ${updatedAgoStr}` : ''}</div>
     <div class="agent-caps">${caps}</div>
     <div class="agent-model-row">
       <span class="agent-model-label">Model</span>
@@ -2395,7 +2423,7 @@ function renderAgentCard(agent) {
   </div>`;
 }
 
-function renderAgents(data) {
+function renderAgents(data, source) {
   const grid = document.getElementById('agent-grid');
   if (!grid) return;
   grid.innerHTML = data.agents.map(renderAgentCard).join('');
@@ -2404,6 +2432,9 @@ function renderAgents(data) {
   const tbody = document.getElementById('system-status-body');
   if (tbody) {
     const gw = data.gatewayStatus === 'running';
+    const apiSource = source === 'local'
+      ? '127.0.0.1:18900 · live data'
+      : 'Supabase · pushed every 10s';
     tbody.innerHTML = `
       <tr><td>Gateway</td>
           <td><span class="badge ${gw ? 'badge-green' : 'badge-red'}">${gw ? 'Running' : 'Stopped'}</span></td>
@@ -2417,9 +2448,9 @@ function renderAgents(data) {
       <tr><td>Google Workspace</td>
           <td><span class="badge badge-green">Connected</span></td>
           <td style="color:var(--muted);font-size:0.78rem">assistant@codydesignbuild.com</td></tr>
-      <tr><td>Local Status API</td>
+      <tr><td>Agent Status API</td>
           <td><span class="badge badge-green">Online</span></td>
-          <td style="color:var(--muted);font-size:0.78rem">127.0.0.1:18900 · live data</td></tr>`;
+          <td style="color:var(--muted);font-size:0.78rem">${apiSource}</td></tr>`;
   }
 }
 
@@ -2433,28 +2464,108 @@ function renderAgentsFallback() {
   }
 }
 
-function setLiveBadge(live) {
+function setLiveBadge(mode) {
   const badge = document.getElementById('agents-live-badge');
   if (!badge) return;
-  badge.innerHTML = live
-    ? `<div class="dot dot-green"></div><span style="color:var(--green)">Live</span>`
-    : `<div class="dot dot-gray"></div><span>Offline — remote view</span>`;
+  if (mode === 'local') {
+    badge.innerHTML = `<div class="dot dot-green"></div><span style="color:var(--green)">Live · Local</span>`;
+  } else if (mode === 'supabase') {
+    badge.innerHTML = `<div class="dot dot-green"></div><span style="color:var(--green)">Live · Supabase Realtime</span>`;
+  } else {
+    badge.innerHTML = `<div class="dot dot-gray"></div><span>Offline</span>`;
+  }
+}
+
+async function fetchAgentsFromSupabase() {
+  try {
+    const res = await apiFetch('/api/agents');
+    if (!res || !res.agents) return null;
+    return res;
+  } catch {
+    return null;
+  }
 }
 
 async function fetchAgents() {
+  // Try local first (only available on Mac mini / local network)
   try {
     const res = await fetch(`${LOCAL_API}/api/agents`, { signal: AbortSignal.timeout(3000) });
     const data = await res.json();
+    // Inject updatedAt from local data — use current time since it's truly live
+    data.agents = data.agents.map(a => ({ ...a, updatedAt: new Date().toISOString() }));
     agentsData = data;
     localAvailable = true;
-    setLiveBadge(true);
-    renderAgents(data);
+    setLiveBadge('local');
+    renderAgents(data, 'local');
+    return;
   } catch {
     localAvailable = false;
+  }
+
+  // Fall back to Supabase via /api/agents
+  const data = await fetchAgentsFromSupabase();
+  if (data) {
+    agentsData = data;
+    setLiveBadge('supabase');
+    renderAgents(data, 'supabase');
+  } else {
     setLiveBadge(false);
     if (!agentsData) renderAgentsFallback();
   }
 }
+
+// Subscribe to Supabase Realtime for live card updates (when not on local network)
+function initSupabaseRealtime() {
+  try {
+    if (typeof supabase === 'undefined') return;
+    supabaseClient = supabase.createClient(
+      'https://evfgrjslfrjwyopyzqzx.supabase.co',
+      SB_ANON_KEY
+    );
+    supabaseClient
+      .channel('agent_status_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_status' }, payload => {
+        if (localAvailable) return; // local is more live, ignore
+        const updated = payload.new;
+        if (!updated || !agentsData) return;
+        // Update the specific agent in agentsData
+        const idx = agentsData.agents.findIndex(a => a.id === updated.id);
+        const normalizedAgent = {
+          id: updated.id,
+          name: updated.name,
+          emoji: updated.emoji,
+          role: updated.role,
+          channel: updated.channel,
+          capabilities: updated.capabilities || [],
+          model: updated.model,
+          status: updated.status,
+          gatewayUp: updated.gateway_up,
+          lastActiveMs: updated.last_active_ms,
+          lastActiveAgo: updated.last_active_ago,
+          updatedAt: updated.updated_at,
+        };
+        if (idx >= 0) {
+          agentsData.agents[idx] = normalizedAgent;
+        } else {
+          agentsData.agents.push(normalizedAgent);
+        }
+        agentsData.gatewayStatus = updated.gateway_status || agentsData.gatewayStatus;
+        renderAgents(agentsData, 'supabase');
+      })
+      .subscribe();
+  } catch (e) {
+    console.warn('[agents] Supabase Realtime init failed:', e.message);
+  }
+}
+
+// Refresh "Updated Xs ago" timestamps every 5 seconds without re-rendering cards
+function tickUpdatedAgo() {
+  document.querySelectorAll('.agent-updated[data-updated-at]').forEach(el => {
+    const iso = el.getAttribute('data-updated-at');
+    el.textContent = `Updated ${fmtUpdatedAgo(iso)}`;
+  });
+}
+setInterval(tickUpdatedAgo, 5000);
 
 function onModelChange(agentId, value) {
   agentModelDraft[agentId] = value;
@@ -2488,9 +2599,10 @@ async function saveModel(agentId) {
   }
 }
 
-// Initial load + poll every 10 seconds
+// Initial load + poll every 10 seconds + Supabase Realtime
 fetchAgents();
 setInterval(fetchAgents, 10 * 1000);
+initSupabaseRealtime();
 
 /* ══════════════════════════════════════════════
    TASKS — Project-based Kanban
