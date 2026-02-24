@@ -3640,10 +3640,10 @@ function renderEstJobSelect() {
   if (!sel) return;
 
   // Group jobs by status for easier scanning
-  const STATUS_ORDER = ['estimating', 'lead', 'proposed', 'active', 'complete', 'cancelled'];
+  const STATUS_ORDER = ['estimating', 'lead', 'proposed', 'active', 'on_hold', 'completed', 'cancelled'];
   const STATUS_LABELS = {
     estimating: 'Estimating', lead: 'Lead', proposed: 'Proposed',
-    active: 'Active / Construction', complete: 'Complete', cancelled: 'Cancelled',
+    active: 'Active / Construction', on_hold: 'On Hold', completed: 'Complete', cancelled: 'Cancelled',
   };
   const grouped = {};
   for (const j of estJobs) {
