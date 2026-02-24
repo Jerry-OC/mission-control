@@ -3566,8 +3566,35 @@ async function fetchEstJobs() {
 function renderEstJobSelect() {
   const sel = document.getElementById('est-job-select');
   if (!sel) return;
-  sel.innerHTML = '<option value="">— Select a job —</option>' +
-    estJobs.map(j => `<option value="${escHtml(j.id)}">${escHtml(j.name)}</option>`).join('');
+
+  // Group jobs by status for easier scanning
+  const STATUS_ORDER = ['estimating', 'lead', 'proposed', 'active', 'complete', 'cancelled'];
+  const STATUS_LABELS = {
+    estimating: 'Estimating', lead: 'Lead', proposed: 'Proposed',
+    active: 'Active / Construction', complete: 'Complete', cancelled: 'Cancelled',
+  };
+  const grouped = {};
+  for (const j of estJobs) {
+    const s = (j.status || 'other').toLowerCase();
+    if (!grouped[s]) grouped[s] = [];
+    grouped[s].push(j);
+  }
+
+  const orderedKeys = [
+    ...STATUS_ORDER.filter(s => grouped[s]),
+    ...Object.keys(grouped).filter(s => !STATUS_ORDER.includes(s)),
+  ];
+
+  let html = '<option value="">— Select a job —</option>';
+  for (const key of orderedKeys) {
+    const label = STATUS_LABELS[key] || (key.charAt(0).toUpperCase() + key.slice(1));
+    html += `<optgroup label="${escHtml(label)}">`;
+    html += grouped[key].map(j =>
+      `<option value="${escHtml(j.id)}">${escHtml(j.name)}</option>`
+    ).join('');
+    html += '</optgroup>';
+  }
+  sel.innerHTML = html;
   if (estSelectedJobId) sel.value = estSelectedJobId;
 }
 
@@ -3891,7 +3918,8 @@ function renderGroupBody(orderId, groupItems, isEditing) {
     const editing = isEditing && estEditingLineItem?.itemId === li.id;
     return editing ? renderLineItemEditRow(orderId, li) : renderLineItemReadRow(orderId, li);
   }).join('');
-  return `<table class="li-table"><tbody>${rows}</tbody></table>`;
+  // Include thead so columns align correctly (Name, Labor, Mats, Other, Markup%, Cost, Price, Actions)
+  return `<table class="li-table">${liTableHead()}<tbody>${rows}</tbody></table>`;
 }
 
 function renderLineItemReadRow(orderId, li) {
