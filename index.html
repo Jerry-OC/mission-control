@@ -902,12 +902,9 @@
   <div class="logo">CDB <span>Mission Control</span></div>
   <nav>
     <button class="active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
-    <button onclick="showTab('jobs',this)">🏗️ Jobs</button>
     <button onclick="showTab('inbox',this)">📥 Cost Inbox</button>
     <button onclick="showTab('revenue',this)">💰 Revenue</button>
     <button onclick="showTab('agents',this)">🤖 Agents</button>
-    <button onclick="showTab('tasks',this)">✅ Tasks</button>
-    <button onclick="showTab('contacts',this)">👥 Contacts</button>
     <button onclick="showTab('estimating',this)">📋 Estimating</button>
   </nav>
   <div class="header-right">
@@ -988,14 +985,6 @@
         <div style="display:flex;justify-content:space-between;padding:0.4rem 0"><span>Google Workspace connected</span><span style="color:var(--muted)">today</span></div>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- ═══════════════ JOBS TAB ═══════════════ -->
-<div id="tab-jobs" class="tab-panel">
-  <h2>Active Jobs</h2>
-  <div id="jobs-list">
-    <!-- skeleton populated by loadData() -->
   </div>
 </div>
 
@@ -1095,95 +1084,6 @@
       </tbody>
     </table>
   </div>
-</div>
-
-<!-- ═══════════════ CONTACTS TAB ═══════════════ -->
-<div id="tab-contacts" class="tab-panel">
-  <div class="contacts-header">
-    <h2>👥 Contacts</h2>
-    <div class="contacts-search-wrap">
-      <span class="contacts-search-icon">🔍</span>
-      <input class="contacts-search" id="contacts-search" placeholder="Search name, company, phone…" oninput="debounceContactSearch()" />
-    </div>
-    <button class="btn" onclick="openAddContact()">+ Add</button>
-  </div>
-
-  <div class="contacts-type-pills" id="contacts-type-pills">
-    <button class="pill active"              onclick="setContactFilter('',this)">All</button>
-    <button class="pill pill-client"         onclick="setContactFilter('client',this)">Clients</button>
-    <button class="pill pill-sub"            onclick="setContactFilter('subcontractor',this)">Subs</button>
-    <button class="pill pill-vendor"         onclick="setContactFilter('vendor',this)">Vendors</button>
-    <button class="pill pill-personal"       onclick="setContactFilter('personal',this)">Personal</button>
-    <button class="pill pill-professional"   onclick="setContactFilter('professional',this)">Professional</button>
-  </div>
-
-  <div class="contacts-count" id="contacts-count"></div>
-  <div class="contacts-list" id="contacts-list">
-    <!-- skeleton populated by fetchContacts() -->
-  </div>
-</div>
-
-<!-- ═══════════════ ADD/EDIT CONTACT MODAL ═══════════════ -->
-<div class="modal-overlay hidden" id="contact-modal">
-  <div class="modal-box" style="max-width:520px">
-    <div class="modal-title" id="contact-modal-title">New Contact</div>
-    <div class="form-row-2col">
-      <div class="form-row"><label class="form-label">First name</label><input class="form-input" id="cm-first" placeholder="John" /></div>
-      <div class="form-row"><label class="form-label">Last name</label><input class="form-input" id="cm-last" placeholder="Martinez" /></div>
-    </div>
-    <div class="form-row-2col">
-      <div class="form-row"><label class="form-label">Phone</label><input class="form-input" id="cm-phone" placeholder="+1 415 555 1234" /></div>
-      <div class="form-row"><label class="form-label">Email</label><input class="form-input" id="cm-email" placeholder="john@example.com" /></div>
-    </div>
-    <div class="form-row-2col">
-      <div class="form-row"><label class="form-label">Company</label><input class="form-input" id="cm-company" placeholder="Coastal Plumbing" /></div>
-      <div class="form-row"><label class="form-label">Title / Role</label><input class="form-input" id="cm-title" placeholder="Owner" /></div>
-    </div>
-    <div class="form-row">
-      <label class="form-label">Types (comma-separated)</label>
-      <input class="form-input" id="cm-types" placeholder="subcontractor, client, personal…" />
-    </div>
-    <div class="form-row">
-      <label class="form-label">Trades / Specialty (comma-separated)</label>
-      <input class="form-input" id="cm-trades" placeholder="Plumber, Electrician…" />
-    </div>
-    <div class="form-row-2col">
-      <div class="form-row"><label class="form-label">Rating (1–5)</label><input class="form-input" id="cm-rating" type="number" min="1" max="5" /></div>
-      <div class="form-row"><label class="form-label">Source</label><input class="form-input" id="cm-source" placeholder="referral, Google…" /></div>
-    </div>
-    <div class="form-row"><label class="form-label">Notes</label><textarea class="form-input" id="cm-notes" rows="2"></textarea></div>
-    <div class="form-row" style="display:flex;align-items:center;gap:0.5rem">
-      <input type="checkbox" id="cm-verified" style="accent-color:var(--accent)" />
-      <label class="form-label" style="margin:0" for="cm-verified">Verified contact</label>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" id="cm-delete-btn" style="color:var(--red);border-color:rgba(239,68,68,0.3);display:none" onclick="deleteCurrentContact()">Delete</button>
-      <button class="btn-cancel" onclick="closeContactModal()">Cancel</button>
-      <button class="btn" id="cm-submit-btn" onclick="submitContactModal()">Add Contact</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ TASKS TAB ═══════════════ -->
-<div id="tab-tasks" class="tab-panel">
-
-  <div class="tasks-header">
-    <h2>✅ Tasks</h2>
-    <div class="view-toggle">
-      <button class="view-btn active" id="view-kanban-btn" onclick="setTaskView('kanban')">⬜ Kanban</button>
-      <button class="view-btn" id="view-list-btn" onclick="setTaskView('list')">☰ List</button>
-    </div>
-    <button class="btn" onclick="openAddTask()">+ Add Task</button>
-  </div>
-
-  <!-- Project switcher -->
-  <div class="project-switcher" id="project-switcher"><!-- rendered by JS --></div>
-
-  <!-- Content area -->
-  <div id="tasks-content">
-    <div class="state-loading">Loading tasks…</div>
-  </div>
-
 </div>
 
 <!-- ═══════════════ ESTIMATING TAB ═══════════════ -->
@@ -1451,7 +1351,7 @@ function showApp() {
   // Restore last active tab — defer slightly so the DOM is ready
   const hash    = window.location.hash.replace('#', '');
   const lastTab = hash || localStorage.getItem('mc_active_tab') || 'dashboard';
-  const tabs    = ['dashboard','jobs','inbox','revenue','agents','tasks','contacts','estimating'];
+  const tabs    = ['dashboard','inbox','revenue','agents','estimating'];
   const target  = tabs.includes(lastTab) ? lastTab : 'dashboard';
   if (target !== 'dashboard') {
     setTimeout(() => {
@@ -1565,9 +1465,7 @@ function showTab(name, btn) {
   btn.classList.add('active');
   localStorage.setItem('mc_active_tab', name);
   history.replaceState(null, '', '#' + name);
-  if (name === 'tasks') fetchTasks();
   if (name === 'agents') fetchAgents();
-  if (name === 'contacts') fetchContacts(contactSearchTerm, contactFilter);
   if (name === 'inbox')      loadInbox(true);
   if (name === 'estimating') loadEstimating();
 }
@@ -2926,7 +2824,6 @@ async function fetchTasks() {
     }
   }
 }
-setInterval(fetchTasks, 30 * 1000);
 
 async function quickComplete(id, newStatus) {
   const t = allTasks.find(x => x.id === id);
@@ -3103,8 +3000,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// Fetch tasks on load
-fetchTasks();
 
 /* ══════════════════════════════════════════════
    CONTACTS
