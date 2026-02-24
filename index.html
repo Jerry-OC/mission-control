@@ -1087,16 +1087,25 @@
 
     <!-- Nav row -->
     <div style="display:flex;justify-content:space-between;margin-bottom:1rem;">
-      <button onclick="rqNav(-1)" style="background:transparent;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;padding:0.3rem 0;">← Back</button>
-      <button onclick="rqNav(1)"  style="background:transparent;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;padding:0.3rem 0;">Skip →</button>
+      <button onclick="rqNav(-1)" style="background:transparent;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;padding:0.3rem 0;" title="Back (← arrow)">← Back</button>
+      <button onclick="rqNav(1)"  style="background:transparent;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;padding:0.3rem 0;" title="Skip (→ arrow)">Skip →</button>
     </div>
 
     <!-- Action buttons -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.5rem;" id="rq-action-buttons">
-      <button onclick="rqAction('log-rule')"     style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:0.55rem 0.4rem;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;">Log + Rule</button>
-      <button onclick="rqAction('log')"          style="background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:0.55rem 0.4rem;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;">Log Once</button>
-      <button onclick="rqAction('excl-rule')"    style="background:rgba(239,68,68,0.15);border:1px solid rgba(248,113,113,0.3);color:#f87171;border-radius:8px;padding:0.55rem 0.4rem;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;">Excl + Rule</button>
-      <button onclick="rqAction('excl')"         style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:0.55rem 0.4rem;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;">Exclude</button>
+      <button onclick="rqAction('log-rule')"     style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:0.55rem 0.4rem;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;" title="Log + create rule (Enter)">Log + Rule</button>
+      <button onclick="rqAction('log')"          style="background:transparent;border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:0.55rem 0.4rem;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;" title="Log this transaction only (L)">Log Once</button>
+      <button onclick="rqAction('excl-rule')"    style="background:rgba(239,68,68,0.15);border:1px solid rgba(248,113,113,0.3);color:#f87171;border-radius:8px;padding:0.55rem 0.4rem;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;" title="Exclude + create rule (E)">Excl + Rule</button>
+      <button onclick="rqAction('excl')"         style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:0.55rem 0.4rem;font-size:0.78rem;font-weight:600;cursor:pointer;white-space:nowrap;" title="Exclude once (X)">Exclude</button>
+    </div>
+
+    <!-- Keyboard hint -->
+    <div id="rq-kbd-hint" style="text-align:center;margin-top:0.75rem;font-size:0.7rem;color:var(--muted);opacity:0.6;">
+      <kbd style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:0.1rem 0.35rem;">Enter</kbd> Log+Rule &nbsp;
+      <kbd style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:0.1rem 0.35rem;">L</kbd> Log Once &nbsp;
+      <kbd style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:0.1rem 0.35rem;">E</kbd> Excl+Rule &nbsp;
+      <kbd style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:0.1rem 0.35rem;">X</kbd> Exclude &nbsp;
+      <kbd style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:0.1rem 0.35rem;">←</kbd><kbd style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:0.1rem 0.35rem;">→</kbd> Nav
     </div>
 
     <!-- Completion screen (hidden until queue exhausted) -->
@@ -4723,6 +4732,7 @@ async function openReviewQueue() {
   const overlay = document.getElementById('review-queue-overlay');
   overlay.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+  document.addEventListener('keydown', rqKeydown);
 
   // Render first transaction
   rqRender();
@@ -4732,6 +4742,7 @@ function closeReviewQueue() {
   const overlay = document.getElementById('review-queue-overlay');
   overlay.style.display = 'none';
   document.body.style.overflow = '';
+  document.removeEventListener('keydown', rqKeydown);
   // Refresh inbox list after queue
   inboxLoaded = false;
   loadInbox(true);
@@ -4744,8 +4755,29 @@ function rqPopulateDropdowns() {
   jobSel.innerHTML = `<option value="">— No Job —</option>` +
     inboxJobs.map(j => `<option value="${escHtml(j.id)}">${escHtml(j.name)}</option>`).join('');
 
-  ccSel.innerHTML = `<option value="">— No Cost Code —</option>` +
-    inboxCostCodes.map(cc => `<option value="${escHtml(cc.id)}">${escHtml(cc.number)} — ${escHtml(cc.name)}</option>`).join('');
+  // Group cost codes by category (same order as inline card)
+  const CC_CATEGORY_ORDER = [
+    'General', 'Preconstruction', 'Site Work', 'Structure & Envelope',
+    'MEP', 'Finishes', 'Fixtures & Features', 'Exterior'
+  ];
+  const ccByCategory = {};
+  inboxCostCodes.forEach(cc => {
+    const cat = cc.category || 'Other';
+    if (!ccByCategory[cat]) ccByCategory[cat] = [];
+    ccByCategory[cat].push(cc);
+  });
+  const sortedCategories = [
+    ...CC_CATEGORY_ORDER.filter(c => ccByCategory[c]),
+    ...Object.keys(ccByCategory).filter(c => !CC_CATEGORY_ORDER.includes(c)),
+  ];
+
+  ccSel.innerHTML = `<option value="">— No Code —</option>` +
+    sortedCategories.map(cat => {
+      const codes = ccByCategory[cat];
+      return `<optgroup label="${escHtml(cat)}">${
+        codes.map(cc => `<option value="${escHtml(cc.id)}">${cc.number} · ${escHtml(cc.name)}</option>`).join('')
+      }</optgroup>`;
+    }).join('');
 }
 
 function rqRender() {
@@ -4756,11 +4788,14 @@ function rqRender() {
   const actionBtns  = document.getElementById('rq-action-buttons');
   const navRow      = actionBtns?.previousElementSibling;
 
+  const kbdHint = document.getElementById('rq-kbd-hint');
+
   // Exhausted
   if (rqIndex >= rqQueue.length) {
     txInfo.style.display      = 'none';
     if (navRow) navRow.style.display = 'none';
     actionBtns.style.display  = 'none';
+    if (kbdHint) kbdHint.style.display = 'none';
     complete.style.display    = 'block';
     progress.textContent      = '';
     document.getElementById('rq-complete-sub').textContent =
@@ -4774,6 +4809,7 @@ function rqRender() {
   txInfo.style.display      = '';
   if (navRow) navRow.style.display = '';
   actionBtns.style.display  = '';
+  if (kbdHint) kbdHint.style.display = '';
   complete.style.display    = 'none';
   modal.querySelectorAll('hr').forEach(hr => hr.style.display = '');
 
@@ -4936,6 +4972,30 @@ function rqAdvance() {
 document.getElementById('review-queue-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeReviewQueue();
 });
+
+/* ── Review Queue keyboard shortcuts ── */
+function rqKeydown(e) {
+  const overlay = document.getElementById('review-queue-overlay');
+  if (!overlay || overlay.style.display === 'none') return;
+
+  // Escape always closes, even from an input
+  if (e.key === 'Escape') { e.preventDefault(); closeReviewQueue(); return; }
+
+  // All other shortcuts are suppressed when typing in an input / select
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+
+  // Don't fire if action buttons are disabled (action in-flight)
+  const firstBtn = document.querySelector('#rq-action-buttons button');
+  if (firstBtn?.disabled) return;
+
+  if (e.key === 'Enter')       { e.preventDefault(); rqAction('log-rule');  return; }
+  if (e.key === 'l' || e.key === 'L') { e.preventDefault(); rqAction('log');       return; }
+  if (e.key === 'e' || e.key === 'E') { e.preventDefault(); rqAction('excl-rule'); return; }
+  if (e.key === 'x' || e.key === 'X') { e.preventDefault(); rqAction('excl');      return; }
+  if (e.key === 'ArrowLeft')   { e.preventDefault(); rqNav(-1); return; }
+  if (e.key === 'ArrowRight')  { e.preventDefault(); rqNav(1);  return; }
+}
 
 /* ═══════════════════════════════════════════════════
    RULES MANAGER
