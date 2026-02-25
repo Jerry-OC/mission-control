@@ -5177,12 +5177,7 @@ async function loadCronData() {
   }
 }
 
-// Auto-load when tab is opened
-const _origShowTab = showTab;
-function showTab(id, btn) {
-  _origShowTab(id, btn);
-  if (id === 'cron') loadCronData();
-}
+// cron auto-load handled inside showTab above
 </script>
 </body>
 </html>
