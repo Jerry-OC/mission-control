@@ -565,6 +565,20 @@
   .btn-split-add { background:none; border:none; color:var(--accent); cursor:pointer; font-size:0.8rem; font-family:'Inter',sans-serif; padding:0.2rem 0; display:inline-block; }
   .btn-split-add:hover { text-decoration:underline; }
 
+  /* ─── CRON TAB ─── */
+  .cron-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0.75rem; margin-bottom:1.5rem; }
+  .cron-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1rem 1.1rem; }
+  .cron-card-header { display:flex; align-items:center; gap:0.6rem; margin-bottom:0.6rem; }
+  .cron-card-icon { font-size:1.3rem; line-height:1; }
+  .cron-card-name { font-weight:600; font-size:0.9rem; flex:1; }
+  .cron-card-schedule { font-size:0.75rem; color:var(--muted); background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:20px; white-space:nowrap; }
+  .cron-card-desc { font-size:0.78rem; color:var(--muted); margin-bottom:0.75rem; line-height:1.4; }
+  .cron-card-footer { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; font-size:0.78rem; }
+  .cron-last-run { color:var(--muted); }
+  .cron-duration { color:var(--muted); font-variant-numeric:tabular-nums; }
+  .cron-status-ok   { color:var(--green); font-weight:600; }
+  .cron-status-error { color:var(--red); font-weight:600; }
+  .cron-status-never { color:var(--muted); }
   /* ─── ESTIMATING TAB ─── */
   .est-header { display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem; }
   .est-header h2 { margin:0; flex:1; }
@@ -909,6 +923,7 @@
     <button onclick="showTab('revenue',this)">💰 Revenue</button>
     <button onclick="showTab('agents',this)">🤖 Agents</button>
     <button onclick="showTab('estimating',this)">📋 Estimating</button>
+    <button onclick="showTab('cron',this)">⏱ Cron</button>
   </nav>
   <div class="header-right">
     <span id="clock"></span>
@@ -1244,6 +1259,43 @@
     </div>
   </div>
 
+</div>
+
+<!-- ═══════════════ CRON TAB ═══════════════ -->
+<div id="tab-cron" class="tab-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.5rem">
+    <h2 style="margin:0">Cron Jobs</h2>
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <span id="cron-last-updated" style="color:var(--muted);font-size:0.78rem"></span>
+      <button class="btn-sm" onclick="loadCronData()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <!-- Job cards -->
+  <div id="cron-jobs-grid" class="cron-grid">
+    <div style="color:var(--muted);font-size:0.85rem;grid-column:1/-1;text-align:center;padding:2rem">Loading…</div>
+  </div>
+
+  <!-- Recent runs -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">Recent Runs</span></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Job</th>
+            <th>When</th>
+            <th>Duration</th>
+            <th>Status</th>
+            <th>Result / Error</th>
+          </tr>
+        </thead>
+        <tbody id="cron-runs-tbody">
+          <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:1.5rem">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════════ NEW ORDER MODAL ═══════════════ -->
@@ -5123,6 +5175,126 @@ async function deleteExclusionRule(id) {
   } catch(e) {
     alert('Failed to delete rule: ' + e.message);
   }
+}
+
+// ══════════════════════════════════════════════════
+//  CRON TAB
+// ══════════════════════════════════════════════════
+
+const CRON_JOBS = [
+  { id:'email-monitor',   label:'Email Monitor',    icon:'📧', schedule:'Every 5 min',  desc:'Polls Gmail for instruction emails from David' },
+  { id:'email-processor', label:'Email Processor',  icon:'⚙️', schedule:'Every 5 min',  desc:'Executes queued email instructions — tasks, events, notes' },
+  { id:'finta-sync',      label:'Finta Sync',       icon:'💳', schedule:'Every hour',   desc:'Syncs bank transactions from Finta Google Sheet' },
+  { id:'sms-monitor',     label:'SMS Monitor',      icon:'📱', schedule:'Every 2 min',  desc:'Checks OpenPhone for inbound SMS replies' },
+  { id:'email-summary',   label:'Email Summary',    icon:'📬', schedule:'Daily 8am PT', desc:'Morning inbox digest to Telegram' },
+  { id:'google-contacts', label:'Contacts Sync',    icon:'👤', schedule:'Daily 2am PT', desc:'Syncs Supabase contacts to Google Contacts' },
+];
+
+function timeAgo(isoStr) {
+  if (!isoStr) return 'Never';
+  const diff = (Date.now() - new Date(isoStr).getTime()) / 1000;
+  if (diff < 60)   return `${Math.round(diff)}s ago`;
+  if (diff < 3600) return `${Math.round(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.round(diff/3600)}h ago`;
+  return `${Math.round(diff/86400)}d ago`;
+}
+
+function fmtDuration(ms) {
+  if (!ms) return '—';
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms/1000).toFixed(1)}s`;
+}
+
+async function loadCronData() {
+  if (!supabaseClient) return;
+  const grid  = document.getElementById('cron-jobs-grid');
+  const tbody = document.getElementById('cron-runs-tbody');
+
+  try {
+    // Fetch last run per job + recent 40 runs
+    const { data: runs } = await supabaseClient
+      .from('cron_runs')
+      .select('*')
+      .order('ran_at', { ascending: false })
+      .limit(80);
+
+    if (!runs) return;
+
+    // Build map: job → last run
+    const lastRun = {};
+    for (const r of runs) {
+      if (!lastRun[r.job]) lastRun[r.job] = r;
+    }
+
+    // Render job cards
+    grid.innerHTML = CRON_JOBS.map(job => {
+      const run  = lastRun[job.id];
+      const status = run ? run.status : 'never';
+      const statusClass = status === 'ok' ? 'cron-status-ok' : status === 'error' ? 'cron-status-error' : 'cron-status-never';
+      const statusLabel = status === 'ok' ? '● OK' : status === 'error' ? '● Error' : '○ No runs yet';
+      const lastRunStr  = run ? timeAgo(run.ran_at) : '—';
+      const durStr      = run ? fmtDuration(run.duration_ms) : '—';
+      return `
+        <div class="cron-card">
+          <div class="cron-card-header">
+            <span class="cron-card-icon">${job.icon}</span>
+            <span class="cron-card-name">${job.label}</span>
+            <span class="cron-card-schedule">${job.schedule}</span>
+          </div>
+          <div class="cron-card-desc">${job.desc}</div>
+          <div class="cron-card-footer">
+            <span class="cron-last-run">Last: ${lastRunStr}</span>
+            <span class="cron-duration">${durStr}</span>
+            <span class="${statusClass}">${statusLabel}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Render recent runs table (last 40)
+    const recent = runs.slice(0, 40);
+    if (recent.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:1.5rem">No runs recorded yet</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = recent.map(r => {
+      const jobDef = CRON_JOBS.find(j => j.id === r.job);
+      const icon   = jobDef ? jobDef.icon : '⚙️';
+      const statusBadge = r.status === 'ok'
+        ? `<span class="badge badge-green">OK</span>`
+        : `<span class="badge badge-red">Error</span>`;
+
+      let resultStr = '';
+      if (r.error) {
+        resultStr = `<span style="color:var(--red);font-size:0.78rem">${r.error.slice(0,80)}</span>`;
+      } else if (r.result) {
+        const parts = Object.entries(r.result)
+          .filter(([,v]) => typeof v === 'number' || typeof v === 'string')
+          .map(([k,v]) => `${k}: ${v}`)
+          .slice(0, 3);
+        resultStr = `<span style="color:var(--muted);font-size:0.78rem">${parts.join(' · ')}</span>`;
+      }
+
+      return `<tr>
+        <td>${icon} ${r.job}</td>
+        <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${timeAgo(r.ran_at)}</td>
+        <td style="font-variant-numeric:tabular-nums">${fmtDuration(r.duration_ms)}</td>
+        <td>${statusBadge}</td>
+        <td>${resultStr}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('cron-last-updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+  } catch(e) {
+    grid.innerHTML = `<div style="color:var(--red);grid-column:1/-1">Error loading cron data: ${e.message}</div>`;
+  }
+}
+
+// Auto-load when tab is opened
+const _origShowTab = showTab;
+function showTab(id, btn) {
+  _origShowTab(id, btn);
+  if (id === 'cron') loadCronData();
 }
 </script>
 </body>
