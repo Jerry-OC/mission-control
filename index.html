@@ -1396,7 +1396,7 @@ function showApp() {
   // Restore last active tab — defer slightly so the DOM is ready
   const hash    = window.location.hash.replace('#', '');
   const lastTab = hash || localStorage.getItem('mc_active_tab') || 'dashboard';
-  const tabs    = ['dashboard','inbox','revenue','agents','estimating'];
+  const tabs    = ['dashboard','revenue','agents','cron'];
   const target  = tabs.includes(lastTab) ? lastTab : 'dashboard';
   if (target !== 'dashboard') {
     setTimeout(() => {
@@ -1511,8 +1511,7 @@ function showTab(name, btn) {
   localStorage.setItem('mc_active_tab', name);
   history.replaceState(null, '', '#' + name);
   if (name === 'agents') fetchAgents();
-  if (name === 'inbox')      { loadInbox(true); loadRulesManager(); }
-  if (name === 'estimating') loadEstimating();
+  if (name === 'cron')   loadCronData();
 }
 
 
