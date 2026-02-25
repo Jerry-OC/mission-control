@@ -5068,7 +5068,7 @@ async function deleteExclusionRule(id) {
 //  CRON TAB
 // ══════════════════════════════════════════════════
 
-const CRON_JOBS = [
+var CRON_JOBS = [
   { id:'email-monitor',   label:'Email Monitor',    icon:'📧', schedule:'Every 5 min',  desc:'Polls Gmail for instruction emails from David' },
   { id:'email-processor', label:'Email Processor',  icon:'⚙️', schedule:'Every 5 min',  desc:'Executes queued email instructions — tasks, events, notes' },
   { id:'finta-sync',      label:'Finta Sync',       icon:'💳', schedule:'Every hour',   desc:'Syncs bank transactions from Finta Google Sheet' },
