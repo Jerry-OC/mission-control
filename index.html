@@ -919,10 +919,8 @@
   <div class="logo">CDB <span>Mission Control</span></div>
   <nav>
     <button class="active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
-    <button onclick="showTab('inbox',this)">📥 Cost Inbox</button>
     <button onclick="showTab('revenue',this)">💰 Revenue</button>
     <button onclick="showTab('agents',this)">🤖 Agents</button>
-    <button onclick="showTab('estimating',this)">📋 Estimating</button>
     <button onclick="showTab('cron',this)">⏱ Cron</button>
   </nav>
   <div class="header-right">
@@ -1001,61 +999,6 @@
         <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border)"><span>Phil agent created (pairing pending)</span><span style="color:var(--muted)">today</span></div>
         <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border)"><span>memory-lancedb enabled</span><span style="color:var(--muted)">today</span></div>
         <div style="display:flex;justify-content:space-between;padding:0.4rem 0"><span>Google Workspace connected</span><span style="color:var(--muted)">today</span></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ COST INBOX TAB ═══════════════ -->
-<div id="tab-inbox" class="tab-panel">
-  <div class="inbox-header">
-    <h2>💸 Cost Inbox</h2>
-    <span class="inbox-remaining" id="inbox-remaining"></span>
-    <button onclick="inboxLoaded=false; loadInbox(true)" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:0.3rem 0.65rem;font-size:0.82rem;cursor:pointer;" title="Refresh">↺</button>
-    <button onclick="openReviewQueue()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:0.3rem 0.9rem;font-size:0.82rem;font-weight:600;cursor:pointer;" title="Review Queue">▶ Review Queue</button>
-  </div>
-
-  <div class="inbox-filter-pills">
-    <button class="pill active" id="inbox-pill-uncoded" onclick="setInboxFilter('uncoded',this)">Uncoded</button>
-    <button class="pill" id="inbox-pill-all"     onclick="setInboxFilter('all',this)">All</button>
-    <button class="pill" id="inbox-pill-coded"   onclick="setInboxFilter('coded',this)">Coded</button>
-    <button class="pill" id="inbox-pill-review"  onclick="setInboxFilter('review',this)">Review</button>
-    <button class="pill" id="inbox-pill-excluded" onclick="setInboxFilter('excluded',this)">Excluded</button>
-  </div>
-
-  <div id="inbox-list" class="tx-list">
-    <!-- skeleton populated by fetchInboxTransactions() -->
-  </div>
-
-  <div class="tx-load-more" id="inbox-load-more" style="display:none">
-    <button onclick="loadMoreTransactions()">Load More</button>
-  </div>
-
-  <!-- ═══ RULES MANAGER ═══ -->
-  <div id="rules-manager" style="margin-top:2.5rem;max-width:680px;">
-    <h3 style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:1rem;">⚙️ Rules</h3>
-
-    <!-- Coding Rules -->
-    <div style="margin-bottom:1.25rem;">
-      <button onclick="toggleRulesSection('coding')" style="background:transparent;border:none;color:var(--text);font-weight:600;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;gap:0.4rem;padding:0;margin-bottom:0.6rem;">
-        <span id="coding-rules-chevron" style="transition:transform 0.2s;">▶</span> Coding Rules
-      </button>
-      <div id="coding-rules-body" style="display:none;">
-        <div id="coding-rules-table">
-          <div class="state-loading" style="font-size:0.82rem;color:var(--muted);padding:0.5rem 0;">Loading…</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Exclusion Rules -->
-    <div>
-      <button onclick="toggleRulesSection('exclusion')" style="background:transparent;border:none;color:var(--text);font-weight:600;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;gap:0.4rem;padding:0;margin-bottom:0.6rem;">
-        <span id="exclusion-rules-chevron" style="transition:transform 0.2s;">▶</span> Exclusion Rules
-      </button>
-      <div id="exclusion-rules-body" style="display:none;">
-        <div id="exclusion-rules-table">
-          <div class="state-loading" style="font-size:0.82rem;color:var(--muted);padding:0.5rem 0;">Loading…</div>
-        </div>
       </div>
     </div>
   </div>
@@ -1204,61 +1147,6 @@
       </tbody>
     </table>
   </div>
-</div>
-
-<!-- ═══════════════ ESTIMATING TAB ═══════════════ -->
-<div id="tab-estimating" class="tab-panel">
-
-  <!-- Header row: title + job picker + action buttons -->
-  <div class="est-header">
-    <h2 style="margin:0">📋 Estimating</h2>
-    <select class="est-job-select" id="est-job-select" onchange="estSelectJob(this.value)">
-      <option value="">— Select a job —</option>
-    </select>
-    <button class="btn-outline" onclick="openNewJobModal()" title="Add a new estimating job to Supabase">+ New Job</button>
-    <button class="btn" onclick="openNewOrderModal()" id="est-new-order-btn" disabled>+ New Order</button>
-  </div>
-
-  <!-- Job-level metrics (hidden until a job is selected) -->
-  <div class="est-metrics" id="est-metrics" style="display:none">
-    <div class="metric-card">
-      <div class="metric-bar" style="background:linear-gradient(90deg,var(--muted),rgba(107,114,128,0.4))"></div>
-      <div class="metric-icon">🏗️</div>
-      <div class="metric-label">Est. Cost</div>
-      <div class="metric-value" id="est-metric-cost">—</div>
-      <div class="metric-sub">all orders</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-bar" style="background:linear-gradient(90deg,var(--accent),var(--accent2))"></div>
-      <div class="metric-icon">💰</div>
-      <div class="metric-label">Est. Price</div>
-      <div class="metric-value" id="est-metric-price">—</div>
-      <div class="metric-sub" id="est-metric-margin-sub">—</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-bar" style="background:linear-gradient(90deg,var(--green),#4ade80)"></div>
-      <div class="metric-icon">✍️</div>
-      <div class="metric-label">Contract Value</div>
-      <div class="metric-value" id="est-metric-contract">—</div>
-      <div class="metric-sub" id="est-metric-contract-sub">signed only</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-bar" style="background:linear-gradient(90deg,var(--blue),#60a5fa)"></div>
-      <div class="metric-icon">📄</div>
-      <div class="metric-label">Orders</div>
-      <div class="metric-value" id="est-metric-orders">—</div>
-      <div class="metric-sub" id="est-metric-orders-sub">—</div>
-    </div>
-  </div>
-
-  <!-- Orders list -->
-  <div id="est-orders-area">
-    <div class="est-empty">
-      <div class="est-empty-icon">📋</div>
-      <div>Select a job to see its estimates</div>
-    </div>
-  </div>
-
 </div>
 
 <!-- ═══════════════ CRON TAB ═══════════════ -->
