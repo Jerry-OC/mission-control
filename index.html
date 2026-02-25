@@ -5094,6 +5094,7 @@ function fmtDuration(ms) {
 
 async function loadCronData() {
   if (!supabaseClient) return;
+  if (!CRON_JOBS || !Array.isArray(CRON_JOBS)) { setTimeout(loadCronData, 200); return; }
   const grid  = document.getElementById('cron-jobs-grid');
   const tbody = document.getElementById('cron-runs-tbody');
 
