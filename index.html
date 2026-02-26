@@ -566,6 +566,14 @@
   .btn-split-add:hover { text-decoration:underline; }
 
   /* ─── CRON TAB ─── */
+  /* ── Activity Feed ── */
+  .activity-stat-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:0.9rem 1.1rem; }
+  .activity-stat-label { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:0.3rem; }
+  .activity-stat-value { font-size:1.5rem; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums; }
+  .activity-stat-sub { font-size:0.72rem; color:var(--muted); margin-top:0.2rem; }
+  .activity-agent-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+  #activity-tbody td { font-size:0.82rem; padding:0.55rem 0.75rem; }
+  #activity-tbody tr:hover { background:rgba(255,255,255,0.03); }
   .cron-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0.75rem; margin-bottom:1.5rem; }
   .cron-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1rem 1.1rem; }
   .cron-card-header { display:flex; align-items:flex-start; gap:0.6rem; margin-bottom:0.6rem; }
@@ -1198,6 +1206,7 @@
     <button class="active" onclick="showTab('dashboard',this)">📊 Dashboard</button>
     <button onclick="showTab('agents',this)">🤖 Agents</button>
     <button onclick="showTab('cron',this)">⏱ Cron</button>
+    <button onclick="showTab('activity',this)">📡 Activity</button>
     <button onclick="showTab('docs',this)">📄 Docs</button>
   </nav>
   <div class="header-right">
@@ -1398,13 +1407,13 @@
     </div>
   </div>
 
-  <!-- OpenClaw Gateway Job cards -->
+  <!-- OpenClaw Gateway Jobs table -->
   <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;margin-top:0.5rem">
-    <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#C4622A">● OpenClaw Gateway Jobs</span>
-    <div style="flex:1;height:1px;background:rgba(196,98,42,0.25)"></div>
+    <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Gateway — Recurring Jobs</span>
+    <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
   </div>
-  <div id="cron-gateway-grid" class="cron-grid" style="margin-bottom:1.5rem">
-    <div style="color:var(--muted);font-size:0.85rem;grid-column:1/-1;text-align:center;padding:2rem">Loading…</div>
+  <div id="cron-gateway-grid" style="overflow-x:auto;margin-bottom:1.5rem">
+    <div style="color:var(--muted);font-size:0.85rem;text-align:center;padding:2rem">Loading…</div>
   </div>
 
   <!-- Vercel Background Job cards -->
@@ -1432,6 +1441,44 @@
         </thead>
         <tbody id="cron-runs-tbody">
           <tr><td colspan="5" style="color:var(--muted);text-align:center;padding:1.5rem">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ ACTIVITY TAB ═══════════════ -->
+<div id="tab-activity" class="tab-panel">
+  <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+    <h2 style="margin:0;color:var(--accent);font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:1px">API ACTIVITY FEED</h2>
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <span id="activity-refresh-badge" style="font-size:0.7rem;color:var(--muted)">auto-refresh 30s</span>
+      <button class="btn-sm" onclick="loadActivityData()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <!-- Summary strip -->
+  <div id="activity-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;margin-bottom:1.25rem"></div>
+
+  <!-- Feed table -->
+  <div class="card" style="padding:0">
+    <div style="overflow-x:auto;overflow-y:auto;max-height:70vh">
+      <table id="activity-table" style="min-width:900px">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Agent</th>
+            <th>Triggered By</th>
+            <th>Model</th>
+            <th style="text-align:right">In</th>
+            <th style="text-align:right">Out</th>
+            <th style="text-align:right">Cache</th>
+            <th style="text-align:right">Cost</th>
+            <th style="text-align:right">Session $</th>
+          </tr>
+        </thead>
+        <tbody id="activity-tbody">
+          <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem">Loading…</td></tr>
         </tbody>
       </table>
     </div>
@@ -1694,7 +1741,7 @@ function showApp() {
   // Restore last active tab — defer slightly so the DOM is ready
   const hash    = window.location.hash.replace('#', '');
   const lastTab = hash || localStorage.getItem('mc_active_tab') || 'dashboard';
-  const tabs    = ['dashboard','agents','cron','docs'];
+  const tabs    = ['dashboard','agents','cron','activity','docs'];
   const target  = tabs.includes(lastTab) ? lastTab : 'dashboard';
   if (target !== 'dashboard') {
     setTimeout(() => {
@@ -1808,9 +1855,10 @@ function showTab(name, btn) {
   btn.classList.add('active');
   localStorage.setItem('mc_active_tab', name);
   history.replaceState(null, '', '#' + name);
-  if (name === 'agents') fetchAgents();
-  if (name === 'cron')   loadCronData();
-  if (name === 'docs')   docsInit();
+  if (name === 'agents')   fetchAgents();
+  if (name === 'cron')     loadCronData();
+  if (name === 'activity') loadActivityData();
+  if (name === 'docs')     docsInit();
 }
 
 
@@ -3139,11 +3187,20 @@ function loadDrawerJobs(agent) {
     el.innerHTML = `<table class="drawer-jobs-table">
       <thead><tr><th>Job</th><th>Schedule</th><th>Last Run</th><th>Status</th></tr></thead>
       <tbody>${agentJobs.map(j => {
-        const st = j.last_status || 'never';
-        const cls = st === 'ok' ? 'badge-green' : st === 'error' ? 'badge-red' : 'badge-muted';
+        // Schedule: human-readable cron if recurring, or formatted next_run_at if one-shot
+        const schedDisplay = j.schedule_expr
+          ? fmtCron(j.schedule_expr, j.schedule_tz)
+          : j.next_run_at
+            ? '🕐 ' + fmtPST(j.next_run_at)
+            : '—';
+        // Status: use last_status if exists, else 'scheduled' if next_run_at is in future, else 'pending'
+        const now = Date.now();
+        const hasNextRun = j.next_run_at && new Date(j.next_run_at).getTime() > now;
+        const st = j.last_status || (hasNextRun ? 'scheduled' : 'pending');
+        const cls = st === 'ok' ? 'badge-green' : st === 'error' ? 'badge-red' : st === 'scheduled' ? 'badge-orange' : 'badge-muted';
         return `<tr>
           <td>${j.name || j.job_id}</td>
-          <td style="color:var(--muted)">${j.schedule_expr || '?'}</td>
+          <td style="color:var(--muted);white-space:nowrap">${schedDisplay}</td>
           <td style="color:var(--muted)">${fmtPST(j.last_run_at)}</td>
           <td><span class="badge ${cls}">${st}</span></td>
         </tr>`;
@@ -3214,12 +3271,18 @@ function loadDrawerFile(agentId, filename, btn) {
   document.querySelectorAll('#drawer-files-sidebar div').forEach(d => d.style.background = '');
   if (btn) btn.style.background = 'rgba(255,255,255,0.06)';
 
-  fetch(`/api/agents/${agentId}/file?path=${encodeURIComponent(filename)}`)
+  // Fetch from Supabase agent_files table (synced every 5min from Mac Mini)
+  const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2ZmdyanNsZnJqd3lvcHl6cXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODk4ODMsImV4cCI6MjA4NzM2NTg4M30.M7P2XEKNeYwoWvi8mxHgaggDfay_3gAEsOhi6XES9I4';
+  fetch(`https://evfgrjslfrjwyopyzqzx.supabase.co/rest/v1/agent_files?agent_id=eq.${agentId}&filename=eq.${encodeURIComponent(filename)}&select=content,updated_at&limit=1`, {
+    headers: { apikey: ANON, Authorization: 'Bearer ' + ANON }
+  })
     .then(r => r.json())
-    .then(data => {
-      if (data.error) throw new Error(data.error);
+    .then(rows => {
+      if (!rows.length) throw new Error('File not found — may not be synced yet');
+      const row = rows[0];
+      const updatedAt = row.updated_at ? new Date(row.updated_at).toLocaleTimeString('en-US',{timeZone:'America/Los_Angeles',hour:'numeric',minute:'2-digit'}) : '';
       // Simple markdown-ish render
-      const html = data.content
+      const html = row.content
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
         .replace(/^# (.+)$/gm,'<h3 style="color:var(--accent);margin:0.8rem 0 0.3rem">$1</h3>')
         .replace(/^## (.+)$/gm,'<h4 style="color:var(--text);margin:0.6rem 0 0.2rem">$1</h4>')
@@ -3227,7 +3290,9 @@ function loadDrawerFile(agentId, filename, btn) {
         .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
         .replace(/`([^`]+)`/g,'<code style="background:rgba(255,255,255,0.07);padding:0.1rem 0.3rem;border-radius:3px;font-size:0.8em">$1</code>')
         .replace(/\n/g,'<br>');
-      content.innerHTML = `<div style="font-size:0.82rem;line-height:1.65;color:var(--muted)">${html}</div>`;
+      content.innerHTML = `
+        <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.6rem;opacity:0.6">Synced ${updatedAt} PST</div>
+        <div style="font-size:0.82rem;line-height:1.65;color:var(--muted)">${html}</div>`;
     })
     .catch(e => { content.innerHTML = `<div style="color:var(--muted);font-size:0.82rem">Error: ${e.message}</div>`; });
 }
@@ -5751,6 +5816,83 @@ function fmtDuration(ms) {
   return `${(ms/1000).toFixed(1)}s`;
 }
 
+function fmtCron(expr, tz) {
+  if (!expr) return '—';
+  const parts = expr.trim().split(/\s+/);
+  if (parts.length !== 5) return expr;
+  const [min, hr, dom, month, dow] = parts;
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const suffix = tz ? tz.replace('America/','') : 'PT';
+
+  function fmtTime(h, m) {
+    const hNum = parseInt(h), mNum = parseInt(m)||0;
+    if (isNaN(hNum)) return null;
+    const ampm = hNum >= 12 ? 'PM' : 'AM';
+    const h12 = hNum % 12 || 12;
+    const mm = mNum > 0 ? `:${String(mNum).padStart(2,'0')}` : '';
+    return `${h12}${mm} ${ampm} ${suffix}`;
+  }
+
+  // Every N minutes: */N * * * *
+  if (min.startsWith('*/') && hr === '*' && dom === '*' && month === '*' && dow === '*') {
+    return `Every ${min.slice(2)} min`;
+  }
+  // Every N hours: 0 */N * * *
+  if (hr.startsWith('*/') && dom === '*' && month === '*' && dow === '*') {
+    return `Every ${hr.slice(2)} hr`;
+  }
+  // Daily: 0 H * * *
+  if (!min.includes('/') && !hr.includes('/') && dom === '*' && month === '*' && dow === '*') {
+    const t = fmtTime(hr, min);
+    return t ? `Daily ${t}` : expr;
+  }
+  // Specific day of week: 0 H * * D
+  if (!min.includes('/') && !hr.includes('/') && dom === '*' && month === '*' && dow !== '*') {
+    const t = fmtTime(hr, min);
+    const dayName = DAYS[parseInt(dow)] || `Day ${dow}`;
+    return t ? `Weekly ${dayName} ${t}` : expr;
+  }
+  // Monthly: 0 H D * *
+  if (!min.includes('/') && !hr.includes('/') && dom !== '*' && month === '*' && dow === '*') {
+    const t = fmtTime(hr, min);
+    const ordinal = {1:'1st',2:'2nd',3:'3rd'}[parseInt(dom)] || `${dom}th`;
+    return t ? `Monthly ${ordinal} ${t}` : expr;
+  }
+  return expr;
+}
+
+// Returns sort key for cron cycle rate: smallest = most frequent
+function getCycleOrder(expr) {
+  if (!expr) return 99999;
+  const p = expr.trim().split(/\s+/);
+  if (p.length !== 5) return 99999;
+  const [min, hr, dom, month, dow] = p;
+  const minMatch = min.match(/^\*\/(\d+)$/);
+  if (minMatch && hr === '*') return parseInt(minMatch[1], 10);          // e.g. 2, 5
+  const hrMatch = hr.match(/^\*\/(\d+)$/);
+  if (min === '0' && hrMatch && dom === '*') return 1000 + parseInt(hrMatch[1], 10) * 60; // hours → minutes
+  if (min === '0' && dom === '*' && month === '*' && dow === '*') return 10000;   // daily
+  if (min === '0' && dom === '*' && month === '*' && dow !== '*') return 100000;  // weekly
+  if (min === '0' && dom !== '*' && month === '*' && dow === '*') return 1000000; // monthly
+  return 99999;
+}
+
+// Returns human-readable cycle label
+function getCycleLabel(expr) {
+  if (!expr) return '—';
+  const p = expr.trim().split(/\s+/);
+  if (p.length !== 5) return '—';
+  const [min, hr, dom, month, dow] = p;
+  const minMatch = min.match(/^\*\/(\d+)$/);
+  if (minMatch && hr === '*') return minMatch[1] + ' min';
+  const hrMatch = hr.match(/^\*\/(\d+)$/);
+  if (min === '0' && hrMatch && dom === '*') return hrMatch[1] + ' hr';
+  if (min === '0' && dom === '*' && month === '*' && dow !== '*') return 'Weekly';
+  if (min === '0' && dom !== '*' && month === '*' && dow === '*') return 'Monthly';
+  if (min === '0' && dom === '*' && month === '*' && dow === '*') return 'Daily';
+  return '—';
+}
+
 function timeUntil(isoStr) {
   if (!isoStr) return '—';
   const diff = (new Date(isoStr).getTime() - Date.now()) / 1000;
@@ -5781,7 +5923,7 @@ async function loadCronData() {
   const BASE  = 'https://evfgrjslfrjwyopyzqzx.supabase.co';
 
   grid.innerHTML   = '<div style="color:var(--muted);font-size:0.85rem;padding:2rem;grid-column:1/-1;text-align:center">Loading…</div>';
-  if (gwGrid) gwGrid.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;padding:2rem;grid-column:1/-1;text-align:center">Loading…</div>';
+  if (gwGrid) gwGrid.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;text-align:center;padding:2rem">Loading…</div>';
 
   try {
     // Fetch gateway jobs + Vercel runs in parallel
@@ -5798,38 +5940,40 @@ async function loadCronData() {
       if (gwRes.ok) {
         gwJobs = await gwRes.json();
         if (!Array.isArray(gwJobs)) gwJobs = [];
+        gwJobs = gwJobs.filter(function(job) { return job.schedule_expr; });
       }
 
       if (!gwJobs.length) {
-        gwGrid.innerHTML = '<div style="color:var(--muted);font-size:0.82rem;grid-column:1/-1;text-align:center;padding:1.5rem;font-style:italic">No gateway jobs synced yet — run sync-gateway-crons.mjs</div>';
+        gwGrid.innerHTML = '<div style="color:var(--muted);font-size:0.82rem;text-align:center;padding:1.5rem;font-style:italic">No gateway jobs synced yet — run sync-gateway-crons.mjs</div>';
       } else {
-        gwGrid.innerHTML = gwJobs.map(function(job) {
-          const st  = job.last_status || 'never';
-          const cls = st === 'ok' ? 'cron-status-ok' : st === 'error' ? 'cron-status-error' : 'cron-status-never';
-          const lbl = st === 'ok' ? '● OK' : st === 'error' ? '● Error' : '○ No runs yet';
-          const dur = job.last_duration_ms != null ? fmtDuration(job.last_duration_ms) : '—';
-          const expr  = job.schedule_expr || '?';
-          const tz    = job.schedule_tz ? job.schedule_tz.replace('America/', '') : '';
-          const agent = job.agent_id ? '<span style="color:var(--accent);font-weight:600;margin-right:0.3rem">[' + job.agent_id + ']</span>' : '';
-          const desc  = job.payload_preview || '—';
-          return '<div class="cron-card">'
-            + '<div class="cron-card-header">'
-            +   '<span class="cron-card-icon">⚡</span>'
-            +   '<div style="flex:1;min-width:0">'
-            +     '<div class="cron-card-name" style="white-space:normal">' + (job.name || job.job_id) + '</div>'
-            +     '<div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.2rem">'
-            +       '<span class="cron-card-schedule">' + expr + '</span>'
-            +       (tz ? '<span style="font-size:0.68rem;color:var(--muted);opacity:0.6">' + tz + '</span>' : '')
-            +     '</div>'
-            +   '</div>'
-            + '</div>'
-            + '<div class="cron-card-desc">' + agent + desc + '</div>'
-            + '<div class="cron-card-footer">'
-            +   '<span class="cron-last-run">Last: ' + fmtPST(job.last_run_at) + ' · Next: ' + fmtPST(job.next_run_at) + '</span>'
-            +   '<span class="cron-duration">' + dur + '</span>'
-            +   '<span class="' + cls + '">' + lbl + '</span>'
-            + '</div></div>';
+        // Sort: most frequent first; within same cycle, soonest next_run_at first
+        gwJobs.sort(function(a, b) {
+          const ao = getCycleOrder(a.schedule_expr), bo = getCycleOrder(b.schedule_expr);
+          if (ao !== bo) return ao - bo;
+          if (a.next_run_at && b.next_run_at) return new Date(a.next_run_at) - new Date(b.next_run_at);
+          return 0;
+        });
+        const rows = gwJobs.map(function(job) {
+          const st       = job.last_status || 'never';
+          const badgeCls = st === 'ok' ? 'badge-green' : st === 'error' ? 'badge-red' : 'badge-muted';
+          const badgeTxt = st === 'ok' ? '● OK' : st === 'error' ? '● Error' : '○ No runs';
+          const dur      = job.last_duration_ms != null ? fmtDuration(job.last_duration_ms) : '—';
+          const sched    = job.schedule_expr ? fmtCron(job.schedule_expr, job.schedule_tz) : (job.next_run_at ? fmtPST(job.next_run_at) : '—');
+          const cycle    = getCycleLabel(job.schedule_expr);
+          const name     = job.name || job.job_id || '—';
+          return '<tr>'
+            + '<td style="font-weight:500;white-space:nowrap">' + name + '</td>'
+            + '<td style="color:var(--muted)">' + sched + '</td>'
+            + '<td style="color:var(--muted);white-space:nowrap">' + cycle + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums;white-space:nowrap">' + fmtPST(job.next_run_at) + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums;white-space:nowrap">' + fmtPST(job.last_run_at) + '</td>'
+            + '<td style="font-variant-numeric:tabular-nums;white-space:nowrap">' + dur + '</td>'
+            + '<td><span class="badge ' + badgeCls + '">' + badgeTxt + '</span></td>'
+            + '</tr>';
         }).join('');
+        gwGrid.innerHTML = '<table class="drawer-jobs-table"><thead><tr>'
+          + '<th>Job</th><th>Schedule</th><th>Cycle</th><th>Next Run</th><th>Last Run</th><th>Duration</th><th>Status</th>'
+          + '</tr></thead><tbody>' + rows + '</tbody></table>';
       }
     }
 
@@ -5916,6 +6060,147 @@ async function loadCronData() {
 }
 
 // cron auto-load handled inside showTab above
+
+/* ══════════════════════════════════════════════
+   ACTIVITY FEED — Token Usage
+══════════════════════════════════════════════ */
+
+const ACTIVITY_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2ZmdyanNsZnJqd3lvcHl6cXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODk4ODMsImV4cCI6MjA4NzM2NTg4M30.M7P2XEKNeYwoWvi8mxHgaggDfay_3gAEsOhi6XES9I4';
+const ACTIVITY_SB   = 'https://evfgrjslfrjwyopyzqzx.supabase.co';
+
+const AGENT_COLORS = {
+  main:   '#C4622A',
+  mickey: '#4A90D9',
+  phil:   '#4CAF50',
+  bobby:  '#E91E63',
+  daisy:  '#9C27B0',
+};
+
+function activityAgentColor(agentId) {
+  return AGENT_COLORS[agentId] || '#888';
+}
+
+function activityAgentLabel(agentId) {
+  const map = { main: 'Jerry', mickey: 'Mickey', phil: 'Phil', bobby: 'Bobby', daisy: 'Daisy' };
+  return map[agentId] || agentId;
+}
+
+function activityTriggeredLabel(triggeredBy) {
+  if (!triggeredBy) return '—';
+  if (triggeredBy === 'david-jerry')   return '👤 David';
+  if (triggeredBy === 'valerie-daisy') return '👤 Valerie';
+  if (triggeredBy === 'sub-agent')     return '🤖 Sub-agent';
+  // pattern: "jerry → mickey"
+  return '🤖 ' + triggeredBy.replace(' → ', ' → ');
+}
+
+function activityFmtTokens(n) {
+  if (n == null) return '—';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return String(n);
+}
+
+function activityFmtCost(n) {
+  if (n == null) return '—';
+  return '$' + Number(n).toFixed(4);
+}
+
+function activityFmtCostTotal(n) {
+  if (n == null) return '—';
+  return '$' + Number(n).toFixed(3);
+}
+
+function activityFmtCache(cacheRead, cacheWrite) {
+  const r = cacheRead  || 0;
+  const w = cacheWrite || 0;
+  if (!r && !w) return '—';
+  return activityFmtTokens(r) + (w ? '+' + activityFmtTokens(w) : '');
+}
+
+let activityAutoRefreshTimer = null;
+
+async function loadActivityData() {
+  const tbody   = document.getElementById('activity-tbody');
+  const summary = document.getElementById('activity-summary');
+  if (!tbody) return;
+
+  try {
+    const res = await fetch(
+      `${ACTIVITY_SB}/rest/v1/agent_token_logs?select=*&order=called_at.desc&limit=200`,
+      { headers: { apikey: ACTIVITY_ANON, Authorization: `Bearer ${ACTIVITY_ANON}` } }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const rows = await res.json();
+
+    // ── Summary strip ──────────────────────────────────────────────────────────
+    const nowPST   = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    const todayStart = new Date(nowPST);
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayRows = rows.filter(r => new Date(r.called_at) >= todayStart);
+    const costToday  = todayRows.reduce((s, r) => s + (r.cost_this_call || 0), 0);
+    const callsToday = todayRows.length;
+
+    // Busiest agent today
+    const agentCounts = {};
+    todayRows.forEach(r => { agentCounts[r.agent_id] = (agentCounts[r.agent_id] || 0) + 1; });
+    const busiestAgent = Object.entries(agentCounts).sort((a, b) => b[1] - a[1])[0];
+
+    // Cache hit rate (across all loaded rows)
+    const totalInput      = rows.reduce((s, r) => s + (r.input_tokens      || 0), 0);
+    const totalCacheRead  = rows.reduce((s, r) => s + (r.cache_read_tokens || 0), 0);
+    const cacheRate = totalInput + totalCacheRead > 0
+      ? Math.round(100 * totalCacheRead / (totalInput + totalCacheRead))
+      : 0;
+
+    summary.innerHTML = [
+      { label: "Today's Cost",  value: '$' + costToday.toFixed(3), sub: callsToday + ' calls today' },
+      { label: 'API Calls Today', value: String(callsToday), sub: rows.length + ' total loaded' },
+      { label: 'Busiest Agent',   value: busiestAgent ? activityAgentLabel(busiestAgent[0]) : '—', sub: busiestAgent ? busiestAgent[1] + ' calls' : '' },
+      { label: 'Cache Hit Rate',  value: cacheRate + '%', sub: activityFmtTokens(totalCacheRead) + ' tokens saved' },
+    ].map(c =>
+      `<div class="activity-stat-card">
+        <div class="activity-stat-label">${c.label}</div>
+        <div class="activity-stat-value">${c.value}</div>
+        <div class="activity-stat-sub">${c.sub}</div>
+      </div>`
+    ).join('');
+
+    // ── Feed table ─────────────────────────────────────────────────────────────
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem">No data yet — run sync-token-usage.mjs to populate</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.map(r => {
+      const color = activityAgentColor(r.agent_id);
+      const ago   = fmtUpdatedAgo(r.called_at);
+      const model = r.model ? r.model.replace('claude-', '').replace('anthropic/', '') : '—';
+      return `<tr>
+        <td style="white-space:nowrap;color:var(--muted)">${ago}</td>
+        <td><span class="activity-agent-dot" style="background:${color}"></span>${activityAgentLabel(r.agent_id)}</td>
+        <td style="color:var(--muted)">${activityTriggeredLabel(r.triggered_by)}</td>
+        <td style="color:var(--muted);font-size:0.78rem">${model}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums">${activityFmtTokens(r.input_tokens)}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums">${activityFmtTokens(r.output_tokens)}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)">${activityFmtCache(r.cache_read_tokens, r.cache_write_tokens)}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--accent)">${activityFmtCost(r.cost_this_call)}</td>
+        <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)" title="${activityFmtTokens(r.total_tokens_session)} total tokens">${r.cost_session_cumulative != null ? activityFmtCostTotal(r.cost_session_cumulative) : activityFmtTokens(r.total_tokens_session) + ' tkns'}</td>
+      </tr>`;
+    }).join('');
+
+  } catch (err) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="color:var(--red);padding:1rem">Error loading activity: ${err.message}</td></tr>`;
+    console.error('[activity] loadActivityData error:', err);
+  }
+
+  // Reset auto-refresh timer
+  clearInterval(activityAutoRefreshTimer);
+  activityAutoRefreshTimer = setInterval(() => {
+    const panel = document.getElementById('tab-activity');
+    if (panel && panel.classList.contains('active')) loadActivityData();
+  }, 30 * 1000);
+}
 
 /* ══════════════════════════════════════════════
    DOCS — Design Documents
