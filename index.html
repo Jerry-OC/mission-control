@@ -1460,10 +1460,31 @@
   <!-- Summary strip -->
   <div id="activity-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;margin-bottom:1.25rem"></div>
 
+  <!-- Per-Agent Cost Table -->
+  <div class="card" style="padding:1rem;margin-bottom:0.75rem">
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:0.75rem">Per-Agent Cost Breakdown</div>
+    <div id="activity-agent-table" style="overflow-x:auto"></div>
+  </div>
+
+  <!-- Per-Model Cost Summary -->
+  <div class="card" style="padding:1rem;margin-bottom:0.75rem">
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:0.75rem">Per-Model Cost Summary</div>
+    <div id="activity-model-table" style="overflow-x:auto"></div>
+  </div>
+
+  <!-- Session History (collapsible) -->
+  <div class="card" style="padding:1rem;margin-bottom:0.75rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none" onclick="activityToggleSessionHistory()">
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Session History</div>
+      <span id="activity-session-toggle" style="color:var(--muted);font-size:0.82rem">▶ expand</span>
+    </div>
+    <div id="activity-session-history" style="display:none;margin-top:0.75rem;overflow-x:auto"></div>
+  </div>
+
   <!-- Feed table -->
   <div class="card" style="padding:0">
     <div style="overflow-x:auto;overflow-y:auto;max-height:70vh">
-      <table id="activity-table" style="min-width:900px">
+      <table id="activity-table" style="min-width:1050px">
         <thead>
           <tr>
             <th>Time</th>
@@ -1475,10 +1496,11 @@
             <th style="text-align:right">Cache</th>
             <th style="text-align:right">Cost</th>
             <th style="text-align:right">Session $</th>
+            <th style="color:var(--muted)">Session</th>
           </tr>
         </thead>
         <tbody id="activity-tbody">
-          <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem">Loading…</td></tr>
+          <tr><td colspan="10" style="text-align:center;color:var(--muted);padding:2rem">Loading…</td></tr>
         </tbody>
       </table>
     </div>
@@ -6118,6 +6140,15 @@ function activityFmtCache(cacheRead, cacheWrite) {
 }
 
 let activityAutoRefreshTimer = null;
+let activitySessionHistoryExpanded = false;
+
+function activityToggleSessionHistory() {
+  const el     = document.getElementById('activity-session-history');
+  const toggle = document.getElementById('activity-session-toggle');
+  activitySessionHistoryExpanded = !activitySessionHistoryExpanded;
+  el.style.display   = activitySessionHistoryExpanded ? 'block' : 'none';
+  toggle.textContent = activitySessionHistoryExpanded ? '▼ collapse' : '▶ expand';
+}
 
 async function loadActivityData() {
   const tbody   = document.getElementById('activity-tbody');
@@ -6125,39 +6156,59 @@ async function loadActivityData() {
   if (!tbody) return;
 
   try {
-    const res = await fetch(
-      `${ACTIVITY_SB}/rest/v1/agent_token_logs?select=*&order=called_at.desc&limit=200`,
-      { headers: { apikey: ACTIVITY_ANON, Authorization: `Bearer ${ACTIVITY_ANON}` } }
-    );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const rows = await res.json();
+    const headers = { apikey: ACTIVITY_ANON, Authorization: `Bearer ${ACTIVITY_ANON}` };
 
-    // ── Summary strip ──────────────────────────────────────────────────────────
-    const nowPST   = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-    const todayStart = new Date(nowPST);
-    todayStart.setHours(0, 0, 0, 0);
+    // Fetch token logs + agent_tasks (for session name resolution) in parallel
+    const [logsRes, tasksRes] = await Promise.all([
+      fetch(`${ACTIVITY_SB}/rest/v1/agent_token_logs?select=*&order=called_at.desc&limit=500`, { headers }),
+      fetch(`${ACTIVITY_SB}/rest/v1/agent_tasks?select=session_id,session_name,status&session_id=not.is.null`, { headers }),
+    ]);
+    if (!logsRes.ok) throw new Error(`HTTP ${logsRes.status}`);
+    const rows  = await logsRes.json();
+    const tasks = tasksRes.ok ? await tasksRes.json() : [];
+
+    // Build session name + done-status maps from agent_tasks
+    const sessionNames   = {};
+    const sessionDoneSet = new Set();
+    tasks.forEach(t => {
+      if (!t.session_id) return;
+      if (t.session_name) sessionNames[t.session_id] = t.session_name;
+      if (t.status === 'done') sessionDoneSet.add(t.session_id);
+    });
+
+    function sessionLabel(sid) {
+      if (!sid) return '—';
+      return sessionNames[sid] || sid.slice(0, 8);
+    }
+
+    // ── Time helpers ──────────────────────────────────────────────────────────
+    const nowPST     = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    const todayStart = new Date(nowPST); todayStart.setHours(0, 0, 0, 0);
+    const weekStart  = new Date(todayStart);
+    // Monday of the current week
+    weekStart.setDate(todayStart.getDate() - ((todayStart.getDay() + 6) % 7));
 
     const todayRows = rows.filter(r => new Date(r.called_at) >= todayStart);
+    const weekRows  = rows.filter(r => new Date(r.called_at) >= weekStart);
+
+    // ── Summary strip ──────────────────────────────────────────────────────────
     const costToday  = todayRows.reduce((s, r) => s + (r.cost_this_call || 0), 0);
     const callsToday = todayRows.length;
 
-    // Busiest agent today
     const agentCounts = {};
     todayRows.forEach(r => { agentCounts[r.agent_id] = (agentCounts[r.agent_id] || 0) + 1; });
     const busiestAgent = Object.entries(agentCounts).sort((a, b) => b[1] - a[1])[0];
 
-    // Cache hit rate (across all loaded rows)
-    const totalInput      = rows.reduce((s, r) => s + (r.input_tokens      || 0), 0);
-    const totalCacheRead  = rows.reduce((s, r) => s + (r.cache_read_tokens || 0), 0);
+    const totalInput     = rows.reduce((s, r) => s + (r.input_tokens     || 0), 0);
+    const totalCacheRead = rows.reduce((s, r) => s + (r.cache_read_tokens || 0), 0);
     const cacheRate = totalInput + totalCacheRead > 0
-      ? Math.round(100 * totalCacheRead / (totalInput + totalCacheRead))
-      : 0;
+      ? Math.round(100 * totalCacheRead / (totalInput + totalCacheRead)) : 0;
 
     summary.innerHTML = [
-      { label: "Today's Cost",  value: '$' + costToday.toFixed(3), sub: callsToday + ' calls today' },
-      { label: 'API Calls Today', value: String(callsToday), sub: rows.length + ' total loaded' },
+      { label: "Today's Cost",    value: '$' + costToday.toFixed(3), sub: callsToday + ' calls today' },
+      { label: 'API Calls Today', value: String(callsToday),          sub: rows.length + ' total loaded' },
       { label: 'Busiest Agent',   value: busiestAgent ? activityAgentLabel(busiestAgent[0]) : '—', sub: busiestAgent ? busiestAgent[1] + ' calls' : '' },
-      { label: 'Cache Hit Rate',  value: cacheRate + '%', sub: activityFmtTokens(totalCacheRead) + ' tokens saved' },
+      { label: 'Cache Hit Rate',  value: cacheRate + '%',             sub: activityFmtTokens(totalCacheRead) + ' tokens saved' },
     ].map(c =>
       `<div class="activity-stat-card">
         <div class="activity-stat-label">${c.label}</div>
@@ -6166,9 +6217,167 @@ async function loadActivityData() {
       </div>`
     ).join('');
 
+    // ── Per-Agent Cost Table ──────────────────────────────────────────────────
+    const AGENTS = [
+      { id: 'main',   label: 'Jerry',  emoji: '🟠' },
+      { id: 'mickey', label: 'Mickey', emoji: '🔵' },
+      { id: 'phil',   label: 'Phil',   emoji: '🟢' },
+      { id: 'bobby',  label: 'Bobby',  emoji: '🔴' },
+      { id: 'daisy',  label: 'Daisy',  emoji: '🟣' },
+    ];
+
+    const thStyle = 'text-align:left;padding:0.4rem 0.6rem;color:var(--muted);font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid rgba(255,255,255,0.08)';
+    const thR     = thStyle.replace('text-align:left', 'text-align:right');
+
+    let agentHtml = `<table style="width:100%;border-collapse:collapse;font-size:0.82rem">
+      <thead><tr>
+        <th style="${thStyle}">Agent</th>
+        <th style="${thStyle}">Model</th>
+        <th style="${thR}">Today</th>
+        <th style="${thR}">This Week</th>
+        <th style="${thR}">All-Time</th>
+      </tr></thead><tbody>`;
+
+    let totT = 0, totW = 0, totA = 0;
+    AGENTS.forEach(agent => {
+      const aAll = rows.filter(r => r.agent_id === agent.id);
+      const aTod = todayRows.filter(r => r.agent_id === agent.id);
+      const aWk  = weekRows.filter(r => r.agent_id === agent.id);
+      const cA   = aAll.reduce((s, r) => s + (r.cost_this_call || 0), 0);
+      const cT   = aTod.reduce((s, r) => s + (r.cost_this_call || 0), 0);
+      const cW   = aWk.reduce((s,  r) => s + (r.cost_this_call || 0), 0);
+      const mdl  = aAll.length ? (aAll[0].model || '—').replace('claude-','').replace('anthropic/','') : '—';
+      const col  = AGENT_COLORS[agent.id] || '#888';
+      totT += cT; totW += cW; totA += cA;
+      agentHtml += `<tr style="border-top:1px solid rgba(255,255,255,0.05)">
+        <td style="padding:0.45rem 0.6rem"><span class="activity-agent-dot" style="background:${col}"></span>${agent.emoji} ${agent.label}</td>
+        <td style="padding:0.45rem 0.6rem;color:var(--muted);font-size:0.78rem">${mdl}</td>
+        <td style="text-align:right;padding:0.45rem 0.6rem;font-variant-numeric:tabular-nums">${cT > 0 ? '$'+cT.toFixed(3) : '<span style="color:var(--muted)">$0.000</span>'}</td>
+        <td style="text-align:right;padding:0.45rem 0.6rem;font-variant-numeric:tabular-nums">${cW > 0 ? '$'+cW.toFixed(3) : '<span style="color:var(--muted)">$0.000</span>'}</td>
+        <td style="text-align:right;padding:0.45rem 0.6rem;font-variant-numeric:tabular-nums;color:var(--accent)">${cA > 0 ? '$'+cA.toFixed(2) : '<span style="color:var(--muted)">$0.00</span>'}</td>
+      </tr>`;
+    });
+    agentHtml += `<tr style="border-top:2px solid rgba(255,255,255,0.15);font-weight:700">
+      <td style="padding:0.45rem 0.6rem" colspan="2">Total</td>
+      <td style="text-align:right;padding:0.45rem 0.6rem;font-variant-numeric:tabular-nums">$${totT.toFixed(3)}</td>
+      <td style="text-align:right;padding:0.45rem 0.6rem;font-variant-numeric:tabular-nums">$${totW.toFixed(3)}</td>
+      <td style="text-align:right;padding:0.45rem 0.6rem;font-variant-numeric:tabular-nums;color:var(--accent)">$${totA.toFixed(2)}</td>
+    </tr></tbody></table>`;
+    const agentEl = document.getElementById('activity-agent-table');
+    if (agentEl) agentEl.innerHTML = agentHtml;
+
+    // ── Per-Model Cost Summary ────────────────────────────────────────────────
+    const MODEL_PRICES = {
+      'claude-sonnet-4-6': { inPer1M: 3.00,  outPer1M: 15.00 },
+      'claude-haiku-4-5':  { inPer1M: 0.25,  outPer1M: 1.25  },
+    };
+    const HARDCODED_MODELS = ['claude-sonnet-4-6', 'claude-haiku-4-5'];
+    const modelSet = new Set([...HARDCODED_MODELS, ...rows.map(r => r.model).filter(Boolean)]);
+
+    const modelStats = {};
+    modelSet.forEach(m => {
+      modelStats[m] = {
+        today:   rows.filter(r => r.model === m && new Date(r.called_at) >= todayStart).reduce((s,r) => s+(r.cost_this_call||0), 0),
+        allTime: rows.filter(r => r.model === m).reduce((s,r) => s+(r.cost_this_call||0), 0),
+      };
+    });
+    const totalAllTime = Object.values(modelStats).reduce((s,v) => s+v.allTime, 0);
+
+    const allModels = [...HARDCODED_MODELS, ...[...modelSet].filter(m => !HARDCODED_MODELS.includes(m))];
+    let modelHtml = `<table style="width:100%;border-collapse:collapse;font-size:0.82rem">
+      <thead><tr>
+        <th style="${thStyle}">Model</th>
+        <th style="${thR}">Price/1M In</th>
+        <th style="${thR}">Price/1M Out</th>
+        <th style="${thR}">Today</th>
+        <th style="${thR}">All-Time</th>
+        <th style="${thR}">% of Spend</th>
+      </tr></thead><tbody>`;
+    allModels.forEach((m, i) => {
+      if (!modelStats[m]) return;
+      const p   = MODEL_PRICES[m] || {};
+      const pct = totalAllTime > 0 ? Math.round(100 * modelStats[m].allTime / totalAllTime) : 0;
+      const sn  = m.replace('claude-','').replace('anthropic/','');
+      modelHtml += `<tr style="${i > 0 ? 'border-top:1px solid rgba(255,255,255,0.05)' : ''}">
+        <td style="padding:0.45rem 0.6rem;font-family:monospace;font-size:0.8rem">${sn}</td>
+        <td style="text-align:right;padding:0.45rem 0.6rem;color:var(--muted)">${p.inPer1M  != null ? '$'+p.inPer1M.toFixed(2)  : '—'}</td>
+        <td style="text-align:right;padding:0.45rem 0.6rem;color:var(--muted)">${p.outPer1M != null ? '$'+p.outPer1M.toFixed(2) : '—'}</td>
+        <td style="text-align:right;padding:0.45rem 0.6rem;font-variant-numeric:tabular-nums">${modelStats[m].today > 0 ? '$'+modelStats[m].today.toFixed(3) : '<span style="color:var(--muted)">$0.000</span>'}</td>
+        <td style="text-align:right;padding:0.45rem 0.6rem;font-variant-numeric:tabular-nums;color:var(--accent)">${modelStats[m].allTime > 0 ? '$'+modelStats[m].allTime.toFixed(2) : '<span style="color:var(--muted)">$0.00</span>'}</td>
+        <td style="text-align:right;padding:0.45rem 0.6rem;color:var(--muted)">${pct}%</td>
+      </tr>`;
+    });
+    modelHtml += `</tbody></table>`;
+    const modelEl = document.getElementById('activity-model-table');
+    if (modelEl) modelEl.innerHTML = modelHtml;
+
+    // ── Session History ───────────────────────────────────────────────────────
+    const sessionMap = {};
+    rows.forEach(r => {
+      if (!r.session_id) return;
+      if (!sessionMap[r.session_id]) sessionMap[r.session_id] = [];
+      sessionMap[r.session_id].push(r);
+    });
+
+    const sessionList = Object.entries(sessionMap).map(([sid, srows]) => {
+      const times   = srows.map(r => new Date(r.called_at).getTime());
+      const maxTime = new Date(Math.max(...times));
+      const minTime = new Date(Math.min(...times));
+      const totalCost = Math.max(...srows.map(r => r.cost_session_cumulative || 0));
+      const durationMs = maxTime - minTime;
+      const mins = Math.round(durationMs / 60000);
+      let duration;
+      if (srows.length === 1) {
+        duration = '< 1m';
+      } else if (mins < 60) {
+        duration = mins + 'm';
+      } else {
+        const h = Math.floor(mins / 60), m = mins % 60;
+        duration = h + 'h' + (m > 0 ? ' ' + m + 'm' : '');
+      }
+      // Ongoing = session not marked done in agent_tasks
+      if (srows.length > 1 && !sessionDoneSet.has(sid)) duration = 'ongoing';
+      return {
+        sid, maxTime, minTime, totalCost, duration,
+        lastAgent: srows[0].agent_id,
+        lastModel: (srows[0].model || '—').replace('claude-','').replace('anthropic/',''),
+        apiCalls: srows.length,
+      };
+    }).sort((a, b) => b.maxTime - a.maxTime).slice(0, 50);
+
+    const thSH  = 'text-align:left;padding:0.4rem 0.6rem;color:var(--muted);font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid rgba(255,255,255,0.08)';
+    const thSHR = thSH.replace('text-align:left','text-align:right');
+    let sessHtml = `<table style="width:100%;border-collapse:collapse;font-size:0.82rem;min-width:700px">
+      <thead><tr>
+        <th style="${thSH}">Session</th>
+        <th style="${thSH}">Agent</th>
+        <th style="${thSH}">Model</th>
+        <th style="${thSH}">Started</th>
+        <th style="${thSH}">Duration</th>
+        <th style="${thSHR}">API Calls</th>
+        <th style="${thSHR}">Total Cost</th>
+      </tr></thead><tbody>`;
+    sessionList.forEach((s, i) => {
+      const col  = AGENT_COLORS[s.lastAgent] || '#888';
+      const lbl  = sessionLabel(s.sid);
+      const dCol = s.duration === 'ongoing' ? 'color:#4CAF50' : 'color:var(--muted)';
+      sessHtml += `<tr style="${i > 0 ? 'border-top:1px solid rgba(255,255,255,0.05)' : ''}">
+        <td style="padding:0.45rem 0.6rem;font-family:monospace;font-size:0.78rem">${lbl}</td>
+        <td style="padding:0.45rem 0.6rem"><span class="activity-agent-dot" style="background:${col}"></span>${activityAgentLabel(s.lastAgent)}</td>
+        <td style="padding:0.45rem 0.6rem;color:var(--muted);font-size:0.78rem">${s.lastModel}</td>
+        <td style="padding:0.45rem 0.6rem;color:var(--muted);font-size:0.78rem;white-space:nowrap">${fmtUpdatedAgo(s.minTime.toISOString())}</td>
+        <td style="padding:0.45rem 0.6rem;font-size:0.78rem;${dCol}">${s.duration}</td>
+        <td style="text-align:right;padding:0.45rem 0.6rem;color:var(--muted)">${s.apiCalls}</td>
+        <td style="text-align:right;padding:0.45rem 0.6rem;font-variant-numeric:tabular-nums;color:var(--accent)">${s.totalCost > 0 ? '$'+s.totalCost.toFixed(3) : '<span style="color:var(--muted)">$0.000</span>'}</td>
+      </tr>`;
+    });
+    sessHtml += `</tbody></table>`;
+    const sessEl = document.getElementById('activity-session-history');
+    if (sessEl) sessEl.innerHTML = sessHtml;
+
     // ── Feed table ─────────────────────────────────────────────────────────────
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem">No data yet — run sync-token-usage.mjs to populate</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:2rem">No data yet — run sync-token-usage.mjs to populate</td></tr>';
       return;
     }
 
@@ -6176,6 +6385,7 @@ async function loadActivityData() {
       const color = activityAgentColor(r.agent_id);
       const ago   = fmtUpdatedAgo(r.called_at);
       const model = r.model ? r.model.replace('claude-', '').replace('anthropic/', '') : '—';
+      const sLbl  = sessionLabel(r.session_id);
       return `<tr>
         <td style="white-space:nowrap;color:var(--muted)">${ago}</td>
         <td><span class="activity-agent-dot" style="background:${color}"></span>${activityAgentLabel(r.agent_id)}</td>
@@ -6186,11 +6396,12 @@ async function loadActivityData() {
         <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)">${activityFmtCache(r.cache_read_tokens, r.cache_write_tokens)}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--accent)">${activityFmtCost(r.cost_this_call)}</td>
         <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)" title="${activityFmtTokens(r.total_tokens_session)} total tokens">${r.cost_session_cumulative != null ? activityFmtCostTotal(r.cost_session_cumulative) : activityFmtTokens(r.total_tokens_session) + ' tkns'}</td>
+        <td style="color:var(--muted);font-family:monospace;font-size:0.75rem">${sLbl}</td>
       </tr>`;
     }).join('');
 
   } catch (err) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="color:var(--red);padding:1rem">Error loading activity: ${err.message}</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="color:var(--red);padding:1rem">Error loading activity: ${err.message}</td></tr>`;
     console.error('[activity] loadActivityData error:', err);
   }
 
