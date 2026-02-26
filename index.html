@@ -6089,7 +6089,7 @@ async function loadCronData() {
    ACTIVITY FEED — Token Usage
 ══════════════════════════════════════════════ */
 
-const AGENT_COLORS = {
+var AGENT_COLORS = {
   main:   '#C4622A',
   mickey: '#4A90D9',
   phil:   '#4CAF50',
@@ -6138,8 +6138,8 @@ function activityFmtCache(cacheRead, cacheWrite) {
   return activityFmtTokens(r) + (w ? '+' + activityFmtTokens(w) : '');
 }
 
-let activityAutoRefreshTimer = null;
-let activitySessionHistoryExpanded = false;
+var activityAutoRefreshTimer = null;
+var activitySessionHistoryExpanded = false;
 
 function activityToggleSessionHistory() {
   const el     = document.getElementById('activity-session-history');
