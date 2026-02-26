@@ -1742,6 +1742,8 @@
    AUTH
 ══════════════════════════════════════════════ */
 const TOKEN_KEY = 'mc_token';
+const ACTIVITY_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2ZmdyanNsZnJqd3lvcHl6cXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODk4ODMsImV4cCI6MjA4NzM2NTg4M30.M7P2XEKNeYwoWvi8mxHgaggDfay_3gAEsOhi6XES9I4';
+const ACTIVITY_SB   = 'https://evfgrjslfrjwyopyzqzx.supabase.co';
 
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -6086,9 +6088,6 @@ async function loadCronData() {
 /* ══════════════════════════════════════════════
    ACTIVITY FEED — Token Usage
 ══════════════════════════════════════════════ */
-
-const ACTIVITY_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2ZmdyanNsZnJqd3lvcHl6cXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODk4ODMsImV4cCI6MjA4NzM2NTg4M30.M7P2XEKNeYwoWvi8mxHgaggDfay_3gAEsOhi6XES9I4';
-const ACTIVITY_SB   = 'https://evfgrjslfrjwyopyzqzx.supabase.co';
 
 const AGENT_COLORS = {
   main:   '#C4622A',
