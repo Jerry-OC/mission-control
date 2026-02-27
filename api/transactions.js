@@ -35,7 +35,7 @@ export default async function handler(req, res) {
   try {
     // ── GET ──────────────────────────────────────────────────
     if (req.method === 'GET') {
-      const { status, limit, resource } = req.query;
+      const { status, limit, resource, offset } = req.query;
 
       // Resource: jobs list
       if (resource === 'jobs') {
@@ -61,7 +61,9 @@ export default async function handler(req, res) {
 
       const whereClause = wheres.length ? `WHERE ${wheres.join(' AND ')}` : '';
       const lim = parseInt(limit) || 200;
-      const limitClause = status === 'all' ? `LIMIT 500` : `LIMIT ${lim}`;
+      const off = parseInt(offset) || 0;
+      const offsetClause = off > 0 ? `OFFSET ${off}` : '';
+      const limitClause = status === 'all' ? `LIMIT 500 ${offsetClause}` : `LIMIT ${lim} ${offsetClause}`;
 
       const rows = await sql(`
         SELECT
