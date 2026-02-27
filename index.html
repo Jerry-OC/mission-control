@@ -951,8 +951,12 @@
 
   /* Category badges for docs */
   .badge-purple { background:rgba(168,85,247,0.15); color:var(--purple); }
+  .doc-cat-spec-draft    { background:rgba(249,115,22,0.15); color:var(--accent); }
+  .doc-cat-spec-approved { background:rgba(76,175,80,0.15); color:#4CAF50; }
+  .doc-cat-docs          { background:rgba(59,130,246,0.15); color:var(--blue); }
+  /* legacy fallback */
   .doc-cat-idea    { background:rgba(168,85,247,0.15); color:var(--purple); }
-  .doc-cat-spec    { background:rgba(59,130,246,0.15); color:var(--blue); }
+  .doc-cat-spec    { background:rgba(249,115,22,0.15); color:var(--accent); }
   .doc-cat-general { background:rgba(107,114,128,0.15); color:var(--muted); }
   .doc-cat-project { background:rgba(249,115,22,0.15); color:var(--accent); }
 
@@ -1072,6 +1076,39 @@
     .docs-sidebar { width:100%; height:240px; }
     .docs-viewer { margin-left:0; margin-top:0.75rem; min-height:400px; }
   }
+
+  /* ─── FEATURE DOCS SYSTEM ─── */
+  .fd-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem; }
+  .fd-sub-tabs { display:flex; gap:0.2rem; background:rgba(255,255,255,0.04); border-radius:8px; padding:3px; border:1px solid var(--border); }
+  .fd-sub-tab { background:transparent; border:none; color:var(--muted); font-size:0.82rem; padding:0.28rem 0.85rem; border-radius:6px; cursor:pointer; transition:all 0.15s; font-family:'Inter',sans-serif; font-weight:500; }
+  .fd-sub-tab.active { background:var(--accent); color:#fff; }
+  .fd-sub-tab:hover:not(.active) { color:var(--text); background:rgba(255,255,255,0.06); }
+  .fd-feature-group { border-bottom:1px solid rgba(255,255,255,0.03); }
+  .fd-feature-header { display:flex; align-items:flex-start; gap:0.4rem; padding:0.55rem 0.75rem; cursor:pointer; transition:background 0.1s; user-select:none; }
+  .fd-feature-header:hover { background:rgba(255,255,255,0.04); }
+  .fd-feature-header-active { background:rgba(249,115,22,0.06); }
+  .fd-feature-toggle { font-size:0.65rem; color:var(--muted); flex-shrink:0; width:10px; }
+  .fd-feature-name { flex:1; font-size:0.85rem; font-weight:600; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.3; }
+  .fd-feature-count { font-size:0.68rem; color:var(--muted); background:rgba(255,255,255,0.06); border-radius:10px; padding:1px 7px; flex-shrink:0; align-self:flex-start; }
+  .fd-spec-version-item { display:flex; align-items:flex-start; padding:0.38rem 0.75rem 0.38rem 1.6rem; cursor:pointer; transition:background 0.1s; border-bottom:1px solid rgba(255,255,255,0.02); }
+  .fd-spec-version-item:hover { background:rgba(255,255,255,0.04); }
+  .fd-spec-version-active { background:rgba(249,115,22,0.1) !important; }
+  .fd-spec-version-name { font-size:0.8rem; color:var(--muted); font-family:'Courier New',monospace; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.35; }
+  .fd-spec-version-active .fd-spec-version-name { color:var(--accent); font-weight:600; }
+  .fd-word-count { font-size:0.75rem; color:var(--muted); text-align:right; padding:0.35rem 0.1rem; }
+  .fd-word-count.warn   { color:var(--yellow); }
+  .fd-word-count.danger { color:var(--red); }
+  .fd-modal-overlay { display:none; position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0.65); align-items:center; justify-content:center; }
+  .fd-modal-box { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:1.5rem; width:100%; max-width:680px; max-height:90vh; overflow-y:auto; box-shadow:0 24px 60px rgba(0,0,0,0.7); }
+
+  .fd-docs-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:1rem; }
+  .fd-doc-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:1.1rem; cursor:pointer; transition:border-color 0.15s; display:flex; flex-direction:column; gap:0.4rem; }
+  .fd-doc-card:hover { border-color:rgba(249,115,22,0.35); }
+  .fd-doc-card-title { font-size:0.95rem; font-weight:700; }
+  .fd-doc-card-desc { font-size:0.75rem; color:var(--muted); }
+  .fd-doc-card-preview { font-size:0.75rem; color:var(--muted); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .fd-doc-card-empty { font-size:0.75rem; color:rgba(107,114,128,0.6); font-style:italic; }
+  .fd-doc-card-footer { display:flex; justify-content:space-between; margin-top:auto; padding-top:0.5rem; border-top:1px solid rgba(255,255,255,0.04); }
 
   /* ─── BTN-SM ─── */
   .btn-sm { background:transparent; border:1px solid var(--border); color:var(--muted); padding:0.28rem 0.65rem; border-radius:6px; font-size:0.72rem; font-family:'Inter',sans-serif; cursor:pointer; transition:all 0.15s; }
@@ -1509,48 +1546,74 @@
 
 <!-- ═══════════════ DOCS TAB ═══════════════ -->
 <div id="tab-docs" class="tab-panel">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.5rem">
-    <h2 style="margin:0">Design Docs</h2>
-    <span style="font-size:0.78rem;color:var(--muted)">Design documents, project ideas, and notes</span>
+  <!-- Sub-tab header -->
+  <div class="fd-header">
+    <h2 style="margin:0">Documentation</h2>
+    <div class="fd-sub-tabs">
+      <button id="fd-specs-tab-btn" class="fd-sub-tab active" onclick="fdShowSubTab('specs')">📐 Specs</button>
+      <button id="fd-docs-tab-btn"  class="fd-sub-tab"        onclick="fdShowSubTab('docs')">📚 Docs</button>
+    </div>
   </div>
 
-  <div class="docs-layout">
-    <!-- Sidebar -->
-    <div class="docs-sidebar">
-      <div class="docs-sidebar-header">
-        <span class="docs-sidebar-title">Documents</span>
-        <button class="docs-new-btn" onclick="docsShowNewForm()">+ New Doc</button>
-      </div>
-
-      <!-- New doc form (hidden by default) -->
-      <div class="docs-new-form" id="docs-new-form" style="display:none">
-        <input type="text" id="docs-new-title" placeholder="Document title…" />
-        <select id="docs-new-cat">
-          <option value="general">General</option>
-          <option value="idea">Idea</option>
-          <option value="spec">Spec</option>
-          <option value="project">Project</option>
-        </select>
-        <div class="docs-new-form-actions">
-          <button class="docs-create-btn" id="docs-create-btn" onclick="docsCreateDoc()">Create</button>
-          <button class="docs-cancel-new-btn" onclick="docsHideNewForm()">Cancel</button>
+  <!-- ── Specs sub-tab ──────────────────────────────────── -->
+  <div id="fd-specs-panel">
+    <div class="docs-layout">
+      <!-- Sidebar: feature list + spec versions -->
+      <div class="docs-sidebar">
+        <div class="docs-sidebar-header">
+          <span class="docs-sidebar-title">Features</span>
+          <div style="display:flex;gap:0.3rem">
+            <button class="docs-new-btn" onclick="fdOpenNewSpecModal()" title="New Spec">+ Spec</button>
+            <button class="docs-new-btn" onclick="fdShowNewFeatureForm()" title="New Feature" style="padding:0.28rem 0.5rem">+ Feature</button>
+          </div>
+        </div>
+        <div style="padding:0.4rem 0.6rem;border-bottom:1px solid var(--border)">
+          <input id="fd-spec-search" type="text" placeholder="Search features…"
+            oninput="fdSpecSearchTerm=this.value.toLowerCase();fdRenderSpecsSidebar()"
+            style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.55rem;color:var(--text);font-size:0.78rem;outline:none;font-family:inherit;box-sizing:border-box;color-scheme:dark">
+        </div>
+        <div id="fd-spec-sidebar-content" class="docs-list">
+          <div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.82rem">Loading…</div>
         </div>
       </div>
-
-      <!-- Doc list -->
-      <div class="docs-list" id="docs-list">
-        <div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.82rem">Loading…</div>
-      </div>
-    </div>
-
-    <!-- Viewer -->
-    <div class="docs-viewer" id="docs-viewer">
-      <div class="docs-viewer-empty">
-        <div class="docs-empty-icon">📄</div>
-        <div>Select a document or create a new one</div>
+      <!-- Spec viewer -->
+      <div class="docs-viewer" id="fd-spec-viewer">
+        <div class="docs-viewer-empty">
+          <div class="docs-empty-icon">📐</div>
+          <div>Select a spec to view</div>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- ── Docs sub-tab ───────────────────────────────────── -->
+  <div id="fd-docs-panel" style="display:none">
+    <div class="docs-layout">
+      <div class="docs-sidebar">
+        <div class="docs-sidebar-header">
+          <span class="docs-sidebar-title">Features</span>
+        </div>
+        <div style="padding:0.4rem 0.6rem;border-bottom:1px solid var(--border)">
+          <input id="fd-doc-search" type="text" placeholder="Search features…"
+            oninput="fdDocSearchTerm=this.value.toLowerCase();fdRenderDocsSidebar()"
+            style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;padding:0.3rem 0.55rem;color:var(--text);font-size:0.78rem;outline:none;font-family:inherit;box-sizing:border-box;color-scheme:dark">
+        </div>
+        <div id="fd-doc-sidebar-content" class="docs-list">
+          <div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.82rem">Loading…</div>
+        </div>
+      </div>
+      <div class="docs-viewer" id="fd-doc-viewer">
+        <div class="docs-viewer-empty">
+          <div class="docs-empty-icon">📚</div>
+          <div>Select a feature to view its doc</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Spec modal -->
+<div id="fd-new-spec-modal" class="fd-modal-overlay" onclick="fdCloseNewSpecModal()">
 </div>
 
 <!-- ═══════════════ NEW ORDER MODAL ═══════════════ -->
@@ -1882,7 +1945,7 @@ function showTab(name, btn) {
   if (name === 'agents')   fetchAgents();
   if (name === 'cron')     loadCronData();
   if (name === 'activity') loadActivityData();
-  if (name === 'docs')     docsInit();
+  if (name === 'docs')     fdInit();
 }
 
 
@@ -3147,16 +3210,19 @@ function openAgentDrawer(agentId) {
 
   // Load panels
   loadDrawerOverview(agent);
-  loadDrawerJobs(agent);
-  loadDrawerSessions(agent);
+  loadDrawerSessionFeed(agent);
   loadDrawerFiles(agent);
   loadDrawerConfig(agent);
+
+  // Start auto-refresh for Session Feed
+  startDrawerFeedRefresh(agent);
 }
 
 function closeAgentDrawer() {
   document.getElementById('agent-drawer-backdrop').classList.remove('open');
   document.getElementById('agent-drawer').classList.remove('open');
   _drawerAgent = null;
+  stopDrawerFeedRefresh();
 }
 
 function showDrawerTab(name, btn) {
@@ -3194,81 +3260,133 @@ function loadDrawerOverview(agent) {
   `;
 }
 
-function loadDrawerJobs(agent) {
-  const el = document.getElementById('drawer-panel-jobs');
-  el.innerHTML = '<div style="color:var(--muted);font-size:0.82rem">Loading…</div>';
+var _drawerFeedInterval = null;
 
-  const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2ZmdyanNsZnJqd3lvcHl6cXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODk4ODMsImV4cCI6MjA4NzM2NTg4M30.M7P2XEKNeYwoWvi8mxHgaggDfay_3gAEsOhi6XES9I4';
-  fetch('https://evfgrjslfrjwyopyzqzx.supabase.co/rest/v1/gateway_cron_state?select=*&order=name',
-    { headers: { apikey: ANON, Authorization: 'Bearer ' + ANON } })
-  .then(r => r.json())
-  .then(jobs => {
-    const agentJobs = jobs.filter(j => (j.agent_id||'').toLowerCase() === agent.id.toLowerCase());
-    if (!agentJobs.length) {
-      el.innerHTML = '<div style="color:var(--muted);font-size:0.82rem">No scheduled gateway jobs for this agent.</div>';
-      return;
+function startDrawerFeedRefresh(agent) {
+  stopDrawerFeedRefresh();
+  _drawerFeedInterval = setInterval(function() {
+    var feedPanel = document.getElementById('drawer-panel-feed');
+    if (feedPanel && feedPanel.classList.contains('active') && _drawerAgent) {
+      loadDrawerSessionFeed(_drawerAgent, true);
     }
-    el.innerHTML = `<table class="drawer-jobs-table">
-      <thead><tr><th>Job</th><th>Schedule</th><th>Last Run</th><th>Status</th></tr></thead>
-      <tbody>${agentJobs.map(j => {
-        // Schedule: human-readable cron if recurring, or formatted next_run_at if one-shot
-        const schedDisplay = j.schedule_expr
-          ? fmtCron(j.schedule_expr, j.schedule_tz)
-          : j.next_run_at
-            ? '🕐 ' + fmtPST(j.next_run_at)
-            : '—';
-        // Status: use last_status if exists, else 'scheduled' if next_run_at is in future, else 'pending'
-        const now = Date.now();
-        const hasNextRun = j.next_run_at && new Date(j.next_run_at).getTime() > now;
-        const st = j.last_status || (hasNextRun ? 'scheduled' : 'pending');
-        const cls = st === 'ok' ? 'badge-green' : st === 'error' ? 'badge-red' : st === 'scheduled' ? 'badge-orange' : 'badge-muted';
-        return `<tr>
-          <td>${j.name || j.job_id}</td>
-          <td style="color:var(--muted);white-space:nowrap">${schedDisplay}</td>
-          <td style="color:var(--muted)">${fmtPST(j.last_run_at)}</td>
-          <td><span class="badge ${cls}">${st}</span></td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table>`;
-  })
-  .catch(() => { el.innerHTML = '<div style="color:var(--muted)">Could not load jobs.</div>'; });
+  }, 15000);
 }
 
-function loadDrawerSessions(agent) {
-  const el = document.getElementById('drawer-panel-sessions');
-  el.innerHTML = '<div style="color:var(--muted);font-size:0.82rem">Loading…</div>';
+function stopDrawerFeedRefresh() {
+  if (_drawerFeedInterval) {
+    clearInterval(_drawerFeedInterval);
+    _drawerFeedInterval = null;
+  }
+}
 
-  const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2ZmdyanNsZnJqd3lvcHl6cXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODk4ODMsImV4cCI6MjA4NzM2NTg4M30.M7P2XEKNeYwoWvi8mxHgaggDfay_3gAEsOhi6XES9I4';
-  fetch(`https://evfgrjslfrjwyopyzqzx.supabase.co/rest/v1/agent_tasks?agent_id=eq.${agent.id}&select=*&order=started_at.desc&limit=30`,
-    { headers: { apikey: ANON, Authorization: 'Bearer ' + ANON } })
-  .then(r => r.json())
-  .then(tasks => {
-    if (!tasks.length) {
-      el.innerHTML = '<div style="color:var(--muted);font-size:0.82rem">No sessions logged yet.</div>';
-      return;
+function loadDrawerSessionFeed(agent, isRefresh) {
+  var el = document.getElementById('drawer-panel-feed');
+  if (!isRefresh) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:0.82rem">Loading…</div>';
+  }
+
+  var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2ZmdyanNsZnJqd3lvcHl6cXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3ODk4ODMsImV4cCI6MjA4NzM2NTg4M30.M7P2XEKNeYwoWvi8mxHgaggDfay_3gAEsOhi6XES9I4';
+  var headers = { apikey: ANON, Authorization: 'Bearer ' + ANON };
+  var agentId = agent.id;
+
+  // Fetch UPCOMING: gateway_cron_state one-shot jobs with next_run_at > now
+  var cronUrl = 'https://evfgrjslfrjwyopyzqzx.supabase.co/rest/v1/gateway_cron_state'
+    + '?agent_id=eq.' + encodeURIComponent(agentId)
+    + '&schedule_expr=is.null'
+    + '&next_run_at=gt.' + new Date().toISOString()
+    + '&select=*&order=next_run_at.asc';
+
+  // Fetch ACTIVE: agent_tasks running/queued
+  var activeUrl = 'https://evfgrjslfrjwyopyzqzx.supabase.co/rest/v1/agent_tasks'
+    + '?agent_id=eq.' + encodeURIComponent(agentId)
+    + '&status=in.(running,queued)'
+    + '&select=*&order=started_at.asc';
+
+  // Fetch HISTORY: agent_tasks done/error
+  var historyUrl = 'https://evfgrjslfrjwyopyzqzx.supabase.co/rest/v1/agent_tasks'
+    + '?agent_id=eq.' + encodeURIComponent(agentId)
+    + '&status=in.(done,error)'
+    + '&select=*&order=started_at.desc&limit=20';
+
+  Promise.all([
+    fetch(cronUrl, { headers: headers }).then(function(r) { return r.json(); }),
+    fetch(activeUrl, { headers: headers }).then(function(r) { return r.json(); }),
+    fetch(historyUrl, { headers: headers }).then(function(r) { return r.json(); })
+  ]).then(function(results) {
+    var upcoming = Array.isArray(results[0]) ? results[0] : [];
+    var active = Array.isArray(results[1]) ? results[1] : [];
+    var history = Array.isArray(results[2]) ? results[2] : [];
+
+    var html = '';
+
+    // ─── UPCOMING section ───
+    if (upcoming.length > 0) {
+      html += '<div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted);margin-bottom:0.5rem;font-weight:600">Upcoming</div>';
+      html += upcoming.map(function(j) {
+        return '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.6rem;border-radius:7px;background:rgba(255,255,255,0.02);border:1px solid var(--border);margin-bottom:0.4rem">'
+          + '<span style="font-size:1rem">🕐</span>'
+          + '<div style="flex:1;min-width:0">'
+          +   '<div style="font-size:0.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (j.name || j.job_id || '—') + '</div>'
+          +   '<div style="font-size:0.72rem;color:var(--muted)">' + fmtPST(j.next_run_at) + '</div>'
+          + '</div>'
+          + '<span class="badge badge-muted" style="flex-shrink:0">scheduled</span>'
+          + '</div>';
+      }).join('');
+      html += '<div style="height:1rem"></div>';
     }
-    el.innerHTML = `<table class="drawer-jobs-table">
-      <thead><tr><th>Session</th><th>Task</th><th>Started</th><th>Duration</th><th>Status</th></tr></thead>
-      <tbody>${tasks.map(t => {
-        const st = t.status || 'unknown';
-        const cls = st === 'done' ? 'badge-green' : st === 'error' ? 'badge-red' : st === 'running' ? 'badge-orange' : 'badge-muted';
-        const badge = st === 'running' ? '<span class="badge badge-orange" style="animation:pulse 1.5s infinite">● running</span>' : `<span class="badge ${cls}">${st}</span>`;
-        const dur = (t.completed_at && t.started_at)
+
+    // ─── ACTIVE section ───
+    if (active.length > 0) {
+      html += '<div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted);margin-bottom:0.5rem;font-weight:600">Active</div>';
+      html += active.map(function(t) {
+        var name = t.session_name || (t.id ? t.id.slice(0,8) : '—');
+        var label = t.task_label || '—';
+        var ago = t.started_at ? fmtAgo(Math.round((Date.now() - new Date(t.started_at).getTime()) / 1000)) : '—';
+        var dotColor = t.status === 'running' ? 'var(--accent)' : 'var(--muted)';
+        var dotAnim = t.status === 'running' ? 'animation:pulse 1.5s infinite' : '';
+        return '<div style="display:flex;align-items:flex-start;gap:0.5rem;padding:0.5rem 0.6rem;border-radius:7px;background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.15);margin-bottom:0.4rem">'
+          + '<span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:0.35rem;background:' + dotColor + ';' + dotAnim + '"></span>'
+          + '<div style="flex:1;min-width:0">'
+          +   '<div style="font-size:0.82rem;font-weight:600;color:var(--text)">' + name + '</div>'
+          +   '<div style="font-size:0.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="' + label + '">' + label + '</div>'
+          +   '<div style="font-size:0.68rem;color:var(--muted);margin-top:0.1rem">started ' + ago + '</div>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+      html += '<div style="height:1rem"></div>';
+    }
+
+    // ─── HISTORY section ───
+    html += '<div style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted);margin-bottom:0.5rem;font-weight:600">History</div>';
+    if (history.length === 0) {
+      html += '<div style="color:var(--muted);font-size:0.8rem;font-style:italic">No history yet.</div>';
+    } else {
+      html += history.map(function(t) {
+        var icon = t.status === 'done' ? '✅' : '❌';
+        var name = t.session_name || (t.id ? t.id.slice(0,8) : '—');
+        var label = t.task_label || '—';
+        var ago = t.started_at ? fmtAgo(Math.round((Date.now() - new Date(t.started_at).getTime()) / 1000)) : '—';
+        var dur = (t.completed_at && t.started_at)
           ? fmtDuration(new Date(t.completed_at) - new Date(t.started_at))
-          : t.status === 'running' ? 'in progress' : '—';
-        const name = t.session_name || t.id?.slice(0,8) || '—';
-        const spawnedBy = t.spawned_by ? `<span style="color:var(--muted);font-size:0.65rem"> via ${t.spawned_by}</span>` : '';
-        return `<tr>
-          <td style="font-weight:600;white-space:nowrap">${name}${spawnedBy}</td>
-          <td style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.task_label||''}">${t.task_label || '—'}</td>
-          <td style="color:var(--muted);white-space:nowrap">${fmtPST(t.started_at)}</td>
-          <td style="color:var(--muted);white-space:nowrap">${dur}</td>
-          <td>${badge}</td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table>`;
-  })
-  .catch(() => { el.innerHTML = '<div style="color:var(--muted)">Could not load sessions.</div>'; });
+          : null;
+        return '<div style="display:flex;align-items:flex-start;gap:0.5rem;padding:0.45rem 0.6rem;border-radius:7px;border:1px solid var(--border);background:rgba(255,255,255,0.01);margin-bottom:0.3rem">'
+          + '<span style="font-size:0.9rem;flex-shrink:0;margin-top:0.05rem">' + icon + '</span>'
+          + '<div style="flex:1;min-width:0">'
+          +   '<div style="font-size:0.8rem;font-weight:600;color:var(--text)">' + name + '</div>'
+          +   '<div style="font-size:0.7rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="' + label + '">' + label + '</div>'
+          + '</div>'
+          + '<div style="text-align:right;flex-shrink:0;font-size:0.68rem;color:var(--muted)">'
+          +   '<div>' + ago + '</div>'
+          +   (dur ? '<div>' + dur + '</div>' : '')
+          + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    el.innerHTML = html;
+  }).catch(function() {
+    el.innerHTML = '<div style="color:var(--muted);font-size:0.82rem">Could not load session feed.</div>';
+  });
 }
 
 function loadDrawerFiles(agent) {
@@ -4108,7 +4226,8 @@ async function deleteCurrentContact() {
 }
 
 // Close on overlay click / Escape
-document.getElementById('contact-modal').addEventListener('click', e => {
+var _contactModal = document.getElementById('contact-modal');
+if (_contactModal) _contactModal.addEventListener('click', e => {
   if (e.target.id === 'contact-modal') closeContactModal();
 });
 
@@ -6098,7 +6217,7 @@ var AGENT_COLORS = {
 };
 
 function activityAgentColor(agentId) {
-  return AGENT_COLORS[agentId] || '#888';
+  return (AGENT_COLORS || {})[agentId] || '#888';
 }
 
 function activityAgentLabel(agentId) {
@@ -6246,7 +6365,7 @@ async function loadActivityData() {
       const cT   = aTod.reduce((s, r) => s + (r.cost_this_call || 0), 0);
       const cW   = aWk.reduce((s,  r) => s + (r.cost_this_call || 0), 0);
       const mdl  = aAll.length ? (aAll[0].model || '—').replace('claude-','').replace('anthropic/','') : '—';
-      const col  = AGENT_COLORS[agent.id] || '#888';
+      const col  = (AGENT_COLORS || {})[agent.id] || '#888';
       totT += cT; totW += cW; totA += cA;
       agentHtml += `<tr style="border-top:1px solid rgba(255,255,255,0.05)">
         <td style="padding:0.45rem 0.6rem"><span class="activity-agent-dot" style="background:${col}"></span>${agent.emoji} ${agent.label}</td>
@@ -6357,7 +6476,7 @@ async function loadActivityData() {
         <th style="${thSHR}">Total Cost</th>
       </tr></thead><tbody>`;
     sessionList.forEach((s, i) => {
-      const col  = AGENT_COLORS[s.lastAgent] || '#888';
+      const col  = (AGENT_COLORS || {})[s.lastAgent] || '#888';
       const lbl  = sessionLabel(s.sid);
       const dCol = s.duration === 'ongoing' ? 'color:#4CAF50' : 'color:var(--muted)';
       sessHtml += `<tr style="${i > 0 ? 'border-top:1px solid rgba(255,255,255,0.05)' : ''}">
@@ -6400,7 +6519,8 @@ async function loadActivityData() {
     }).join('');
 
   } catch (err) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="color:var(--red);padding:1rem">Error loading activity: ${err.message}</td></tr>`;
+    const stack = (err.stack || '').split('\n').slice(0,5).join(' | ');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="color:var(--red);padding:1rem">Error loading activity: ${err.message}<br><small style="opacity:0.6;font-family:monospace">${stack}</small></td></tr>`;
     console.error('[activity] loadActivityData error:', err);
   }
 
@@ -6413,179 +6533,278 @@ async function loadActivityData() {
 }
 
 /* ══════════════════════════════════════════════
-   DOCS — Design Documents
+   DOCS — Feature Documentation System
 ══════════════════════════════════════════════ */
 
-let docsAll = [];           // list items (no content)
-let docsActiveId = null;    // currently selected doc id
-let docsActiveDoc = null;   // full doc object (with content)
-let docsEditing = false;    // is right panel in edit mode
-let docsLoaded = false;
+// ─── State (all var — TDZ-safe) ──────────────────────────────────────────────
+var fdSubTab              = 'specs';  // 'specs' | 'docs'
+var fdSpecSearchTerm      = '';
+var fdDocSearchTerm       = '';
+var fdFeatures            = [];       // [{id,name,slug,description,...}]
+var fdFeaturesLoaded      = false;
+var fdSpecsCache          = {};       // slug -> [{version,sha,path,size}] | null
+var fdActiveFeatureSlug   = null;     // selected feature slug in Specs panel
+var fdExpandedFeatures    = {};       // slug -> bool (expanded in sidebar)
+var fdActiveVersion       = null;     // selected spec version string
+var fdActiveSpec          = null;     // {version,sha,content,path} loaded from GitHub
+var fdSpecEditing         = false;
+var fdDocFeatureId        = null;     // selected feature_id in Docs panel
+var fdActiveFeatureDoc    = null;     // loaded {id,feature_id,content,...} or null
+var fdDocEditing          = false;
+var fdFeatureDocsMap      = {};       // feature_id -> doc object (or null if checked)
+var fdFeatureDocsListLoaded = false;  // true after meta list fetched
 
-const DOC_CAT_CLASSES = {
-  idea:    'doc-cat-idea',
-  spec:    'doc-cat-spec',
-  general: 'doc-cat-general',
-  project: 'doc-cat-project',
-};
-
-function docsCatBadge(cat) {
-  const cls = DOC_CAT_CLASSES[cat] || 'doc-cat-general';
-  return `<span class="badge ${cls}" style="font-size:0.65rem;padding:0.1rem 0.45rem">${cat || 'general'}</span>`;
-}
-
-function docsFmtDate(iso) {
+function fdFmtDate(iso) {
   if (!iso) return '';
-  const d = new Date(iso);
+  var d = new Date(iso);
   return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
 }
 
-async function docsInit() {
-  if (!docsLoaded) await docsLoadList();
+// ─── Init / sub-tab switching ────────────────────────────────────────────────
+async function fdInit() {
+  if (!fdFeaturesLoaded) await fdLoadFeatures();
+  fdRenderSpecsSidebar();
 }
 
-async function docsLoadList() {
-  const list = document.getElementById('docs-list');
-  list.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.82rem">Loading…</div>`;
+function fdShowSubTab(name) {
+  fdSubTab = name;
+  var specsPanel = document.getElementById('fd-specs-panel');
+  var docsPanel  = document.getElementById('fd-docs-panel');
+  var specBtn    = document.getElementById('fd-specs-tab-btn');
+  var docsBtn    = document.getElementById('fd-docs-tab-btn');
+  if (specsPanel) specsPanel.style.display = name === 'specs' ? '' : 'none';
+  if (docsPanel)  docsPanel.style.display  = name === 'docs'  ? '' : 'none';
+  if (specBtn)    specBtn.classList.toggle('active', name === 'specs');
+  if (docsBtn)    docsBtn.classList.toggle('active', name === 'docs');
+  if (name === 'docs') {
+    if (!fdFeatureDocsListLoaded) {
+      fdLoadAllFeatureDocsMeta().then(function() { fdRenderDocsSidebar(); });
+    }
+    fdRenderDocsSidebar();
+  }
+}
+
+// ─── Features ────────────────────────────────────────────────────────────────
+async function fdLoadFeatures() {
   try {
-    const data = await apiFetch('/api/docs');
-    docsAll = data.docs || [];
-    docsLoaded = true;
-    docsRenderList();
-    // Re-select active doc if still present
-    if (docsActiveId) {
-      const still = docsAll.find(d => d.id === docsActiveId);
-      if (still) docsSelectDoc(docsActiveId);
+    var data = await apiFetch('/api/features');
+    fdFeatures = (data && data.features) ? data.features : [];
+    fdFeaturesLoaded = true;
+  } catch(e) {
+    fdFeatures = [];
+    console.error('[fd] loadFeatures:', e);
+  }
+}
+
+function fdSlugify(name) {
+  return (name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function fdShowNewFeatureForm() {
+  var el = document.getElementById('fd-spec-sidebar-content');
+  if (!el) return;
+  var existingHtml = el.innerHTML;
+  el.innerHTML = `<div style="padding:0.75rem;border-bottom:1px solid var(--border)">
+    <div style="font-size:0.73rem;font-weight:600;color:var(--accent);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.07em">New Feature</div>
+    <input id="fd-nf-name" type="text" placeholder="Feature name…"
+      oninput="var s=document.getElementById('fd-nf-slug');if(s&&!s._edited)s.value=fdSlugify(this.value)"
+      onkeydown="if(event.key==='Enter')fdCreateFeature()"
+      style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:0.32rem 0.55rem;color:var(--text);font-size:0.8rem;outline:none;margin-bottom:0.35rem" />
+    <input id="fd-nf-slug" type="text" placeholder="slug (auto-filled)"
+      oninput="this._edited=true"
+      style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:0.32rem 0.55rem;color:var(--muted);font-size:0.75rem;font-family:monospace;outline:none;margin-bottom:0.35rem" />
+    <input id="fd-nf-desc" type="text" placeholder="Short description (optional)"
+      style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:0.32rem 0.55rem;color:var(--text);font-size:0.8rem;outline:none;margin-bottom:0.5rem" />
+    <div style="display:flex;gap:0.4rem">
+      <button id="fd-create-feature-btn" onclick="fdCreateFeature()"
+        style="flex:1;background:var(--accent);border:none;color:#fff;padding:0.32rem 0;border-radius:4px;font-size:0.8rem;cursor:pointer;font-family:inherit;font-weight:600">Create</button>
+      <button onclick="fdRenderSpecsSidebar()"
+        style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:0.32rem 0.65rem;border-radius:4px;font-size:0.8rem;cursor:pointer;font-family:inherit">Cancel</button>
+    </div>
+  </div>` + existingHtml;
+  setTimeout(function() {
+    var el2 = document.getElementById('fd-nf-name');
+    if (el2) el2.focus();
+  }, 50);
+}
+
+async function fdCreateFeature() {
+  var nameEl = document.getElementById('fd-nf-name');
+  var slugEl = document.getElementById('fd-nf-slug');
+  var descEl = document.getElementById('fd-nf-desc');
+  var name   = nameEl ? nameEl.value.trim() : '';
+  var slug   = slugEl ? slugEl.value.trim() : '';
+  var desc   = descEl ? descEl.value.trim() : '';
+  if (!name) { if (nameEl) nameEl.focus(); return; }
+  if (!slug) slug = fdSlugify(name);
+  var btn = document.getElementById('fd-create-feature-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
+  try {
+    var data = await apiPost('/api/features', { name: name, slug: slug, description: desc });
+    if (data.ok && data.feature) {
+      fdFeatures.push(data.feature);
+      fdFeatures.sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); });
+      fdRenderSpecsSidebar();
     }
   } catch(e) {
-    list.innerHTML = `<div style="color:var(--red);padding:1rem;font-size:0.82rem">Failed to load docs: ${escHtml(e.message)}</div>`;
+    alert('Failed to create feature: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Create'; }
   }
 }
 
-function docsRenderList() {
-  const list = document.getElementById('docs-list');
-  if (!docsAll.length) {
-    list.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.82rem">No documents yet.<br>Click "+ New Doc" to get started.</div>`;
-    return;
+// ─── Specs sidebar ────────────────────────────────────────────────────────────
+function fdRenderSpecsSidebar() {
+  var el = document.getElementById('fd-spec-sidebar-content');
+  if (!el) return;
+  var term = (fdSpecSearchTerm || '').toLowerCase().trim();
+  var allFeats = fdFeatures || [];
+  var filteredFeats = term ? allFeats.filter(function(f) { return (f.name || '').toLowerCase().indexOf(term) >= 0; }) : allFeats;
+  var html = '';
+  if (!filteredFeats.length) {
+    html = term
+      ? `<div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:0.82rem">No features match "${escHtml(term)}"</div>`
+      : `<div style="padding:2rem 1rem;text-align:center;color:var(--muted);font-size:0.82rem">No features yet.<br>Click "+ Feature" to get started.</div>`;
+  } else {
+    filteredFeats.forEach(function(feat) {
+      var isExpanded = !!fdExpandedFeatures[feat.slug];
+      var isActive   = fdActiveFeatureSlug === feat.slug;
+      var specs      = fdSpecsCache.hasOwnProperty(feat.slug) ? fdSpecsCache[feat.slug] : null;
+      var specCount  = specs ? specs.length : '?';
+      html += `<div class="fd-feature-group">
+        <div class="fd-feature-header${isActive ? ' fd-feature-header-active' : ''}"
+             onclick="fdToggleFeature('${escHtml(feat.slug)}')">
+          <span class="fd-feature-toggle">${isExpanded ? '▾' : '▸'}</span>
+          <span class="fd-feature-name" title="${escHtml(feat.name)}">${escHtml(feat.name)}</span>
+          <span class="fd-feature-count">${escHtml(String(specCount))}</span>
+        </div>`;
+      if (isExpanded) {
+        if (specs === null) {
+          html += `<div style="padding:0.35rem 0.75rem 0.35rem 1.6rem;font-size:0.75rem;color:var(--muted)">Loading…</div>`;
+        } else if (!specs.length) {
+          html += `<div style="padding:0.35rem 0.75rem 0.35rem 1.6rem;font-size:0.75rem;color:var(--muted);font-style:italic">No specs yet.</div>`;
+        } else {
+          var sorted = specs.slice().sort(function(a, b) { return (b.version || '').localeCompare(a.version || ''); });
+          sorted.forEach(function(spec) {
+            var isActiveSpec = isActive && fdActiveVersion === spec.version;
+            html += `<div class="fd-spec-version-item${isActiveSpec ? ' fd-spec-version-active' : ''}"
+                         onclick="fdSelectSpec('${escHtml(feat.slug)}','${escHtml(spec.version)}')">
+              <span class="fd-spec-version-name">${escHtml(spec.version)}</span>
+            </div>`;
+          });
+        }
+      }
+      html += `</div>`;
+    });
   }
-  list.innerHTML = docsAll.map(doc => {
-    const active = doc.id === docsActiveId ? 'active' : '';
-    return `<div class="doc-list-card ${active}" id="doccard-${doc.id}" onclick="docsSelectDoc('${doc.id}')">
-      <div class="doc-list-card-title" title="${escHtml(doc.title)}">${escHtml(doc.title)}</div>
-      <div class="doc-list-card-meta">
-        ${docsCatBadge(doc.category)}
-        <span class="doc-list-card-date">${docsFmtDate(doc.updated_at)}</span>
-      </div>
-    </div>`;
-  }).join('');
+  el.innerHTML = html;
 }
 
-async function docsSelectDoc(id) {
-  // Update sidebar selection
-  docsAll.forEach(d => {
-    const el = document.getElementById('doccard-' + d.id);
-    if (el) el.classList.toggle('active', d.id === id);
-  });
-  docsActiveId = id;
-  docsEditing = false;
+async function fdToggleFeature(slug) {
+  fdActiveFeatureSlug      = slug;
+  fdExpandedFeatures[slug] = !fdExpandedFeatures[slug];
+  fdRenderSpecsSidebar();
+  if (fdExpandedFeatures[slug] && !fdSpecsCache.hasOwnProperty(slug)) {
+    await fdLoadFeatureSpecs(slug);
+  }
+}
 
-  // Show loading state
-  const viewer = document.getElementById('docs-viewer');
-  viewer.innerHTML = `<div class="docs-viewer-empty"><div class="docs-empty-icon">⏳</div><div>Loading…</div></div>`;
-
+async function fdLoadFeatureSpecs(slug) {
   try {
-    const data = await apiFetch(`/api/docs?id=${id}`);
-    docsActiveDoc = data.doc;
-    docsRenderViewer(false);
+    var data = await apiFetch('/api/specs?feature=' + encodeURIComponent(slug));
+    fdSpecsCache[slug] = (data && data.specs) ? data.specs : [];
   } catch(e) {
-    viewer.innerHTML = `<div class="docs-viewer-empty"><div>Error loading doc: ${escHtml(e.message)}</div></div>`;
+    fdSpecsCache[slug] = [];
+    console.error('[fd] loadFeatureSpecs:', e);
+  }
+  fdRenderSpecsSidebar();
+}
+
+async function fdSelectSpec(featureSlug, version) {
+  fdActiveFeatureSlug = featureSlug;
+  fdActiveVersion     = version;
+  fdSpecEditing       = false;
+  fdRenderSpecsSidebar();
+  var viewer = document.getElementById('fd-spec-viewer');
+  if (!viewer) return;
+  viewer.innerHTML = `<div class="docs-viewer-empty"><div class="docs-empty-icon">⏳</div><div>Loading…</div></div>`;
+  try {
+    var data = await apiFetch('/api/specs?feature=' + encodeURIComponent(featureSlug) + '&version=' + encodeURIComponent(version));
+    fdActiveSpec = (data && data.spec) ? data.spec : null;
+    fdRenderSpecViewer(false);
+  } catch(e) {
+    viewer.innerHTML = `<div class="docs-viewer-empty"><div style="color:var(--red)">Error: ${escHtml(e.message)}</div></div>`;
   }
 }
 
-function docsRenderViewer(editing) {
-  docsEditing = editing;
-  const doc = docsActiveDoc;
-  if (!doc) return;
-  const viewer = document.getElementById('docs-viewer');
-
-  const titleEl = editing
-    ? `<input class="docs-title-input" id="docs-title-input" value="${escHtml(doc.title)}" />`
-    : `<div class="docs-title-display" onclick="docsRenderViewer(true)" title="Click to edit">${escHtml(doc.title)}</div>`;
-
-  const catSelect = `<select class="docs-cat-select" id="docs-cat-select" ${editing ? '' : 'disabled'}>
-    <option value="general" ${doc.category==='general'?'selected':''}>General</option>
-    <option value="idea"    ${doc.category==='idea'   ?'selected':''}>Idea</option>
-    <option value="spec"    ${doc.category==='spec'   ?'selected':''}>Spec</option>
-    <option value="project" ${doc.category==='project'?'selected':''}>Project</option>
-  </select>`;
-
-  const actionBtns = editing
-    ? `<button class="docs-save-btn" id="docs-save-btn" onclick="docsSave()">Save</button>
-       <button class="docs-delete-btn" onclick="docsDelete()">Delete</button>
-       <button class="docs-edit-btn" onclick="docsRenderViewer(false)">Cancel</button>`
-    : `<button class="docs-edit-btn" onclick="docsRenderViewer(true)">Edit</button>
-       <button class="docs-delete-btn" onclick="docsDelete()">Delete</button>`;
-
-  const bodyContent = editing
-    ? `<textarea class="docs-textarea" id="docs-content-textarea">${escHtml(doc.content)}</textarea>`
-    : `<div class="doc-content" id="docs-content-rendered">${typeof marked !== 'undefined' ? marked.parse(doc.content || '') : escHtml(doc.content || '')}</div>`;
-
+function fdRenderSpecViewer(editing) {
+  fdSpecEditing = editing;
+  var spec   = fdActiveSpec;
+  var viewer = document.getElementById('fd-spec-viewer');
+  if (!spec || !viewer) return;
+  var feat     = null;
+  var feats    = fdFeatures || [];
+  for (var i = 0; i < feats.length; i++) { if (feats[i].slug === fdActiveFeatureSlug) { feat = feats[i]; break; } }
+  var featName = feat ? feat.name : (fdActiveFeatureSlug || '');
+  var ghUrl    = 'https://github.com/Jerry-OC/cdb-specs-and-docs/blob/main/' + (spec.path || '');
+  var bodyHtml = editing
+    ? `<textarea class="docs-textarea" id="fd-spec-textarea" oninput="fdUpdateWordCount()">${escHtml(spec.content)}</textarea>
+       <div id="fd-word-count" class="fd-word-count">Words: 0</div>`
+    : `<div class="doc-content">${(typeof marked !== 'undefined') ? marked.parse(spec.content || '') : escHtml(spec.content || '')}</div>`;
+  var actionBtns = editing
+    ? `<button class="docs-save-btn" id="fd-spec-save-btn" onclick="fdSaveSpec()">Save</button>
+       <button class="docs-edit-btn" onclick="fdRenderSpecViewer(false)">Cancel</button>`
+    : `<button class="docs-edit-btn" onclick="fdRenderSpecViewer(true)">Edit</button>`;
   viewer.innerHTML = `
     <div class="docs-viewer-header">
       <div class="docs-title-row">
-        ${titleEl}
-        <div class="docs-viewer-actions">
-          ${catSelect}
+        <div>
+          <span style="font-size:0.72rem;color:var(--muted)">${escHtml(featName)} &rsaquo;</span>
+          <span style="font-size:1rem;font-weight:700;margin-left:0.3rem">${escHtml(spec.version || '')}</span>
+        </div>
+        <div class="docs-viewer-actions" style="gap:0.4rem">
           ${actionBtns}
+          <a href="${escHtml(ghUrl)}" target="_blank" rel="noopener"
+             style="font-size:0.72rem;color:var(--muted);border:1px solid var(--border);border-radius:5px;padding:0.28rem 0.55rem;text-decoration:none;transition:color 0.15s"
+             onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">GitHub ↗</a>
         </div>
       </div>
     </div>
-    <div class="docs-body" id="docs-body">${bodyContent}</div>
-    <div class="docs-timestamps">
-      <span>Created: ${docsFmtDate(doc.created_at)}</span>
-      <span>Updated: ${docsFmtDate(doc.updated_at)}</span>
-    </div>`;
+    <div class="docs-body">${bodyHtml}</div>`;
+  if (editing) fdUpdateWordCount();
 }
 
-async function docsSave() {
-  if (!docsActiveDoc) return;
-  const btn = document.getElementById('docs-save-btn');
+function fdCountWords(text) {
+  var t = (text || '').trim();
+  return t ? t.split(/\s+/).length : 0;
+}
+
+function fdUpdateWordCount() {
+  var ta = document.getElementById('fd-spec-textarea');
+  var wc = document.getElementById('fd-word-count');
+  if (!ta || !wc) return;
+  var count = fdCountWords(ta.value);
+  var cls   = count >= 1500 ? 'danger' : (count >= 1000 ? 'warn' : '');
+  wc.textContent = 'Words: ' + count;
+  wc.className   = 'fd-word-count' + (cls ? ' ' + cls : '');
+}
+
+async function fdSaveSpec() {
+  if (!fdActiveSpec) return;
+  var btn = document.getElementById('fd-spec-save-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
-
-  const titleInput = document.getElementById('docs-title-input');
-  const catSelect  = document.getElementById('docs-cat-select');
-  const textarea   = document.getElementById('docs-content-textarea');
-
-  const updates = {};
-  if (titleInput) updates.title    = titleInput.value.trim();
-  if (catSelect)  updates.category = catSelect.value;
-  if (textarea)   updates.content  = textarea.value;
-
-  if (!updates.title) {
-    if (titleInput) titleInput.focus();
-    if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
-    return;
-  }
-
+  var ta = document.getElementById('fd-spec-textarea');
+  if (!ta) { if (btn) { btn.disabled = false; btn.textContent = 'Save'; } return; }
   try {
-    const data = await apiPatch(`/api/docs?id=${docsActiveDoc.id}`, updates);
+    var data = await apiPatch('/api/specs', {
+      feature: fdActiveFeatureSlug,
+      version: fdActiveSpec.version,
+      sha:     fdActiveSpec.sha,
+      content: ta.value,
+    });
     if (data.ok) {
-      docsActiveDoc = data.doc;
-      // Update list cache
-      const idx = docsAll.findIndex(d => d.id === docsActiveDoc.id);
-      if (idx >= 0) {
-        docsAll[idx] = {
-          id: docsActiveDoc.id,
-          title: docsActiveDoc.title,
-          category: docsActiveDoc.category,
-          created_at: docsActiveDoc.created_at,
-          updated_at: docsActiveDoc.updated_at,
-        };
-        docsRenderList();
-      }
-      docsRenderViewer(false);
-    } else {
-      if (btn) { btn.disabled = false; btn.textContent = 'Error'; }
+      fdActiveSpec.content = ta.value;
+      if (data.spec && data.spec.sha) fdActiveSpec.sha = data.spec.sha;
+      fdRenderSpecViewer(false);
     }
   } catch(e) {
     alert('Save failed: ' + e.message);
@@ -6593,90 +6812,263 @@ async function docsSave() {
   }
 }
 
-async function docsDelete() {
-  if (!docsActiveDoc || !confirm(`Delete "${docsActiveDoc.title}"?`)) return;
+// ─── New Spec modal ───────────────────────────────────────────────────────────
+function fdOpenNewSpecModal() {
+  var today = new Date().toISOString().slice(0, 10);
+  var tmpl  = '# Feature Name \u2014 Spec\n\n**Status:** Draft  \n**Version:** v1-initial  \n**Date:** ' + today + '  \n\n---\n\n## Summary\n\n[One paragraph describing what this feature does and why it\'s needed.]\n\n## Goals\n\n- \n\n## Non-Goals\n\n- \n\n## User Stories\n\n- As a [user type], I want to [action] so that [benefit].\n\n## Technical Design\n\n### API Changes\n\n### UI Changes\n\n### Data Model\n\n## Open Questions\n\n- \n\n## Out of Scope\n\n- \n';
+  var featureOptions = (fdFeatures || []).map(function(f) {
+    return '<option value="' + escHtml(f.slug) + '">' + escHtml(f.name) + '</option>';
+  }).join('');
+  var modal = document.getElementById('fd-new-spec-modal');
+  if (!modal) return;
+  modal.innerHTML = `<div class="fd-modal-box" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <span style="font-weight:700;font-size:1rem">New Spec</span>
+      <button onclick="fdCloseNewSpecModal()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;line-height:1;padding:0">&#x2715;</button>
+    </div>
+    <div style="display:flex;gap:0.75rem;margin-bottom:0.75rem;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <label style="display:block;font-size:0.73rem;color:var(--muted);margin-bottom:0.25rem">Feature *</label>
+        <select id="fd-ns-feature" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:0.38rem 0.55rem;color:var(--text);font-size:0.82rem;outline:none;color-scheme:dark">
+          <option value="">&#8212; select feature &#8212;</option>
+          ${featureOptions}
+        </select>
+      </div>
+      <div style="flex:1;min-width:150px">
+        <label style="display:block;font-size:0.73rem;color:var(--muted);margin-bottom:0.25rem">Version *</label>
+        <input id="fd-ns-version" type="text" placeholder="v1-initial" value="v1-initial"
+          style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:0.38rem 0.55rem;color:var(--text);font-size:0.82rem;outline:none;font-family:monospace" />
+      </div>
+    </div>
+    <div style="margin-bottom:0.4rem">
+      <label style="display:block;font-size:0.73rem;color:var(--muted);margin-bottom:0.25rem">Content *</label>
+      <textarea id="fd-ns-content" rows="16" oninput="fdNsUpdateWordCount()"
+        style="width:100%;box-sizing:border-box;background:#0a0a14;border:1px solid var(--border);border-radius:4px;padding:0.55rem;color:var(--text);font-size:0.8rem;font-family:'Courier New',monospace;resize:vertical;outline:none;line-height:1.5">${escHtml(tmpl)}</textarea>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <span id="fd-ns-wc" style="font-size:0.75rem;color:var(--muted)">Words: 0</span>
+      <span style="font-size:0.72rem;color:var(--muted)">Yellow &#8805;1000 &middot; Red &#8805;1500</span>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:0.5rem">
+      <button onclick="fdCloseNewSpecModal()" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:0.42rem 0.9rem;border-radius:6px;font-size:0.82rem;cursor:pointer;font-family:inherit">Cancel</button>
+      <button id="fd-ns-create-btn" onclick="fdCreateSpec()" style="background:var(--accent);border:none;color:#fff;padding:0.42rem 1rem;border-radius:6px;font-size:0.82rem;cursor:pointer;font-family:inherit;font-weight:600">Create Spec &#8594;</button>
+    </div>
+  </div>`;
+  modal.style.display = 'flex';
+  setTimeout(function() { fdNsUpdateWordCount(); }, 20);
+}
+
+function fdCloseNewSpecModal() {
+  var modal = document.getElementById('fd-new-spec-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function fdNsUpdateWordCount() {
+  var ta = document.getElementById('fd-ns-content');
+  var wc = document.getElementById('fd-ns-wc');
+  if (!ta || !wc) return;
+  var count = fdCountWords(ta.value);
+  var color = count >= 1500 ? 'var(--red)' : (count >= 1000 ? 'var(--yellow)' : 'var(--muted)');
+  wc.textContent = 'Words: ' + count;
+  wc.style.color  = color;
+}
+
+async function fdCreateSpec() {
+  var featSel  = document.getElementById('fd-ns-feature');
+  var verInput = document.getElementById('fd-ns-version');
+  var ta       = document.getElementById('fd-ns-content');
+  var feature  = featSel  ? featSel.value.trim()  : '';
+  var version  = verInput ? verInput.value.trim() : '';
+  var content  = ta       ? ta.value              : '';
+  if (!feature) { if (featSel)  featSel.focus();  return; }
+  if (!version) { if (verInput) verInput.focus(); return; }
+  if (!content.trim()) { if (ta) ta.focus(); return; }
+  var btn = document.getElementById('fd-ns-create-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating\u2026'; }
   try {
-    const token = getToken();
-    const res = await fetch(`/api/docs?id=${docsActiveDoc.id}`, {
-      method: 'DELETE',
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-    });
-    if (res.ok) {
-      docsAll = docsAll.filter(d => d.id !== docsActiveDoc.id);
-      docsActiveId  = null;
-      docsActiveDoc = null;
-      docsRenderList();
-      document.getElementById('docs-viewer').innerHTML = `
-        <div class="docs-viewer-empty">
-          <div class="docs-empty-icon">📄</div>
-          <div>Select a document or create a new one</div>
-        </div>`;
-    }
-  } catch(e) { alert('Delete failed: ' + e.message); }
-}
-
-function docsShowNewForm() {
-  const form = document.getElementById('docs-new-form');
-  if (form) { form.style.display = 'block'; document.getElementById('docs-new-title').focus(); }
-}
-
-function docsHideNewForm() {
-  const form = document.getElementById('docs-new-form');
-  if (form) { form.style.display = 'none'; }
-  document.getElementById('docs-new-title').value = '';
-  document.getElementById('docs-new-cat').value = 'general';
-}
-
-async function docsCreateDoc() {
-  const titleInput = document.getElementById('docs-new-title');
-  const catSelect  = document.getElementById('docs-new-cat');
-  const title = titleInput?.value.trim();
-  if (!title) { titleInput?.focus(); return; }
-
-  const btn = document.getElementById('docs-create-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
-
-  try {
-    const data = await apiPost('/api/docs', {
-      title,
-      category: catSelect?.value || 'general',
-      content: `# ${title}\n\n`,
-    });
-    if (data.ok && data.doc) {
-      docsHideNewForm();
-      // Add to list cache
-      docsAll.unshift({
-        id: data.doc.id, title: data.doc.title, category: data.doc.category,
-        created_at: data.doc.created_at, updated_at: data.doc.updated_at,
-      });
-      docsRenderList();
-      // Select and put in edit mode
-      docsActiveId  = data.doc.id;
-      docsActiveDoc = data.doc;
-      docsRenderViewer(true);
-      // Update sidebar selection
-      docsAll.forEach(d => {
-        const el = document.getElementById('doccard-' + d.id);
-        if (el) el.classList.toggle('active', d.id === data.doc.id);
-      });
-      // Focus content area
-      setTimeout(() => {
-        const ta = document.getElementById('docs-content-textarea');
-        if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
-      }, 80);
+    var data = await apiPost('/api/specs', { feature: feature, version: version, content: content });
+    if (data.ok) {
+      if (!fdSpecsCache.hasOwnProperty(feature)) fdSpecsCache[feature] = [];
+      var newEntry = { version: version, sha: (data.spec && data.spec.sha) || null, path: 'specs/' + feature + '/' + version + '.md', size: 0 };
+      fdSpecsCache[feature] = (fdSpecsCache[feature] || []).concat([newEntry]);
+      fdActiveFeatureSlug       = feature;
+      fdExpandedFeatures[feature] = true;
+      fdCloseNewSpecModal();
+      fdRenderSpecsSidebar();
+      await fdSelectSpec(feature, version);
     }
   } catch(e) {
     alert('Create failed: ' + e.message);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Create'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Create Spec \u2192'; }
   }
 }
 
-// Allow Enter key in new doc title field
-document.addEventListener('DOMContentLoaded', () => {
-  const nti = document.getElementById('docs-new-title');
-  if (nti) nti.addEventListener('keydown', e => { if (e.key === 'Enter') docsCreateDoc(); });
-});
+// ─── Docs sub-tab ─────────────────────────────────────────────────────────────
+async function fdLoadAllFeatureDocsMeta() {
+  try {
+    var data = await apiFetch('/api/feature-docs');
+    var docs = (data && data.docs) ? data.docs : [];
+    docs.forEach(function(doc) {
+      if (doc && doc.feature_id && !fdFeatureDocsMap.hasOwnProperty(doc.feature_id)) {
+        fdFeatureDocsMap[doc.feature_id] = doc; // meta only, no content yet
+      }
+    });
+    fdFeatureDocsListLoaded = true;
+  } catch(e) {
+    console.error('[fd] loadAllFeatureDocsMeta:', e);
+  }
+}
+
+function fdRenderDocsSidebar() {
+  var el = document.getElementById('fd-doc-sidebar-content');
+  if (!el) return;
+  var term = (fdDocSearchTerm || '').toLowerCase().trim();
+  var allFeats = fdFeatures || [];
+  var feats = term ? allFeats.filter(function(f) { return (f.name || '').toLowerCase().indexOf(term) >= 0; }) : allFeats;
+  if (!feats.length) {
+    el.innerHTML = term
+      ? `<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.82rem">No features match "${escHtml(term)}"</div>`
+      : `<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.82rem">No features yet.</div>`;
+    return;
+  }
+  el.innerHTML = feats.map(function(feat) {
+    var isActive  = fdDocFeatureId === feat.id;
+    var doc       = fdFeatureDocsMap.hasOwnProperty(feat.id) ? fdFeatureDocsMap[feat.id] : null;
+    var hasDoc    = !!doc;
+    var dateStr   = doc ? fdFmtDate(doc.updated_at) : '';
+    return `<div class="fd-feature-group">
+      <div class="fd-feature-header ${isActive ? 'fd-feature-header-active' : ''}"
+           onclick="fdOpenDoc('${escHtml(feat.id)}')">
+        <span class="fd-feature-name">${escHtml(feat.name)}</span>
+        ${hasDoc
+          ? `<span style="font-size:0.62rem;color:var(--muted);flex-shrink:0">${dateStr}</span>`
+          : `<span style="font-size:0.62rem;color:rgba(107,114,128,0.5);flex-shrink:0;font-style:italic">no doc</span>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fdDocPreview(content) {
+  if (!content) return '';
+  var text = (content || '').replace(/^#+.*$/mg, '').replace(/\s+/g, ' ').trim();
+  return text.length > 120 ? text.slice(0, 120) + '\u2026' : text;
+}
+
+async function fdOpenDoc(featureId) {
+  fdDocFeatureId = featureId;
+  fdDocEditing   = false;
+  fdRenderDocsSidebar();
+  var viewer = document.getElementById('fd-doc-viewer');
+  if (viewer) viewer.innerHTML = `<div style="text-align:center;padding:3rem;color:var(--muted)">Loading…</div>`;
+  var cached = fdFeatureDocsMap.hasOwnProperty(featureId) ? fdFeatureDocsMap[featureId] : undefined;
+  if (cached === undefined || !(cached && cached._fullLoaded)) {
+    try {
+      var data = await apiFetch('/api/feature-docs?feature_id=' + encodeURIComponent(featureId));
+      var doc  = (data && data.doc) ? data.doc : null;
+      if (doc) doc._fullLoaded = true;
+      fdFeatureDocsMap[featureId] = doc;
+    } catch(e) {
+      fdFeatureDocsMap[featureId] = null;
+    }
+  }
+  fdActiveFeatureDoc = fdFeatureDocsMap[featureId] || null;
+  var feat = null;
+  var feats = fdFeatures || [];
+  for (var j = 0; j < feats.length; j++) { if (feats[j].id === featureId) { feat = feats[j]; break; } }
+  if (feat && feat.slug && !fdSpecsCache.hasOwnProperty(feat.slug)) {
+    fdLoadFeatureSpecs(feat.slug);
+  }
+  fdRenderDocViewer(false);
+}
+
+function fdRenderDocViewer(editing) {
+  fdDocEditing = editing;
+  var el = document.getElementById('fd-doc-viewer');
+  if (!el) return;
+  var feat  = null;
+  var feats = fdFeatures || [];
+  for (var i = 0; i < feats.length; i++) { if (feats[i].id === fdDocFeatureId) { feat = feats[i]; break; } }
+  if (!feat) { el.innerHTML = ''; return; }
+  var doc = fdActiveFeatureDoc;
+  var specArr   = (feat.slug && fdSpecsCache.hasOwnProperty(feat.slug)) ? (fdSpecsCache[feat.slug] || []) : [];
+  var specsHtml = '';
+  if (specArr.length) {
+    var sorted = specArr.slice().sort(function(a, b) { return (b.version || '').localeCompare(a.version || ''); });
+    specsHtml = `<div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)">
+      <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.5rem">Back-linked Specs</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem">` +
+      sorted.map(function(s) {
+        var ghUrl = 'https://github.com/Jerry-OC/cdb-specs-and-docs/blob/main/' + (s.path || '');
+        return `<a href="${escHtml(ghUrl)}" target="_blank" rel="noopener"
+          style="font-size:0.75rem;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:5px;padding:0.2rem 0.55rem;color:var(--accent);text-decoration:none">&#x1F4D0; ${escHtml(s.version)} &#8599;</a>`;
+      }).join('') +
+      `</div></div>`;
+  }
+  var defaultContent = '# ' + feat.name + '\n\n## Overview\n\n[Describe this feature.]\n\n## How It Works\n\n## Configuration\n\n## Notes\n\n';
+  var bodyHtml = editing
+    ? `<textarea class="docs-textarea" id="fd-doc-textarea" style="min-height:400px">${escHtml(doc ? doc.content : defaultContent)}</textarea>`
+    : (doc
+        ? `<div class="doc-content">${(typeof marked !== 'undefined') ? marked.parse(doc.content || '') : escHtml(doc.content || '')}</div>`
+        : `<div style="color:var(--muted);font-style:italic;padding:2rem 0">No living doc yet &#8212; click Edit to create one.</div>`);
+  var actionBtns = editing
+    ? `<button class="docs-save-btn" id="fd-doc-save-btn" onclick="fdSaveDoc()">Save</button>
+       <button class="docs-edit-btn" onclick="fdRenderDocViewer(false)">Cancel</button>`
+    : `<button class="docs-edit-btn" onclick="fdRenderDocViewer(true)">Edit</button>`;
+  el.innerHTML = `
+    <div class="docs-viewer-header">
+      <div class="docs-title-row">
+        <div>
+          <span style="font-size:0.72rem;color:var(--muted)">Living Doc &rsaquo;</span>
+          <span style="font-size:1rem;font-weight:700;margin-left:0.3rem">${escHtml(feat.name)}</span>
+        </div>
+        <div class="docs-viewer-actions" style="gap:0.4rem">${actionBtns}</div>
+      </div>
+    </div>
+    <div class="docs-body">
+      <div>${bodyHtml}</div>
+      ${specsHtml}
+      ${doc ? `<div style="margin-top:1rem;font-size:0.7rem;color:var(--muted)">Updated: ${fdFmtDate(doc.updated_at)}</div>` : ''}
+    </div>`;
+}
+
+function fdBackToDocs() {
+  fdDocFeatureId     = null;
+  fdActiveFeatureDoc = null;
+  fdDocEditing       = false;
+  var viewer = document.getElementById('fd-doc-viewer');
+  if (viewer) viewer.innerHTML = `<div class="docs-viewer-empty"><div class="docs-empty-icon">📚</div><div>Select a feature to view its doc</div></div>`;
+  fdRenderDocsSidebar();
+}
+
+async function fdSaveDoc() {
+  var feat  = null;
+  var feats = fdFeatures || [];
+  for (var i = 0; i < feats.length; i++) { if (feats[i].id === fdDocFeatureId) { feat = feats[i]; break; } }
+  if (!feat) return;
+  var btn = document.getElementById('fd-doc-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving\u2026'; }
+  var ta = document.getElementById('fd-doc-textarea');
+  if (!ta) { if (btn) { btn.disabled = false; btn.textContent = 'Save'; } return; }
+  try {
+    var doc  = fdActiveFeatureDoc;
+    var data;
+    if (doc && doc.id) {
+      data = await apiPatch('/api/feature-docs?id=' + encodeURIComponent(doc.id), { content: ta.value });
+    } else {
+      data = await apiPost('/api/feature-docs', { feature_id: fdDocFeatureId, content: ta.value });
+    }
+    if (data.ok && data.doc) {
+      data.doc._fullLoaded             = true;
+      fdActiveFeatureDoc               = data.doc;
+      fdFeatureDocsMap[fdDocFeatureId] = data.doc;
+      fdRenderDocViewer(false);
+    }
+  } catch(e) {
+    alert('Save failed: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+  }
+}
+
 </script>
 
 <!-- Agent Detail Drawer -->
@@ -6692,15 +7084,13 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
   <div class="drawer-tabs">
     <button class="drawer-tab active" onclick="showDrawerTab('overview', this)">Overview</button>
-    <button class="drawer-tab" onclick="showDrawerTab('jobs', this)">Scheduled Jobs</button>
-    <button class="drawer-tab" onclick="showDrawerTab('sessions', this)">Recent Sessions</button>
+    <button class="drawer-tab" onclick="showDrawerTab('feed', this)">Session Feed</button>
     <button class="drawer-tab" onclick="showDrawerTab('files', this)">Files</button>
     <button class="drawer-tab" onclick="showDrawerTab('config', this)">Config</button>
   </div>
   <div class="drawer-body">
     <div class="drawer-panel active" id="drawer-panel-overview"></div>
-    <div class="drawer-panel" id="drawer-panel-jobs"></div>
-    <div class="drawer-panel" id="drawer-panel-sessions"></div>
+    <div class="drawer-panel" id="drawer-panel-feed"></div>
     <div class="drawer-panel" id="drawer-panel-files">
       <div class="drawer-files-layout">
         <div class="drawer-files-sidebar" id="drawer-files-sidebar"></div>
