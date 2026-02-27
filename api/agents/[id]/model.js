@@ -4,7 +4,7 @@
 
 import { requireAuth } from '../../../_auth.js';
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://evfgrjslfrjwyopyzqzx.supabase.co';
+const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 const ALLOWED_MODELS = [
