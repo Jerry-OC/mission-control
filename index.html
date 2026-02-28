@@ -6273,13 +6273,22 @@ async function loadActivityData() {
   const summary = document.getElementById('activity-summary');
   if (!tbody) return;
 
+  // Show loading state immediately — no blank flash while data fetches
+  tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--muted)">
+    <span class="skel" style="display:inline-block;width:220px;height:14px;border-radius:4px;"></span>
+  </td></tr>`;
+  if (summary) summary.innerHTML = Array(4).fill(
+    `<div class="activity-stat-card"><span class="skel" style="display:block;height:11px;width:65%;margin-bottom:8px;"></span><span class="skel" style="display:block;height:22px;width:45%;margin-bottom:6px;"></span><span class="skel" style="display:block;height:10px;width:75%;"></span></div>`
+  ).join('');
+
   try {
     const headers = { apikey: ACTIVITY_ANON, Authorization: `Bearer ${ACTIVITY_ANON}` };
 
-    // Fetch token logs + agent_tasks (for session name resolution) in parallel
+    // Fetch token logs + agent_tasks (for session name resolution) in parallel.
+    // agent_tasks: limit 500 most-recent to prevent silent truncation at Supabase's 1000-row default cap.
     const [logsRes, tasksRes] = await Promise.all([
       fetch(`${ACTIVITY_SB}/rest/v1/agent_token_logs?select=*&order=called_at.desc&limit=500`, { headers }),
-      fetch(`${ACTIVITY_SB}/rest/v1/agent_tasks?select=session_id,session_name,status&session_id=not.is.null`, { headers }),
+      fetch(`${ACTIVITY_SB}/rest/v1/agent_tasks?select=session_id,session_name,status&session_id=not.is.null&order=created_at.desc&limit=500`, { headers }),
     ]);
     if (!logsRes.ok) throw new Error(`HTTP ${logsRes.status}`);
     const rows  = await logsRes.json();
