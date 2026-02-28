@@ -2722,9 +2722,9 @@ async function loadData() {
 
   try {
     [jobsData, inboxData, invoicesData] = await Promise.all([
-      fetch('/api/jobs',                              { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/api/transactions?status=uncoded&limit=1', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/api/invoices',                          { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/jobs',                              { headers, signal: AbortSignal.timeout(10000) }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/transactions?status=uncoded&limit=1', { headers, signal: AbortSignal.timeout(10000) }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/invoices',                          { headers, signal: AbortSignal.timeout(10000) }).then(r => r.ok ? r.json() : null).catch(() => null),
     ]);
   } catch (e) {
     console.error('loadData failed:', e);
@@ -2856,7 +2856,7 @@ async function loadActivityFeed() {
 
   } catch (e) {
     console.warn('[activity-feed] fetch failed:', e.message);
-    // Leave loading state rather than showing an error in a secondary widget
+    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:1rem;font-size:0.82rem">Activity unavailable</div>';
   }
 }
 
