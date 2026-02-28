@@ -8,7 +8,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        "$": { "grantKey": process.env.JOBTREAD_GRANT_KEY },
+        "$": { "grantKey": (process.env.JOBTREAD_GRANT_KEY || '').trim() },
         "organization": {
           "id": "22NeVb7CK2sW",
           "documents": {

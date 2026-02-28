@@ -5,8 +5,9 @@
 
 import { requireAuth } from './_auth.js';
 
-const SB_URL = process.env.SUPABASE_URL;
-const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
+const SB_URL = (process.env.SUPABASE_URL          || '').trim();
+const SB_KEY = (process.env.SUPABASE_SERVICE_KEY   || '').trim();
+const JT_KEY = (process.env.JOBTREAD_GRANT_KEY     || '').trim();
 
 function sbHeaders(extra = {}) {
   return {
@@ -101,7 +102,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        "$": { "grantKey": process.env.JOBTREAD_GRANT_KEY },
+        "$": { "grantKey": JT_KEY },
         "organization": {
           "id": "22NeVb7CK2sW",
           "jobs": {
