@@ -2,7 +2,7 @@
 // One living doc per feature. feature_id = feature slug.
 import { requireAuth } from './_auth.js';
 
-const GH_TOKEN = process.env.GITHUB_DOCS_TOKEN;
+const GH_TOKEN = (process.env.GITHUB_DOCS_TOKEN || '').trim();
 const GH_REPO  = 'Jerry-OC/cdb-specs-and-docs';
 const GH_BASE  = `https://api.github.com/repos/${GH_REPO}/contents`;
 

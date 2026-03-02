@@ -1,8 +1,8 @@
 // GET /api/agents — Live agent status from Supabase
 import { requireAuth } from './_auth.js';
 
-const SB_URL = process.env.SUPABASE_URL;
-const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
+const SB_URL = (process.env.SUPABASE_URL || '').trim();
+const SB_KEY = (process.env.SUPABASE_SERVICE_KEY || '').trim();
 
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return;

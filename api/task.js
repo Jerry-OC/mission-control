@@ -21,8 +21,8 @@ export default async function handler(req, res) {
   }
   if (!task) return res.status(400).json({ error: 'No task provided' });
 
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const botToken = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
+  const chatId = (process.env.TELEGRAM_CHAT_ID || '').trim();
 
   if (!botToken || !chatId) {
     return res.status(500).json({ error: 'Bot not configured' });

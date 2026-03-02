@@ -18,7 +18,7 @@ async function sql(query) {
   const res = await fetch(SB_BASE, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.SUPABASE_MGMT_TOKEN}`,
+      'Authorization': `Bearer ${(process.env.SUPABASE_MGMT_TOKEN || '').trim()}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ query }),
