@@ -4901,6 +4901,7 @@ function renderLineItemReadRow(orderId, li) {
       <td>
         <div class="li-name-cell">${escHtml(li.name)}</div>
         ${li.description ? `<div class="li-desc-cell">${escHtml(li.description)}</div>` : ''}
+        ${li.category ? `<div class="li-desc-cell" style="font-size:0.75rem;color:rgba(100,200,255,0.7)" title="Category">🏷️ ${escHtml(li.category)}</div>` : ''}
         ${li.notes ? `<div class="li-desc-cell" style="font-style:italic;color:rgba(255,255,255,0.3)" title="Internal note">📝 ${escHtml(li.notes)}</div>` : ''}
       </td>
       <td class="num-muted">${li.laborCost > 0 ? fmtCurrencyFull(li.laborCost) : '—'}</td>
@@ -4925,10 +4926,11 @@ function renderLineItemEditRow(orderId, li) {
         <input class="li-input li-input-wide" id="lie-name" value="${escHtml(li.name)}" placeholder="Name *" />
         <input class="li-input" style="margin-top:4px" id="lie-desc" value="${escHtml(li.description||'')}" placeholder="Description (optional)" />
         <input class="li-input" style="margin-top:4px;font-size:0.76rem" id="lie-notes" value="${escHtml(li.notes||'')}" placeholder="Notes (internal only)" />
-        <div style="margin-top:4px">
+        <div style="margin-top:4px;display:flex;gap:0.4rem;font-size:0.78rem">
           <select class="li-group-select" id="lie-group" title="Group" style="max-width:160px">
             ${groupSelectOptions(orderId, li.groupId)}
           </select>
+          <input class="li-input" id="lie-category" value="${escHtml(li.category||'')}" placeholder="Category (e.g. Demo, Framing)" style="flex:1;max-width:180px" />
         </div>
       </td>
       <td><input class="li-input num li-input-narrow" id="lie-labor" type="number" min="0" step="0.01" value="${li.laborCost}" /></td>
@@ -4981,6 +4983,10 @@ function renderNewLineItemRow(orderId) {
         <div>
           <label class="form-label li-new-label">Description (optional)</label>
           <input class="li-input" id="lin-desc" placeholder="Brief description" />
+        </div>
+        <div>
+          <label class="form-label li-new-label">Category (optional)</label>
+          <input class="li-input" id="lin-category" placeholder="e.g. Demo, Framing, Plumbing" />
         </div>
         <div>
           <label class="form-label li-new-label">Notes (internal only)</label>
@@ -5058,6 +5064,7 @@ async function saveEditLineItem(orderId, itemId) {
     name,
     description:   document.getElementById('lie-desc')?.value.trim()  || null,
     notes:         document.getElementById('lie-notes')?.value.trim() || null,
+    category:      document.getElementById('lie-category')?.value.trim() || null,
     laborCost:     parseFloat(document.getElementById('lie-labor')?.value  || 0) || 0,
     materialsCost: parseFloat(document.getElementById('lie-mats')?.value   || 0) || 0,
     otherCost:     parseFloat(document.getElementById('lie-other')?.value  || 0) || 0,
@@ -5110,6 +5117,7 @@ async function submitNewLineItem(orderId) {
     order_id:      orderId,
     name,
     description:   document.getElementById('lin-desc')?.value.trim()  || null,
+    category:      document.getElementById('lin-category')?.value.trim() || null,
     notes:         document.getElementById('lin-notes')?.value.trim() || null,
     laborCost:     parseFloat(document.getElementById('lin-labor')?.value  || 0) || 0,
     materialsCost: parseFloat(document.getElementById('lin-mats')?.value   || 0) || 0,

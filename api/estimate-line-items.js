@@ -37,6 +37,7 @@ function normalizeLineItem(li) {
     id:           li.id,
     orderId:      li.order_id,
     groupId:      li.group_id  ?? null,
+    category:     li.category  ?? null,
     name:         li.name,
     description:  li.description,
     laborCost:    Number(li.labor_cost     ?? 0),
@@ -94,6 +95,7 @@ export default async function handler(req, res) {
       const row = {
         order_id:       orderId,
         group_id:       body.groupId      ?? body.group_id      ?? null,
+        category:       body.category     ?? null,
         name:           body.name,
         description:    body.description  || null,
         labor_cost:     Number(body.laborCost     ?? body.labor_cost     ?? 0),
@@ -151,6 +153,7 @@ export default async function handler(req, res) {
       const patch = {};
       if (body.name          !== undefined) patch.name           = body.name;
       if (body.description   !== undefined) patch.description    = body.description;
+      if (body.category      !== undefined) patch.category       = body.category      ?? null;
       if (body.groupId       !== undefined) patch.group_id       = body.groupId       ?? null;
       if (body.group_id      !== undefined) patch.group_id       = body.group_id      ?? null;
       if (body.laborCost     !== undefined) patch.labor_cost     = Number(body.laborCost);
