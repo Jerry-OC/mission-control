@@ -2282,7 +2282,7 @@ function renderTxCard(tx) {
     if (merchantUpper.includes(kw)) {
       const match = inboxJobs.find(j => j.name.toLowerCase().includes(hint));
       if (match) {
-        suggestHint = `<div class="tx-suggest" onclick="applySuggestedJob('${tx.id}','${escHtml(match.id)}','${escHtml(match.name).replace(/'/g,"\\'")}')" id="suggest-${tx.id}">💡 Suggest: ${escHtml(match.name)}</div>`;
+        suggestHint = `<div class="tx-suggest" onclick="applySuggestedJob('${escHtml(tx.id)}','${escHtml(match.id)}','${escHtml(match.name)}')" id="suggest-${escHtml(tx.id)}">💡 Suggest: ${escHtml(match.name)}</div>`;
         break;
       }
     }
@@ -2484,7 +2484,7 @@ async function submitTxStatus(id, newStatus) {
             codingEl.innerHTML = `
               <div class="tx-rule-prompt">
                 Always exclude <strong>${escHtml(merchant)}</strong>?
-                <button class="btn-rule-yes" onclick="createExclusionRule('${id}','merchant','${escHtml(merchant).replace(/'/g,"\\'")}')">Yes, always</button>
+                <button class="btn-rule-yes" onclick="createExclusionRule('${escHtml(id)}','merchant','${escHtml(merchant)}')">Yes, always</button>
                 <button class="btn-rule-no" onclick="dismissRulePrompt('${id}')">Just this one</button>
               </div>`;
             // Auto-dismiss and advance after 6s if no action
@@ -2627,7 +2627,8 @@ function escHtml(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 
