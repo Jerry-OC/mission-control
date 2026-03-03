@@ -3437,7 +3437,7 @@ function loadDrawerFile(agentId, filename, btn) {
         <div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.6rem;opacity:0.6">Synced ${updatedAt} PST</div>
         <div style="font-size:0.82rem;line-height:1.65;color:var(--muted)">${html}</div>`;
     })
-    .catch(e => { content.innerHTML = `<div style="color:var(--muted);font-size:0.82rem">Error: ${e.message}</div>`; });
+    .catch(e => { content.innerHTML = `<div style="color:var(--muted);font-size:0.82rem">Error: ${escHtml(e.message)}</div>`; });
 }
 
 function loadDrawerConfig(agent) {
@@ -3825,7 +3825,7 @@ async function fetchTasks() {
   } catch (err) {
     if (!tasksLoaded) {
       const c = document.getElementById('tasks-content');
-      if (c) c.innerHTML = `<div class="state-error">Failed to load tasks: ${err.message}</div>`;
+      if (c) c.innerHTML = `<div class="state-error">Failed to load tasks: ${escHtml(err.message)}</div>`;
     }
   }
 }
@@ -4120,7 +4120,7 @@ async function fetchContacts(search = '', type = '') {
     allContacts = data.contacts || [];
     renderContacts(allContacts);
   } catch (err) {
-    if (list) list.innerHTML = `<div class="state-error">Failed to load: ${err.message}</div>`;
+    if (list) list.innerHTML = `<div class="state-error">Failed to load: ${escHtml(err.message)}</div>`;
   }
 }
 
@@ -6199,7 +6199,7 @@ async function loadCronData() {
 
   } catch(e) {
     console.error('[cron] loadCronData error:', e);
-    grid.innerHTML = '<div style="color:var(--red);grid-column:1/-1;padding:1rem">Error: ' + e.message + '<br><small style="opacity:0.6">' + (e.stack||'').split('\n').slice(0,3).join(' | ') + '</small></div>';
+    grid.innerHTML = '<div style="color:var(--red);grid-column:1/-1;padding:1rem">Error: ' + escHtml(e.message) + '<br><small style="opacity:0.6">' + escHtml((e.stack||'').split('\n').slice(0,3).join(' | ')) + '</small></div>';
   }
 }
 
@@ -6530,7 +6530,7 @@ async function loadActivityData() {
 
   } catch (err) {
     const stack = (err.stack || '').split('\n').slice(0,5).join(' | ');
-    if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="color:var(--red);padding:1rem">Error loading activity: ${err.message}<br><small style="opacity:0.6;font-family:monospace">${stack}</small></td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="color:var(--red);padding:1rem">Error loading activity: ${escHtml(err.message)}<br><small style="opacity:0.6;font-family:monospace">${escHtml(stack)}</small></td></tr>`;
     console.error('[activity] loadActivityData error:', err);
   }
 
