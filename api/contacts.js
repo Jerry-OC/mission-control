@@ -1,5 +1,5 @@
 // api/contacts.js — Contacts CRM (Supabase backend)
-import { requireAuth } from './_auth.js';
+import { requireAuth, corsMiddleware } from './_auth.js';
 
 const PROJECT = 'evfgrjslfrjwyopyzqzx';
 const SB_BASE = `https://api.supabase.com/v1/projects/${PROJECT}/database/query`;
@@ -29,11 +29,7 @@ async function sql(query) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-
+  if (!corsMiddleware(req, res)) return;
   if (!requireAuth(req, res)) return;
 
   try {

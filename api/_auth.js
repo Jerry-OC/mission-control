@@ -1,6 +1,6 @@
-// /api/_auth.js — Shared auth validation helper
+// /api/_auth.js — Shared auth & middleware helpers
 // Files prefixed with _ are NOT treated as Vercel serverless routes.
-// Import this from any route that needs auth.
+// Import this from any route that needs auth or middleware.
 
 /**
  * Validates the Bearer token in an incoming request's Authorization header.
@@ -44,4 +44,24 @@ export function requireAuth(req, res) {
   if (validateAuth(req)) return true;
   res.status(401).json({ error: 'Unauthorized' });
   return false;
+}
+
+/**
+ * Sets up CORS headers and handles OPTIONS requests.
+ * Standardized across all API routes.
+ * @param {object} req - Incoming request
+ * @param {object} res - Response object
+ * @param {string|string[]} methods - Allowed HTTP methods (default: 'GET, POST, PATCH, DELETE, OPTIONS')
+ * @returns {boolean} true if request should continue, false if OPTIONS was handled
+ */
+export function corsMiddleware(req, res, methods = 'GET, POST, PATCH, DELETE, OPTIONS') {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', methods);
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return false;
+  }
+  return true;
 }

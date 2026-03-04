@@ -8,7 +8,7 @@
 //
 // Order groups have been extracted to /api/order-groups
 
-import { requireAuth } from './_auth.js';
+import { requireAuth, corsMiddleware } from './_auth.js';
 import { sbFetch } from './_sb.js';
 
 const VALID_ORDER_TYPES = ['Proposal', 'Change Order'];
@@ -34,11 +34,7 @@ function normalizeOrder(o) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') { res.status(204).end(); return; }
-
+  if (!corsMiddleware(req, res)) return;
   if (!requireAuth(req, res)) return;
 
   const { id, job_id } = req.query || {};

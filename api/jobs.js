@@ -3,16 +3,13 @@
 //   GET  /api/jobs?source=estimating   → Supabase jobs with estimating totals
 //   POST /api/jobs?source=estimating   → Create a new Supabase job record
 
-import { requireAuth } from './_auth.js';
+import { requireAuth, corsMiddleware } from './_auth.js';
 import { sbFetch } from './_sb.js';
 
 const JT_KEY = (process.env.JOBTREAD_GRANT_KEY     || '').trim();
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') { res.status(204).end(); return; }
+  if (!corsMiddleware(req, res, 'GET, POST, OPTIONS')) return;
 
   // ── POST — create a new Supabase job (estimating flow only) ──────────
   if (req.method === 'POST') {

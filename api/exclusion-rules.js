@@ -1,5 +1,5 @@
 // api/exclusion-rules.js — Exclusion rules CRUD + bulk-apply
-import { requireAuth } from './_auth.js';
+import { requireAuth, corsMiddleware } from './_auth.js';
 
 const PROJECT = 'evfgrjslfrjwyopyzqzx';
 const SB_BASE = `https://api.supabase.com/v1/projects/${PROJECT}/database/query`;
@@ -54,10 +54,7 @@ async function applyRules() {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (!corsMiddleware(req, res, 'GET, POST, DELETE, OPTIONS')) return;
   if (!requireAuth(req, res)) return;
 
   try {

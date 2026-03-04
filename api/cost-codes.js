@@ -2,15 +2,11 @@
 //
 // GET /api/cost-codes → returns { costCodes: [...] } ordered by number asc
 
-import { requireAuth } from './_auth.js';
+import { requireAuth, corsMiddleware } from './_auth.js';
 import { sbFetch } from './_sb.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') { res.status(204).end(); return; }
-
+  if (!corsMiddleware(req, res, 'GET, OPTIONS')) return;
   if (!requireAuth(req, res)) return;
 
   if (req.method === 'GET') {
