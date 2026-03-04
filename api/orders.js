@@ -11,21 +11,25 @@
 import { requireAuth } from './_auth.js';
 import { sbFetch } from './_sb.js';
 
+const VALID_ORDER_TYPES = ['Proposal', 'Change Order'];
+const VALID_ORDER_STATUSES = ['Draft', 'Sent', 'Signed'];
+
 function normalizeOrder(o) {
   return {
-    id:            o.id,
-    jobId:         o.job_id,
-    name:          o.name,
-    type:          o.type,
-    status:        o.status,
-    dateSent:      o.date_sent,
-    dateSigned:    o.date_signed,
-    notes:         o.notes,
-    totalCost:     Number(o.total_cost  ?? 0),
-    totalPrice:    Number(o.total_price ?? 0),
-    lineItemCount: Number(o.line_item_count ?? 0),
-    createdAt:     o.created_at,
-    updatedAt:     o.updated_at,
+    id:                  o.id,
+    jobId:               o.job_id,
+    name:                o.name,
+    type:                o.type,
+    status:              o.status,
+    dateSent:            o.date_sent,
+    dateSigned:          o.date_signed,
+    notes:               o.notes,
+    docusealSubmissionId: o.docuseal_submission_id ?? null,
+    totalCost:           Number(o.total_cost  ?? 0),
+    totalPrice:          Number(o.total_price ?? 0),
+    lineItemCount:       Number(o.line_item_count ?? 0),
+    createdAt:           o.created_at,
+    updatedAt:           o.updated_at,
   };
 }
 
@@ -58,14 +62,28 @@ export default async function handler(req, res) {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
       if (!body.job_id && !body.jobId) { res.status(400).json({ error: 'job_id required' }); return; }
       if (!body.name) { res.status(400).json({ error: 'name required' }); return; }
+      
+      const orderType = body.type || 'Proposal';
+      const orderStatus = body.status || 'Draft';
+      
+      if (!VALID_ORDER_TYPES.includes(orderType)) {
+        res.status(400).json({ error: `Invalid type: must be one of ${VALID_ORDER_TYPES.join(', ')}` });
+        return;
+      }
+      if (!VALID_ORDER_STATUSES.includes(orderStatus)) {
+        res.status(400).json({ error: `Invalid status: must be one of ${VALID_ORDER_STATUSES.join(', ')}` });
+        return;
+      }
+      
       const row = {
-        job_id:      body.job_id   || body.jobId,
-        name:        body.name,
-        type:        body.type     || 'Proposal',
-        status:      body.status   || 'Draft',
-        date_sent:   body.dateSent   || body.date_sent   || null,
-        date_signed: body.dateSigned || body.date_signed || null,
-        notes:       body.notes    || null,
+        job_id:                body.job_id   || body.jobId,
+        name:                  body.name,
+        type:                  orderType,
+        status:                orderStatus,
+        date_sent:             body.dateSent   || body.date_sent   || null,
+        date_signed:           body.dateSigned || body.date_signed || null,
+        notes:                 body.notes    || null,
+        docuseal_submission_id: body.docusealSubmissionId || body.docuseal_submission_id || null,
       };
       const [created] = await sbFetch('/orders', {
         method:  'POST',
@@ -83,15 +101,39 @@ export default async function handler(req, res) {
     try {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
       const patch = {};
-      if (body.name        !== undefined) patch.name        = body.name;
-      if (body.type        !== undefined) patch.type        = body.type;
-      if (body.status      !== undefined) patch.status      = body.status;
+      
+      if (body.name !== undefined) patch.name = body.name;
+      
+      if (body.type !== undefined) {
+        if (!VALID_ORDER_TYPES.includes(body.type)) {
+          res.status(400).json({ error: `Invalid type: must be one of ${VALID_ORDER_TYPES.join(', ')}` });
+          return;
+        }
+        patch.type = body.type;
+      }
+      
+      if (body.status !== undefined) {
+        if (!VALID_ORDER_STATUSES.includes(body.status)) {
+          res.status(400).json({ error: `Invalid status: must be one of ${VALID_ORDER_STATUSES.join(', ')}` });
+          return;
+        }
+        patch.status = body.status;
+        // Auto-set date_sent if transitioning to 'Sent'
+        if (body.status === 'Sent' && !body.dateSent && !body.date_sent) {
+          patch.date_sent = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        }
+      }
+      
       if (body.dateSent    !== undefined) patch.date_sent   = body.dateSent   || null;
       if (body.date_sent   !== undefined) patch.date_sent   = body.date_sent  || null;
       if (body.dateSigned  !== undefined) patch.date_signed = body.dateSigned || null;
       if (body.date_signed !== undefined) patch.date_signed = body.date_signed|| null;
       if (body.notes       !== undefined) patch.notes       = body.notes;
+      if (body.docusealSubmissionId !== undefined) patch.docuseal_submission_id = body.docusealSubmissionId || null;
+      if (body.docuseal_submission_id !== undefined) patch.docuseal_submission_id = body.docuseal_submission_id || null;
+      
       patch.updated_at = new Date().toISOString();
+      
       await sbFetch(`/orders?id=eq.${id}`, {
         method:  'PATCH',
         body:    JSON.stringify(patch),
@@ -102,12 +144,12 @@ export default async function handler(req, res) {
     return;
   }
 
-  // DELETE
+  // DELETE — cascade delete handled by database
   if (req.method === 'DELETE') {
     if (!id) { res.status(400).json({ error: 'id required' }); return; }
     try {
-      await sbFetch(`/line_items?order_id=eq.${id}`, { method: 'DELETE' });
-      await sbFetch(`/orders?id=eq.${id}`,            { method: 'DELETE' });
+      // Line items are automatically deleted via CASCADE constraint on orders table
+      await sbFetch(`/orders?id=eq.${id}`, { method: 'DELETE' });
       res.status(200).json({ ok: true, id });
     } catch (err) { res.status(500).json({ error: err.message }); }
     return;
