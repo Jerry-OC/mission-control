@@ -1962,7 +1962,7 @@ function addPriority() {
   const id  = 'p' + Date.now();
   const div = document.createElement('div');
   div.className = 'priority-item';
-  div.innerHTML = `<input type="checkbox" id="${id}" onchange="toggleDone(this)"><label for="${id}">${text}</label>`;
+  div.innerHTML = `<input type="checkbox" id="${id}" onchange="toggleDone(this)"><label for="${id}">${escHtml(text)}</label>`;
   document.getElementById('priorities').appendChild(div);
   savePriorities();
 }
@@ -1984,7 +1984,7 @@ function loadPriorities() {
       const id  = 'p' + i;
       const div = document.createElement('div');
       div.className = 'priority-item';
-      div.innerHTML = `<input type="checkbox" id="${id}" ${item.done ? 'checked' : ''} onchange="toggleDone(this)"><label for="${id}" class="${item.done ? 'done' : ''}">${item.text}</label>`;
+      div.innerHTML = `<input type="checkbox" id="${id}" ${item.done ? 'checked' : ''} onchange="toggleDone(this)"><label for="${id}" class="${item.done ? 'done' : ''}">${escHtml(item.text)}</label>`;
       container.appendChild(div);
     });
   } catch(e) {}
