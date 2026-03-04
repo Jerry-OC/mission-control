@@ -9,29 +9,7 @@
 // Order groups have been extracted to /api/order-groups
 
 import { requireAuth } from './_auth.js';
-
-const SB_URL = (process.env.SUPABASE_URL || '').trim();
-const SB_KEY = (process.env.SUPABASE_SERVICE_KEY || '').trim();
-
-function sbHeaders(extra = {}) {
-  return {
-    'apikey':        SB_KEY,
-    'Authorization': `Bearer ${SB_KEY}`,
-    'Content-Type':  'application/json',
-    ...extra,
-  };
-}
-
-async function sbFetch(path, options = {}) {
-  const res = await fetch(`${SB_URL}/rest/v1${path}`, {
-    ...options,
-    headers: { ...sbHeaders(), ...(options.headers || {}) },
-  });
-  const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
-  if (!res.ok) throw new Error(data?.message || data?.error || `Supabase ${res.status}`);
-  return data;
-}
+import { sbFetch } from './_sb.js';
 
 function normalizeOrder(o) {
   return {

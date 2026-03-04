@@ -1,25 +1,12 @@
 // GET /api/agents — Live agent status from Supabase
 import { requireAuth } from './_auth.js';
-
-const SB_URL = (process.env.SUPABASE_URL || '').trim();
-const SB_KEY = (process.env.SUPABASE_SERVICE_KEY || '').trim();
+import { sbFetch } from './_sb.js';
 
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return;
 
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/agent_status?select=*&order=id`, {
-      headers: {
-        'apikey': SB_KEY,
-        'Authorization': `Bearer ${SB_KEY}`,
-      },
-    });
-
-    if (!r.ok) {
-      return res.status(500).json({ error: 'Supabase fetch failed' });
-    }
-
-    const rows = await r.json();
+    const rows = await sbFetch('/agent_status?select=*&order=id');
 
     // Normalize DB column names to camelCase to match what the frontend expects
     const agents = rows.map(r => ({

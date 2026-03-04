@@ -4,30 +4,9 @@
 //   POST /api/jobs?source=estimating   → Create a new Supabase job record
 
 import { requireAuth } from './_auth.js';
+import { sbFetch } from './_sb.js';
 
-const SB_URL = (process.env.SUPABASE_URL          || '').trim();
-const SB_KEY = (process.env.SUPABASE_SERVICE_KEY   || '').trim();
 const JT_KEY = (process.env.JOBTREAD_GRANT_KEY     || '').trim();
-
-function sbHeaders(extra = {}) {
-  return {
-    'apikey':        SB_KEY,
-    'Authorization': `Bearer ${SB_KEY}`,
-    'Content-Type':  'application/json',
-    ...extra,
-  };
-}
-
-async function sbFetch(path, options = {}) {
-  const res = await fetch(`${SB_URL}/rest/v1${path}`, {
-    ...options,
-    headers: { ...sbHeaders(), ...(options.headers || {}) },
-  });
-  const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
-  if (!res.ok) throw new Error(data?.message || data?.error || `Supabase ${res.status}`);
-  return data;
-}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
