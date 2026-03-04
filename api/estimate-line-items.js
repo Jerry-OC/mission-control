@@ -7,7 +7,7 @@
 //
 // Note: cost codes are job costing only — not used on estimate line items
 
-import { requireAuth, corsMiddleware } from './_auth.js';
+import { createHandler, parseBody } from './_handler.js';
 import { sbFetch } from './_sb.js';
 
 function normalizeLineItem(li) {
@@ -31,69 +31,58 @@ function normalizeLineItem(li) {
   };
 }
 
-export default async function handler(req, res) {
-  if (!corsMiddleware(req, res)) return;
-  if (!requireAuth(req, res)) return;
-
+export default createHandler(async (req, res) => {
   const { id, order_id, action } = req.query || {};
 
   // ── GET — list line items for an order ────────────────────────────────────
   if (req.method === 'GET') {
-    if (!order_id) { res.status(400).json({ error: 'order_id required' }); return; }
-    try {
-      const raw = await sbFetch(
-        `/line_items?order_id=eq.${order_id}&select=*&order=sort_order.asc,created_at.asc`
-      );
-      res.setHeader('Cache-Control', 'no-store');
-      res.status(200).json({ lineItems: (raw || []).map(normalizeLineItem) });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+    if (!order_id) throw new Error('order_id required');
+    const raw = await sbFetch(
+      `/line_items?order_id=eq.${order_id}&select=*&order=sort_order.asc,created_at.asc`
+    );
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(200).json({ lineItems: (raw || []).map(normalizeLineItem) });
     return;
   }
 
   // ── POST — create a line item ─────────────────────────────────────────────
   if (req.method === 'POST') {
-    try {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-      const orderId = body.order_id || body.orderId;
-      if (!orderId) { res.status(400).json({ error: 'order_id required' }); return; }
-      if (!body.name) { res.status(400).json({ error: 'name required' }); return; }
+    const body = parseBody(req);
+    const orderId = body.order_id || body.orderId;
+    if (!orderId) throw new Error('order_id required');
+    if (!body.name) throw new Error('name required');
 
-      // Determine sort_order: put new items at the end
-      const existing = await sbFetch(
-        `/line_items?order_id=eq.${orderId}&select=sort_order&order=sort_order.desc&limit=1`
-      );
-      const nextSort = existing?.length ? (existing[0].sort_order + 1) : 0;
+    // Determine sort_order: put new items at the end
+    const existing = await sbFetch(
+      `/line_items?order_id=eq.${orderId}&select=sort_order&order=sort_order.desc&limit=1`
+    );
+    const nextSort = existing?.length ? (existing[0].sort_order + 1) : 0;
 
-      const row = {
-        order_id:       orderId,
-        group_id:       body.groupId      ?? body.group_id      ?? null,
-        category:       body.category     ?? null,
-        name:           body.name,
-        description:    body.description  || null,
-        labor_cost:     Number(body.laborCost     ?? body.labor_cost     ?? 0),
-        materials_cost: Number(body.materialsCost ?? body.materials_cost ?? 0),
-        other_cost:     Number(body.otherCost     ?? body.other_cost     ?? 0),
-        margin_pct:     Number(body.markupPct     ?? body.marginPct      ?? body.margin_pct ?? 20),
-        notes:          body.notes        || null,
-        sort_order:     body.sortOrder    ?? body.sort_order ?? nextSort,
-      };
+    const row = {
+      order_id:       orderId,
+      group_id:       body.groupId      ?? body.group_id      ?? null,
+      category:       body.category     ?? null,
+      name:           body.name,
+      description:    body.description  || null,
+      labor_cost:     Number(body.laborCost     ?? body.labor_cost     ?? 0),
+      materials_cost: Number(body.materialsCost ?? body.materials_cost ?? 0),
+      other_cost:     Number(body.otherCost     ?? body.other_cost     ?? 0),
+      margin_pct:     Number(body.markupPct     ?? body.marginPct      ?? body.margin_pct ?? 20),
+      notes:          body.notes        || null,
+      sort_order:     body.sortOrder    ?? body.sort_order ?? nextSort,
+    };
 
-      // Insert then re-fetch with join so cost code info is included
-      const [created] = await sbFetch('/line_items', {
-        method:  'POST',
-        body:    JSON.stringify(row),
-        headers: { 'Prefer': 'return=representation' },
-      });
+    // Insert then re-fetch with join so cost code info is included
+    const [created] = await sbFetch('/line_items', {
+      method:  'POST',
+      body:    JSON.stringify(row),
+      headers: { 'Prefer': 'return=representation' },
+    });
 
-      // Re-fetch to get generated columns (total_cost, price)
-      const [withCalc] = await sbFetch(`/line_items?id=eq.${created.id}&select=*`);
+    // Re-fetch to get generated columns (total_cost, price)
+    const [withCalc] = await sbFetch(`/line_items?id=eq.${created.id}&select=*`);
 
-      res.status(201).json({ ok: true, lineItem: normalizeLineItem(withCalc || created) });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+    res.status(201).json({ ok: true, lineItem: normalizeLineItem(withCalc || created) });
     return;
   }
 
@@ -101,76 +90,64 @@ export default async function handler(req, res) {
   if (req.method === 'PATCH') {
     // Bulk reorder: body = { items: [{id, sortOrder}] }
     if (action === 'reorder') {
-      try {
-        const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-        const updates = body.items || [];
-        await Promise.all(
-          updates.map(item =>
-            sbFetch(`/line_items?id=eq.${item.id}`, {
-              method:  'PATCH',
-              body:    JSON.stringify({ sort_order: item.sortOrder ?? item.sort_order }),
-              headers: { 'Prefer': 'return=minimal' },
-            })
-          )
-        );
-        res.status(200).json({ ok: true });
-      } catch (err) {
-        res.status(500).json({ error: err.message });
-      }
+      const body = parseBody(req);
+      const updates = body.items || [];
+      await Promise.all(
+        updates.map(item =>
+          sbFetch(`/line_items?id=eq.${item.id}`, {
+            method:  'PATCH',
+            body:    JSON.stringify({ sort_order: item.sortOrder ?? item.sort_order }),
+            headers: { 'Prefer': 'return=minimal' },
+          })
+        )
+      );
+      res.status(200).json({ ok: true });
       return;
     }
 
     // Single update
-    if (!id) { res.status(400).json({ error: 'id required' }); return; }
-    try {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-      const patch = {};
-      if (body.name          !== undefined) patch.name           = body.name;
-      if (body.description   !== undefined) patch.description    = body.description;
-      if (body.category      !== undefined) patch.category       = body.category      ?? null;
-      if (body.groupId       !== undefined) patch.group_id       = body.groupId       ?? null;
-      if (body.group_id      !== undefined) patch.group_id       = body.group_id      ?? null;
-      if (body.laborCost     !== undefined) patch.labor_cost     = Number(body.laborCost);
-      if (body.labor_cost    !== undefined) patch.labor_cost     = Number(body.labor_cost);
-      if (body.materialsCost !== undefined) patch.materials_cost = Number(body.materialsCost);
-      if (body.materials_cost!== undefined) patch.materials_cost = Number(body.materials_cost);
-      if (body.otherCost     !== undefined) patch.other_cost     = Number(body.otherCost);
-      if (body.other_cost    !== undefined) patch.other_cost     = Number(body.other_cost);
-      if (body.markupPct     !== undefined) patch.margin_pct     = Number(body.markupPct);
-      if (body.marginPct     !== undefined) patch.margin_pct     = Number(body.marginPct);
-      if (body.margin_pct    !== undefined) patch.margin_pct     = Number(body.margin_pct);
-      if (body.notes         !== undefined) patch.notes          = body.notes;
-      if (body.sortOrder     !== undefined) patch.sort_order     = body.sortOrder;
-      if (body.sort_order    !== undefined) patch.sort_order     = body.sort_order;
-      patch.updated_at = new Date().toISOString();
+    if (!id) throw new Error('id required');
+    const body = parseBody(req);
+    const patch = {};
+    if (body.name          !== undefined) patch.name           = body.name;
+    if (body.description   !== undefined) patch.description    = body.description;
+    if (body.category      !== undefined) patch.category       = body.category      ?? null;
+    if (body.groupId       !== undefined) patch.group_id       = body.groupId       ?? null;
+    if (body.group_id      !== undefined) patch.group_id       = body.group_id      ?? null;
+    if (body.laborCost     !== undefined) patch.labor_cost     = Number(body.laborCost);
+    if (body.labor_cost    !== undefined) patch.labor_cost     = Number(body.labor_cost);
+    if (body.materialsCost !== undefined) patch.materials_cost = Number(body.materialsCost);
+    if (body.materials_cost!== undefined) patch.materials_cost = Number(body.materials_cost);
+    if (body.otherCost     !== undefined) patch.other_cost     = Number(body.otherCost);
+    if (body.other_cost    !== undefined) patch.other_cost     = Number(body.other_cost);
+    if (body.markupPct     !== undefined) patch.margin_pct     = Number(body.markupPct);
+    if (body.marginPct     !== undefined) patch.margin_pct     = Number(body.marginPct);
+    if (body.margin_pct    !== undefined) patch.margin_pct     = Number(body.margin_pct);
+    if (body.notes         !== undefined) patch.notes          = body.notes;
+    if (body.sortOrder     !== undefined) patch.sort_order     = body.sortOrder;
+    if (body.sort_order    !== undefined) patch.sort_order     = body.sort_order;
+    patch.updated_at = new Date().toISOString();
 
-      await sbFetch(`/line_items?id=eq.${id}`, {
-        method:  'PATCH',
-        body:    JSON.stringify(patch),
-        headers: { 'Prefer': 'return=minimal' },
-      });
+    await sbFetch(`/line_items?id=eq.${id}`, {
+      method:  'PATCH',
+      body:    JSON.stringify(patch),
+      headers: { 'Prefer': 'return=minimal' },
+    });
 
-            // Re-fetch to get updated generated columns (total_cost, price)
-      const [withCalc] = await sbFetch(`/line_items?id=eq.${id}&select=*`);
+    // Re-fetch to get updated generated columns (total_cost, price)
+    const [withCalc] = await sbFetch(`/line_items?id=eq.${id}&select=*`);
 
-      res.status(200).json({ ok: true, lineItem: normalizeLineItem(withCalc) });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+    res.status(200).json({ ok: true, lineItem: normalizeLineItem(withCalc) });
     return;
   }
 
   // ── DELETE ────────────────────────────────────────────────────────────────
   if (req.method === 'DELETE') {
-    if (!id) { res.status(400).json({ error: 'id required' }); return; }
-    try {
-      await sbFetch(`/line_items?id=eq.${id}`, { method: 'DELETE' });
-      res.status(200).json({ ok: true, id });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+    if (!id) throw new Error('id required');
+    await sbFetch(`/line_items?id=eq.${id}`, { method: 'DELETE' });
+    res.status(200).json({ ok: true, id });
     return;
   }
 
   res.status(405).json({ error: 'Method not allowed' });
-}
+});

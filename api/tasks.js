@@ -4,112 +4,96 @@
 // PATCH  /api/tasks?id=uuid      → update a task
 // DELETE /api/tasks?id=uuid      → delete a task
 
-import { requireAuth, corsMiddleware } from './_auth.js';
+import { createHandler, parseBody, requireParam, buildPatch } from './_handler.js';
 import { sbFetch } from './_sb.js';
 
-export default async function handler(req, res) {
-  if (!corsMiddleware(req, res)) return;
-  if (!requireAuth(req, res)) return;
+const FIELD_MAP = {
+  'job_name': 'job',
+  'due_date': 'dueDate',
+  'created_at': 'createdAt',
+};
 
+function normalizeTask(t) {
+  return {
+    id:          t.id,
+    name:        t.name,
+    description: t.description,
+    status:      t.status,
+    priority:    t.priority,
+    level:       t.level,
+    job:         t.job_name,
+    assignee:    t.assignee,
+    dueDate:     t.due_date,
+    notes:       t.notes,
+    createdAt:   t.created_at,
+  };
+}
+
+export default createHandler(async (req, res) => {
   const id = req.query?.id;
 
   // ── GET — list all tasks ───────────────────────────────────────────────
   if (req.method === 'GET') {
-    try {
-      const raw = await sbFetch(
-        '/tasks?select=*&order=created_at.asc',
-        { headers: { 'Prefer': 'return=representation' } }
-      );
-      // Normalize to camelCase / frontend-friendly field names
-      const tasks = (raw || []).map(t => ({
-        id:          t.id,
-        name:        t.name,
-        description: t.description,
-        status:      t.status,
-        priority:    t.priority,
-        level:       t.level,
-        job:         t.job_name,
-        assignee:    t.assignee,
-        dueDate:     t.due_date,
-        notes:       t.notes,
-        createdAt:   t.created_at,
-      }));
-      res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=30');
-      res.status(200).json({ tasks });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+    const raw = await sbFetch(
+      '/tasks?select=*&order=created_at.asc'
+    );
+    res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=30');
+    res.status(200).json({ tasks: (raw || []).map(normalizeTask) });
     return;
   }
 
   // ── POST — create a task ────────────────────────────────────────────────
   if (req.method === 'POST') {
-    try {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const row = {
-        name:        body.name        || null,
-        description: body.description || null,
-        status:      body.status      || 'To Do',
-        priority:    body.priority    || 'Medium',
-        level:       body.level       || 'Org',
-        job_name:    body.job         || body.job_name || null,
-        assignee:    body.assignee    || null,
-        due_date:    body.dueDate     || body.due_date || null,
-        notes:       body.notes       || null,
-      };
-      const [created] = await sbFetch('/tasks', {
-        method: 'POST',
-        body: JSON.stringify(row),
-        headers: { 'Prefer': 'return=representation' },
-      });
-      res.status(201).json({ ok: true, id: created.id, name: created.name });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+    const body = parseBody(req);
+    const row = {
+      name:        body.name        || null,
+      description: body.description || null,
+      status:      body.status      || 'To Do',
+      priority:    body.priority    || 'Medium',
+      level:       body.level       || 'Org',
+      job_name:    body.job         || body.job_name || null,
+      assignee:    body.assignee    || null,
+      due_date:    body.dueDate     || body.due_date || null,
+      notes:       body.notes       || null,
+    };
+    const [created] = await sbFetch('/tasks', {
+      method: 'POST',
+      body: JSON.stringify(row),
+      headers: { 'Prefer': 'return=representation' },
+    });
+    res.status(201).json({ ok: true, id: created.id, name: created.name });
     return;
   }
 
   // ── PATCH — update a task ──────────────────────────────────────────────
   if (req.method === 'PATCH') {
-    if (!id) { res.status(400).json({ error: 'id required' }); return; }
-    try {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const patch = {};
-      if (body.name        !== undefined) patch.name        = body.name;
-      if (body.description !== undefined) patch.description = body.description;
-      if (body.status      !== undefined) patch.status      = body.status;
-      if (body.priority    !== undefined) patch.priority    = body.priority;
-      if (body.level       !== undefined) patch.level       = body.level;
-      if (body.job         !== undefined) patch.job_name    = body.job;
-      if (body.job_name    !== undefined) patch.job_name    = body.job_name;
-      if (body.assignee    !== undefined) patch.assignee    = body.assignee;
-      if (body.dueDate     !== undefined) patch.due_date    = body.dueDate;
-      if (body.due_date    !== undefined) patch.due_date    = body.due_date;
-      if (body.notes       !== undefined) patch.notes       = body.notes;
-
-      await sbFetch(`/tasks?id=eq.${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(patch),
-        headers: { 'Prefer': 'return=minimal' },
-      });
-      res.status(200).json({ ok: true, id });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+    if (!id) throw new Error('id required');
+    const body = parseBody(req);
+    const patch = buildPatch(body, FIELD_MAP);
+    
+    // Only include fields that were explicitly provided
+    const finalPatch = {};
+    const allowedFields = ['name', 'description', 'status', 'priority', 'level', 'job_name', 'assignee', 'due_date', 'notes'];
+    for (const field of allowedFields) {
+      if (patch[field] !== undefined) finalPatch[field] = patch[field];
     }
+
+    await sbFetch(`/tasks?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(finalPatch),
+      headers: { 'Prefer': 'return=minimal' },
+    });
+    res.status(200).json({ ok: true, id });
     return;
   }
 
   // ── DELETE ──────────────────────────────────────────────────────────────
   if (req.method === 'DELETE') {
-    if (!id) { res.status(400).json({ error: 'id required' }); return; }
-    try {
-      await sbFetch(`/tasks?id=eq.${id}`, { method: 'DELETE' });
-      res.status(200).json({ ok: true });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
+    if (!id) throw new Error('id required');
+    await sbFetch(`/tasks?id=eq.${id}`, { method: 'DELETE' });
+    res.status(200).json({ ok: true });
     return;
   }
 
   res.status(405).json({ error: 'Method not allowed' });
-}
+});
